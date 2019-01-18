@@ -6,8 +6,8 @@
     <atom:link href="http://localhost:8820/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Fri, 18 Jan 2019 15:23:51 +0200</pubDate>
-    <lastBuildDate>Fri, 18 Jan 2019 15:23:51 +0200</lastBuildDate>
+    <pubDate>Fri, 18 Jan 2019 19:28:27 +0200</pubDate>
+    <lastBuildDate>Fri, 18 Jan 2019 19:28:27 +0200</lastBuildDate>
 
     <item>
       <title>Как поднять блог на github и jbake</title>
@@ -15,7 +15,23 @@
       <pubDate>Fri, 18 Jan 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/01/github-jbake-blog.html</guid>
       	<description>
-	&lt;p&gt;How to make site on guthub pages...&lt;/p&gt;
+	&lt;p&gt;Развернуть свой персональный блог, блог компании или лендинг проекта используя &lt;a href=&quot;https://pages.github.com/&quot;&gt;github&lt;/a&gt; - задача не сложная и не требующая особых навыков. С другой стороны от необходимости чтения документации и мук выбора того или иного решения имеют место быть. Я, максимально констуктивно, постараюсь изложить основные шаги, которые необходимо сделать для того, что бы обзавестись личным блогом на небезизвестном ресурсе.&lt;/p&gt;
+&lt;h4&gt;Шаг 1. Хостим статику на github&lt;/h4&gt;
+&lt;p&gt;Для этого нам потребуются аккаунт на &lt;a href=&quot;https://github.com/&quot;&gt;github&lt;/a&gt; и базовые навыки работы с &lt;a href=&quot;https://git-scm.com/&quot;&gt;git&lt;/a&gt;. К слову сказать, все ниже изложенное можно проделать и для конкурирующего сервиса &lt;a href=&quot;https://gitlab.com/&quot;&gt;gitlab&lt;/a&gt;, - где кому больше нравится.&lt;/p&gt;
+&lt;p&gt;После чего, нужно просто создать проект, назвав его особым образом, а именно &amp;lt;логин&amp;gt;.github.io, например kostenkoserg.github.io (см. скрин)&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/img/my_github_srcshot.png&quot; alt=&quot;github pages project screenshot&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;В принципе, на этом и вся подготовительная рабобта для хостинга статики завершена. Далее проосто клонируем проект себе (пока пустой), создаём index.html пушим в репозиторий:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;git clone https://github.com/kostenkoserg/kostenkoserg.github.io.git
+cd kostenkoserg.github.io
+echo &amp;quot;Hello GitHub!&amp;quot;
+git commit -m &amp;quot;my first github page&amp;quot;
+git push
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Все! Страничка доступна по &lt;a href=&quot;https://kostenkoserg.github.io&quot;&gt;https://kostenkoserg.github.io&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/img/first_github_page.png&quot; alt=&quot;first_github_page&quot; /&gt;&lt;br /&gt;
+По желанию, можно подвязать уже существующий домен, если по каких-либо соображениям .github.io не подходит.&lt;/p&gt;
+&lt;h4&gt;Шаг 2. Генерация статического сайта с помощью Jbake&lt;/h4&gt;
+&lt;p&gt;...&lt;/p&gt;
 
 	</description>
     </item>
