@@ -46,7 +46,6 @@
           <ul class="nav navbar-nav">
             <li><a href="about.html">About</a></li>
 						<li><a href="about.html">Resume</a></li>
-            <li><a href="feed.xml">Feed</a></li>
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown">Tags <b class="caret"></b></a>
               <ul class="dropdown-menu">
@@ -56,55 +55,66 @@
 								</ul>
 						</li>
           </ul>
+					<!-- switch language -->
+					<ul class="nav navbar-nav navbar-right">
+						<li><a href="/">en</a></li>
+						<li><a href="/ru">ru</a></li>
+						<li><a  class="icon-rss" href="feed.xml"></a></li>
+					</ul>
         </div><!--/.nav-collapse -->
       </div>
     </div>
     <div class="container">
 
+  			<a href="blog/2019/01/jbake-blog-improve.html"><h1>Блог на jbake, добавляем теги и мультиязычность</h1></a>
+  			<p>19 января 2019</p>
+  			<p><p>........</p>
+</p>
   			<a href="blog/2019/01/github-jbake-blog.html"><h1>Как поднять блог на github и jbake</h1></a>
-  			<p>18 January 2019</p>
-  			<p><p>Развернуть свой персональный блог, блог компании или лендинг проекта используя <a href="https://pages.github.com/">github</a> - задача, как оказалось, несложная и не требующая особых навыков. Здесь я, максимально конструктивно, постараюсь изложить основные шаги, которые необходимо сделать для того, что бы обзавестись личным блогом на небезизвестном ресурсе.</p> 
-<h4>Шаг 1. Хостим статику на github</h4> 
-<p>Для этого нам потребуются аккаунт на <a href="https://github.com/">github</a> и базовые навыки работы с <a href="https://git-scm.com/">git</a>. К слову сказать, все ниже изложенное можно проделать и для конкурирующего сервиса <a href="https://gitlab.com/">gitlab</a>, - где кому больше нравится.</p> 
-<p>Далее, нужно просто создать проект, назвав его: &lt;логин&gt;.github.io, например kostenkoserg.github.io</p> 
-<p><img src="http://localhost:8080/ru/img/my_github_srcshot.png" alt="github pages project screenshot"></p> 
-<p>В принципе, на этом вся подготовительная рабобта для хостинга статики и завершена. Теперь клонируем проект себе (пока пустой), создаём index.html и пушим в репозиторий:</p> 
+  			<p>18 января 2019</p>
+  			<p><p>Развернуть свой персональный блог, блог компании или лендинг проекта используя <a href="https://pages.github.com/">github</a> - задача, как оказалось, несложная и не требующая особых навыков. Здесь я, максимально конструктивно, постараюсь изложить основные шаги, которые необходимо сделать для того, что бы обзавестись личным блогом на небезизвестном ресурсе.</p>
+<h4>Шаг 1. Хостим статику на github</h4>
+<p>Для этого нам потребуются аккаунт на <a href="https://github.com/">github</a> и базовые навыки работы с <a href="https://git-scm.com/">git</a>. К слову сказать, все ниже изложенное можно проделать и для конкурирующего сервиса <a href="https://gitlab.com/">gitlab</a>, - где кому больше нравится.</p>
+<p>Далее, нужно просто создать проект, назвав его:  &lt;логин&gt;.github.io, например kostenkoserg.github.io</p>
+<p><img src="/ru/img/my_github_srcshot.png" alt="github pages project screenshot" /></p>
+<p>В принципе, на этом вся подготовительная рабобта для хостинга статики и завершена. Теперь клонируем проект себе (пока пустой), создаём index.html и пушим в репозиторий:</p>
 <pre><code>$ git clone https://github.com/kostenkoserg/kostenkoserg.github.io.git
 $ cd kostenkoserg.github.io
-$ echo "Hello World!"
-$ git commit -m "my first github page"
+$ echo &quot;Hello World!&quot;
+$ git commit -m &quot;my first github page&quot;
 $ git push
-</code></pre> 
-<p>Все! Страничка доступна по <a href="https://kostenkoserg.github.io">https://kostenkoserg.github.io</a></p> 
-<p><img src="http://localhost:8080/ru/img/first_github_page.png" alt="first_github_page"><br> По желанию, к сайту можно подвязать уже существующий домен, если по каким-либо соображениям .github.io не подходит.</p> 
-<h4>Шаг 2. Генерация статического сайта с помощью Jbake</h4> 
-<p><a href="https://jbake.org/">Jbake</a> - это проект, с открытым исходным кодом, для генерации статических сайтов. Для Jbake доступна интеграция с Gradle и Maven, из коробки поддержка Bootstrap и прозрачная интеграция с другими CSS фреймворками, а так же поддержка Freemarker, Groovy, Thymeleaf и Jade в качестве шаблонов.</p> 
-<p>Для начала работы с Jbake, качаем дистрибутив с <a href="https://jbake.org/download.html">сайта проекта</a> и распаковываем архив куда-то себе. После чего генерируем структуру своего сайта:</p> 
+</code></pre>
+<p>Все! Страничка доступна по <a href="https://kostenkoserg.github.io">https://kostenkoserg.github.io</a></p>
+<p><img src="/ru/img/first_github_page.png" alt="first_github_page" /><br />
+По желанию, к сайту можно подвязать уже существующий домен, если по каким-либо соображениям .github.io не подходит.</p>
+<h4>Шаг 2. Генерация статического сайта с помощью Jbake</h4>
+<p><a href="https://jbake.org/">Jbake</a> - это проект, с открытым исходным кодом, для генерации статических сайтов. Для Jbake доступна интеграция с  Gradle и Maven, из коробки поддержка Bootstrap и прозрачная интеграция с другими CSS фреймворками, а так же поддержка Freemarker, Groovy, Thymeleaf и Jade в качестве шаблонов.</p>
+<p>Для начала работы с Jbake, качаем дистрибутив с <a href="https://jbake.org/download.html">сайта проекта</a> и распаковываем архив куда-то себе. После чего генерируем структуру своего сайта:</p>
 <pre><code>$ cd myblog
 $ /opt/jbake/bin/jbake -i
-</code></pre> 
-<p>В результате получаем следующую структуру каталогов:</p> 
+</code></pre>
+<p>В результате получаем следующую структуру каталогов и немного тестового контента:</p>
 <pre><code>├── assets
-│&nbsp;&nbsp; ├── css
-│&nbsp;&nbsp; │&nbsp;&nbsp; ├── asciidoctor.css
-│&nbsp;&nbsp; │&nbsp;&nbsp; ├── base.css
-│&nbsp;&nbsp; │&nbsp;&nbsp; ├── bootstrap.min.css
-│&nbsp;&nbsp; │&nbsp;&nbsp; └── prettify.css
-│&nbsp;&nbsp; ├── favicon.ico
-│&nbsp;&nbsp; ├── fonts
-│&nbsp;&nbsp; │&nbsp;&nbsp; ├── ...
-│&nbsp;&nbsp; └── js
-│&nbsp;&nbsp;     ├── bootstrap.min.js
-│&nbsp;&nbsp;     ├── html5shiv.min.js
-│&nbsp;&nbsp;     ├── jquery-1.11.1.min.js
-│&nbsp;&nbsp;     └── prettify.js
+│   ├── css
+│   │   ├── asciidoctor.css
+│   │   ├── base.css
+│   │   ├── bootstrap.min.css
+│   │   └── prettify.css
+│   ├── favicon.ico
+│   ├── fonts
+│   │   ├── ...
+│   └── js
+│       ├── bootstrap.min.js
+│       ├── html5shiv.min.js
+│       ├── jquery-1.11.1.min.js
+│       └── prettify.js
 ├── content
-│&nbsp;&nbsp; ├── about.html
-│&nbsp;&nbsp; └── blog
-│&nbsp;&nbsp;     └── 2013
-│&nbsp;&nbsp;         ├── first-post.html
-│&nbsp;&nbsp;         ├── second-post.md
-│&nbsp;&nbsp;         └── third-post.adoc
+│   ├── about.html
+│   └── blog
+│       └── 2013
+│           ├── first-post.html
+│           ├── second-post.md
+│           └── third-post.adoc
 ├── jbake.properties
 └── templates
     ├── archive.ftl
@@ -117,20 +127,24 @@ $ /opt/jbake/bin/jbake -i
     ├── post.ftl
     ├── sitemap.ftl
     └── tags.ftl
-</code></pre> 
-<p>Теперь генерируем сайт:</p> 
+</code></pre>
+<p>Теперь генерируем сам сайт:</p>
 <pre><code>/opt/jbake/bin/jbake -b
-</code></pre> 
-<p>В результате чего получим каталог 'output' с нашим статическим сайтом.<br> Проверить, что получилось можно по <a href="http://localhost:8820/">http://localhost:8820/</a>, запустив всторенный сервер</p> 
+</code></pre>
+<p>В результате чего получим каталог <code>output</code> с нашим статическим сайтом.<br />
+Проверить, что получилось можно по <a href="http://localhost:8820/">http://localhost:8820/</a>, запустив всторенный сервер</p>
 <pre><code>/opt/jbake/bin/jbake -s
-</code></pre> 
-<p><img src="http://localhost:8080/ru/img/jbake_default_site.png" alt="jbake_default_site"></p> 
-<p>Всё! наш статический сайт готов! Для полноценного ведения блога, теперь достаточно отредактировать содержимое каталога 'content', перегенерировать сайт и запушить полученный 'output' в созданный на первом шаге github репозиторий.</p></p>
+</code></pre>
+<p><img src="/ru/img/jbake_default_site.png" alt="jbake_default_site" /></p>
+<p>Всё! наш статический сайт готов! Для полноценного ведения блога, теперь достаточно отредактировать содержимое каталога <code>content</code>, перегенерировать сайт и запушить полученный <code>output</code> в, созданный на первом шаге, github репозиторий.</p>
+<p>Jbake поддерживает несколько форматов контента: HTML, Markdown, AsciiDoc, - что позволяет вести свой сайт, используя любой текстовый редактор. Я использую <a href="https://atom.io/">Atom</a> и <a href="https://www.markdownguide.org/basic-syntax/">Markdown</a>.</p>
+</p>
   			<a href="blog/2019/01/start-blogging.html"><h1>Первая запись в блоге</h1></a>
-  			<p>17 January 2019</p>
-  			<p><p>Мысли о собственном блоге посещали меня уже давно и достаточно регулярно, но в силу различных причин реализация задуманного откладывалась. Среди причин было и желание реализовать собственный движок для блогов (зачем-то), и поиск подходящих стилей (ведь так важно), и знакомство со специализированными решениями: wordpress, wix, blogger и другими...</p> 
-<p>В итоге, в качестве платформы был выбран <a href="https://pages.github.com/">pages.github.io</a> с его генератором статического контента <a href="https://jekyllrb.com/">Jekyll</a>. Последнее показалось мне самым сбалансированным решеним: понятно, бесплантно, быстро, надежно. Да и найти лучшее место для технического блога сегодня, наверное, трудно. По мере знакомства с предметной областью, мне попалась java-альтернатиа Jekyll (рубби) в лице проекта <a href="https://jbake.org/">JBake</a>, что как java-разработчику мне показалось ближе.</p> 
-<p>Ну что ж, решение принято, стек выбран, - вперёд!</p></p>
+  			<p>17 января 2019</p>
+  			<p><p>Мысли о собственном блоге посещали меня уже давно и достаточно регулярно, но в силу различных причин реализация задуманного откладывалась. Среди причин было и желание реализовать собственный движок для блогов (зачем-то), и поиск подходящих стилей (ведь так важно), и знакомство со специализированными решениями: wordpress, wix, blogger и другими...</p>
+<p>В итоге, в качестве платформы был выбран <a href="https://pages.github.com/">pages.github.io</a> с его генератором статического контента <a href="https://jekyllrb.com/">Jekyll</a>. Последнее показалось мне самым сбалансированным решеним: понятно, бесплантно,  быстро, надежно. Да и найти лучшее место для технического блога сегодня, наверное, трудно. По мере знакомства с  предметной областью, мне попалась java-альтернатиа  Jekyll (рубби) в лице проекта <a href="https://jbake.org/">JBake</a>, что как java-разработчику мне показалось ближе.</p>
+<p>Ну что ж, решение принято, стек выбран, - вперёд!</p>
+</p>
 
 	<hr />
 
@@ -142,7 +156,7 @@ $ /opt/jbake/bin/jbake -i
 
     <div id="footer">
       <div class="container">
-        <p class="muted credit">&copy; 2019 | Mixed with <a href="http://getbootstrap.com/">Bootstrap v3.1.1</a> | Baked with <a href="http://jbake.org">JBake v2.6.1</a></p>
+        <p class="muted credit">&copy; 2019 | Mixed with <a href="http://getbootstrap.com/">Bootstrap v3.1.1</a> | Baked with <a href="http://jbake.org">JBake v2.6.3</a></p>
       </div>
     </div>
 

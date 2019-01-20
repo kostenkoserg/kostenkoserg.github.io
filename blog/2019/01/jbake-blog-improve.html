@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8"/>
-    <title>Первая запись в блоге</title>
+    <title>Jbake. Add tags, multilanguage support and analytics</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -67,14 +67,48 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Первая запись в блоге</h1>
+		<h1>Jbake. Add tags, multilanguage support and analytics</h1>
 	</div>
 
-	<p><em>17 января 2019</em></p>
+	<p><em>19 January 2019</em></p>
 
-	<p><p>Мысли о собственном блоге посещали меня уже давно и достаточно регулярно, но в силу различных причин реализация задуманного откладывалась. Среди причин было и желание реализовать собственный движок для блогов (зачем-то), и поиск подходящих стилей (ведь так важно), и знакомство со специализированными решениями: wordpress, wix, blogger и другими...</p>
-<p>В итоге, в качестве платформы был выбран <a href="https://pages.github.com/">pages.github.io</a> с его генератором статического контента <a href="https://jekyllrb.com/">Jekyll</a>. Последнее показалось мне самым сбалансированным решеним: понятно, бесплантно,  быстро, надежно. Да и найти лучшее место для технического блога сегодня, наверное, трудно. По мере знакомства с  предметной областью, мне попалась java-альтернатиа  Jekyll (рубби) в лице проекта <a href="https://jbake.org/">JBake</a>, что как java-разработчику мне показалось ближе.</p>
-<p>Ну что ж, решение принято, стек выбран, - вперёд!</p>
+	<p><p>Jbake supports tagging out of the box. It means that engine will generate separate page for each tag. To enable this feature on your blog you need to change <code>render.tags</code> property in your <code>jbake.properties</code> file</p>
+<pre><code>render.tags=true
+</code></pre>
+<p>Next  modify template file depends on where you whant to reneder tags. For this blog I am using freemarker templates and made desition to put tags as part of menu bar. So, chages of my <code>menu.ftl</code> below:</p>
+<pre><code>  &lt;ul class=&quot;dropdown-menu&quot;&gt;
+      &lt;#list tags as tag&gt;
+        &lt;li&gt;&lt;a href=&quot;${content.rootpath}${tag.uri}&quot;&gt;${tag.name}&lt;/a&gt;&lt;/li&gt;
+      &lt;/#list&gt;
+  &lt;/ul&gt;
+</code></pre>
+<p>That's is it!</p>
+<p>Now let's talk about multilanguage support. It is pity, but Jbake does not support blogging in different languages at the same time by default. So, we need a some hacks to do that. First idea  I had was about two the same sites  in different languages. It is not big deal, but in case changes for  templates, assets or images  you will need to do it twice. What is not so good.</p>
+<p>Instead of full copy  I did additional directory <code>content_ru</code> just with content.</p>
+<pre><code>├── assets  
+├── content  
+├── content_ru
+├── templates
+├── jbake.properties
+├── README.md  
+</code></pre>
+<p>In <code>jbake.propeeries</code> you can specify which content should be used.</p>
+<p>So, I  choosen english as default language and bake my blog in the next way:</p>
+<p>bake.sh:</p>
+<pre><code>$ export JBAKE_OPTS=&quot;-Duser.language=EN&quot;
+$ bin/jbake -b
+change property file with content.folder=content_ru
+$ export JBAKE_OPTS=&quot;-Duser.language=RU&quot;
+$ jbake -b . output/ru
+</code></pre>
+<p>Now let’s add to the menu bar links to choose language:</p>
+<pre><code>&lt;!-- switch language --&gt;
+&lt;ul class=&quot;nav navbar-nav navbar-right&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;/&quot;&gt;en&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;/ru&quot;&gt;ru&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+<p>Done!</p>
 </p>
 
 	<hr />
