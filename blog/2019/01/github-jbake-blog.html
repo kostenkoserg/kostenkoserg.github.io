@@ -97,7 +97,11 @@ $ git push
 </code></pre>
 <p>Congrats! Our new site currently available over world wide web: <a href="https://kostenkoserg.github.io">https://kostenkoserg.github.io</a></p>
 <p><img src="/ru/img/first_github_page.png" alt="first_github_page" /><br />
-By the way  you also can use existing domain for your GitHub based site.</p>
+By the way  you also can use existing domain for your GitHub based site. For do that you just need to</p>
+<ul>
+<li>Add <code>A</code> records to your DNS provider with GitHub IP's</li>
+<li>Provide in GitHub project settings your DNS name</li>
+</ul>
 <h4>Step 2. Static blog generation with JBake</h4>
 <p><a href="https://jbake.org/">Jbake</a> is a java based open source solution for static site generation. For JBake available integration with Gradle and Maven. Jbake out of the box supports Bootstrap and can be easy integrated with other CSS frameworks. As template engines JBake supports Freemarker, Groovy, Thymeleaf and Jade.</p>
 <p>To start with let's download distribution from <a href="https://jbake.org/download.html">project site</a> and extract the package to your favorite directory. Now we can generate static site with example content</p>

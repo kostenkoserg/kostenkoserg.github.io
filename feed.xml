@@ -2,20 +2,21 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>JBake</title>
-    <link>http://localhost</link>
-    <atom:link href="http://localhost/feed.xml" rel="self" type="application/rss+xml" />
+    <link>https://kostenko.org</link>
+    <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Mon, 21 Jan 2019 10:26:59 +0200</pubDate>
-    <lastBuildDate>Mon, 21 Jan 2019 10:26:59 +0200</lastBuildDate>
+    <pubDate>Mon, 21 Jan 2019 22:35:18 +0200</pubDate>
+    <lastBuildDate>Mon, 21 Jan 2019 22:35:18 +0200</lastBuildDate>
 
     <item>
-      <title>Jbake. Add tags, multilanguage support and analytics</title>
-      <link>http://localhost/blog/2019/01/jbake-blog-improve.html</link>
+      <title>Jbake. Add tags, multi languages support and analytics</title>
+      <link>https://kostenko.org/blog/2019/01/jbake-blog-improve.html</link>
       <pubDate>Sat, 19 Jan 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/01/jbake-blog-improve.html</guid>
       	<description>
-	&lt;p&gt;Jbake supports tagging out of the box. It means that engine will generate separate page for each tag. To enable this feature on your blog you need to change &lt;code&gt;render.tags&lt;/code&gt; property in your &lt;code&gt;jbake.properties&lt;/code&gt; file&lt;/p&gt;
+	&lt;h4&gt;1. Tags&lt;/h4&gt;
+&lt;p&gt;Jbake supports tagging out of the box. It means that engine will generate separate page for each tag. To enable this feature on your blog you need to change &lt;code&gt;render.tags&lt;/code&gt; property in your &lt;code&gt;jbake.properties&lt;/code&gt; file&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;render.tags=true
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Next  modify template file depends on where you whant to reneder tags. For this blog I am using freemarker templates and made desition to put tags as part of menu bar. So, chages of my &lt;code&gt;menu.ftl&lt;/code&gt; below:&lt;/p&gt;
@@ -26,6 +27,7 @@
   &amp;lt;/ul&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;That&apos;s is it!&lt;/p&gt;
+&lt;h4&gt;2. Multi languages&lt;/h4&gt;
 &lt;p&gt;Now let&apos;s talk about multilanguage support. It is pity, but Jbake does not support blogging in different languages at the same time by default. So, we need a some hacks to do that. First idea  I had was about two the same sites  in different languages. It is not big deal, but in case changes for  templates, assets or images  you will need to do it twice. What is not so good.&lt;/p&gt;
 &lt;p&gt;Instead of full copy  I did additional directory &lt;code&gt;content_ru&lt;/code&gt; just with content.&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;├── assets  
@@ -35,14 +37,28 @@
 ├── jbake.properties
 ├── README.md  
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;In &lt;code&gt;jbake.propeeries&lt;/code&gt; you can specify which content should be used.&lt;/p&gt;
+&lt;p&gt;In &lt;code&gt;jbake.properies&lt;/code&gt; you can specify which content should be used.&lt;/p&gt;
 &lt;p&gt;So, I  choosen english as default language and bake my blog in the next way:&lt;/p&gt;
-&lt;p&gt;bake.sh:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ export JBAKE_OPTS=&amp;quot;-Duser.language=EN&amp;quot;
-$ bin/jbake -b
-change property file with content.folder=content_ru
-$ export JBAKE_OPTS=&amp;quot;-Duser.language=RU&amp;quot;
-$ jbake -b . output/ru
+&lt;p&gt;bakeblog.sh:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#!/bin/bash
+
+# Helper script to bake the blog
+# Author: kostenko
+
+export PATH=&amp;quot;/opt/jbake-2.6.3-bin/bin&amp;quot;:$PATH
+rm -R ./output
+# Building en version
+export JBAKE_OPTS=&amp;quot;-Duser.language=EN&amp;quot;
+jbake -b
+# Build ru version
+export JBAKE_OPTS=&amp;quot;-Duser.language=RU&amp;quot;
+mv jbake.properties jbake.properties.orig
+cat jbake.properties.orig &amp;gt;&amp;gt; jbake.properties
+echo &amp;quot;content.folder=content_ru&amp;quot; &amp;gt;&amp;gt; jbake.properties
+jbake -b . output/ru
+# cleanup
+rm jbake.properties
+mv jbake.properties.orig jbake.properties
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Now let’s add to the menu bar links to choose language:&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;&amp;lt;!-- switch language --&amp;gt;
@@ -52,12 +68,33 @@ $ jbake -b . output/ru
 &amp;lt;/ul&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Done!&lt;/p&gt;
+&lt;h4&gt;3. Analytics&lt;/h4&gt;
+&lt;p&gt;To enable &lt;a href=&quot;https://analytics.google.com&quot;&gt;Google analytics&lt;/a&gt; functionality on your Jbake based  site, you need to do few simple steps:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Register your resource on  google analytics&lt;/li&gt;
+&lt;li&gt;Get provided by GA code snippet&lt;/li&gt;
+&lt;li&gt;Paste provided snippet to your &lt;code&gt;header.ftl&lt;/code&gt; as first block of &lt;code&gt;&amp;lt;HEAD&amp;gt;&lt;/code&gt; section.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;!-- Global site tag (gtag.js) - Google Analytics --&amp;gt;
+&amp;lt;head&amp;gt;
+  &amp;lt;script async src=&amp;quot;https://www.googletagmanager.com/gtag/js?id=&amp;lt;YOUR_GA_ID&amp;gt;&amp;quot;&amp;gt;&amp;lt;/script&amp;gt;
+  &amp;lt;script&amp;gt;
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag(&apos;js&apos;, new Date());
+    gtag(&apos;config&apos;, &apos;&amp;lt;YOUR_GA_ID&amp;gt;&apos;);
+  &amp;lt;/script&amp;gt;
+  ...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Congrats! You are ready to blogging!&lt;/p&gt;
+&lt;p&gt;P.S. If you want to have comments for your posts, - refer to the services like &lt;a href=&quot;https://disqus.com/&quot;&gt;Disqus&lt;/a&gt; - it is aloso easy to integrate and nice to have for some reasons.&lt;br /&gt;
+P.P.S. Blog sources available on &lt;a href=&quot;https://github.com/kostenkoserg/kostenko.blog.src&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
 
 	</description>
     </item>
     <item>
       <title>Start blogging with GitHub and Jbake</title>
-      <link>http://localhost/blog/2019/01/github-jbake-blog.html</link>
+      <link>https://kostenko.org/blog/2019/01/github-jbake-blog.html</link>
       <pubDate>Fri, 18 Jan 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/01/github-jbake-blog.html</guid>
       	<description>
@@ -75,7 +112,11 @@ $ git push
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Congrats! Our new site currently available over world wide web: &lt;a href=&quot;https://kostenkoserg.github.io&quot;&gt;https://kostenkoserg.github.io&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;/ru/img/first_github_page.png&quot; alt=&quot;first_github_page&quot; /&gt;&lt;br /&gt;
-By the way  you also can use existing domain for your GitHub based site.&lt;/p&gt;
+By the way  you also can use existing domain for your GitHub based site. For do that you just need to&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Add &lt;code&gt;A&lt;/code&gt; records to your DNS provider with GitHub IP&apos;s&lt;/li&gt;
+&lt;li&gt;Provide in GitHub project settings your DNS name&lt;/li&gt;
+&lt;/ul&gt;
 &lt;h4&gt;Step 2. Static blog generation with JBake&lt;/h4&gt;
 &lt;p&gt;&lt;a href=&quot;https://jbake.org/&quot;&gt;Jbake&lt;/a&gt; is a java based open source solution for static site generation. For JBake available integration with Gradle and Maven. Jbake out of the box supports Bootstrap and can be easy integrated with other CSS frameworks. As template engines JBake supports Freemarker, Groovy, Thymeleaf and Jade.&lt;/p&gt;
 &lt;p&gt;To start with let&apos;s download distribution from &lt;a href=&quot;https://jbake.org/download.html&quot;&gt;project site&lt;/a&gt; and extract the package to your favorite directory. Now we can generate static site with example content&lt;/p&gt;
@@ -131,7 +172,7 @@ To check the result you can start embedded server and open  &lt;a href=&quot;htt
     </item>
     <item>
       <title>My first blog post</title>
-      <link>http://localhost/blog/2019/01/start-blogging.html</link>
+      <link>https://kostenko.org/blog/2019/01/start-blogging.html</link>
       <pubDate>Thu, 17 Jan 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/01/start-blogging.html</guid>
       	<description>
