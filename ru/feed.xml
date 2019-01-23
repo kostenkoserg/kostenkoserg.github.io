@@ -6,16 +6,87 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Пн, 21 янв 2019 22:35:22 +0200</pubDate>
-    <lastBuildDate>Пн, 21 янв 2019 22:35:22 +0200</lastBuildDate>
+    <pubDate>Ср, 23 янв 2019 10:14:38 +0200</pubDate>
+    <lastBuildDate>Ср, 23 янв 2019 10:14:38 +0200</lastBuildDate>
 
     <item>
-      <title>Блог на jbake, добавляем теги и мультиязычность</title>
+      <title>Jbake. Добавляем теги, поддержку нескольких языков и аналитику</title>
       <link>https://kostenko.org/blog/2019/01/jbake-blog-improve.html</link>
       <pubDate>Сб, 19 янв 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/01/jbake-blog-improve.html</guid>
       	<description>
-	&lt;p&gt;........&lt;/p&gt;
+	&lt;h4&gt;1. Теги&lt;/h4&gt;
+&lt;p&gt;Jbake поддерживает работу с тегами из коробки и при использовании тегов в описании будет генерироваться отдельная страница под каждый тег. Достаточно отредактировать параметр &lt;code&gt;render.tags&lt;/code&gt; в конфигурационном файле &lt;code&gt;jbake.properties&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;render.tags=true
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Теперь в зависимости от того, где мы хотим разместить список тегов, редактируем соответствующий темплейт. Для этого блога я использую freemarker и решил вывести теги в меню в виде выпадающего списка. Соответственно, изменив  ``menu.ftl`, как показано ниже:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;  &amp;lt;ul class=&amp;quot;dropdown-menu&amp;quot;&amp;gt;
+      &amp;lt;#list tags as tag&amp;gt;
+        &amp;lt;li&amp;gt;&amp;lt;a href=&amp;quot;${content.rootpath}${tag.uri}&amp;quot;&amp;gt;${tag.name}&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
+      &amp;lt;/#list&amp;gt;
+  &amp;lt;/ul&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Готово!&lt;/p&gt;
+&lt;h4&gt;2. Контент на нескольких языках&lt;/h4&gt;
+&lt;p&gt;К сожалению, Jbake пока не поддерживает мультиязычные блоги на уровне метаданных и для обеспечения этой функциональности мне пришлость проделать несколько нехитрых упражнений. Сперва, я просто хотел сделать полную копию с другим языком контента, но в случае любых изменений для шаблонов, скриптов, изображений - правки пришлось бы делать дважды. Что не есть хорошо.&lt;/p&gt;
+&lt;p&gt;Вместо этого я просто создал каталог &lt;code&gt;content_ru&lt;/code&gt; в корне проекта.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;├── assets  
+├── content  
+├── content_ru
+├── templates
+├── jbake.properties
+├── README.md  
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;К счастью, в &lt;code&gt;jbake.properies&lt;/code&gt; есть возможность установить каталог контента, который будет использован при генерации, что позволяет держать несколько директорий в проекте.  Теперь сгенерировать мультиязычный блог можно используя скрипт:&lt;/p&gt;
+&lt;p&gt;bakeblog.sh:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#!/bin/bash
+
+# Helper script to bake the blog
+# Author: kostenko
+
+export PATH=&amp;quot;/opt/jbake-2.6.3-bin/bin&amp;quot;:$PATH
+rm -R ./output
+# Building en version
+export JBAKE_OPTS=&amp;quot;-Duser.language=EN&amp;quot;
+jbake -b
+# Build ru version
+export JBAKE_OPTS=&amp;quot;-Duser.language=RU&amp;quot;
+mv jbake.properties jbake.properties.orig
+cat jbake.properties.orig &amp;gt;&amp;gt; jbake.properties
+echo &amp;quot;content.folder=content_ru&amp;quot; &amp;gt;&amp;gt; jbake.properties
+jbake -b . output/ru
+# cleanup
+rm jbake.properties
+mv jbake.properties.orig jbake.properties
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Добавим возможность переключения языков в меню:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;!-- switch language --&amp;gt;
+&amp;lt;ul class=&amp;quot;nav navbar-nav navbar-right&amp;quot;&amp;gt;
+  &amp;lt;li&amp;gt;&amp;lt;a href=&amp;quot;/&amp;quot;&amp;gt;en&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
+  &amp;lt;li&amp;gt;&amp;lt;a href=&amp;quot;/ru&amp;quot;&amp;gt;ru&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
+&amp;lt;/ul&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;На этом все!&lt;/p&gt;
+&lt;h4&gt;3. Аналитика&lt;/h4&gt;
+&lt;p&gt;Для того что бы подключить &lt;a href=&quot;https://analytics.google.com&quot;&gt;Google analytics&lt;/a&gt; нужно выполнить несколько простых шагов&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Зарегестировать ресурс в GA&lt;/li&gt;
+&lt;li&gt;Получить сгенерированный GA фрагмент кода&lt;/li&gt;
+&lt;li&gt;Вставить этот код в &lt;code&gt;header.ftl&lt;/code&gt; первой строкой блока &lt;code&gt;&amp;lt;HEAD&amp;gt;&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;&amp;lt;!-- Global site tag (gtag.js) - Google Analytics --&amp;gt;
+&amp;lt;head&amp;gt;
+  &amp;lt;script async src=&amp;quot;https://www.googletagmanager.com/gtag/js?id=&amp;lt;YOUR_GA_ID&amp;gt;&amp;quot;&amp;gt;&amp;lt;/script&amp;gt;
+  &amp;lt;script&amp;gt;
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag(&apos;js&apos;, new Date());
+    gtag(&apos;config&apos;, &apos;&amp;lt;YOUR_GA_ID&amp;gt;&apos;);
+  &amp;lt;/script&amp;gt;
+  ...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;P.S. При желании к блогу можно подключить возможность оставлять комментарии, используя например &lt;a href=&quot;https://disqus.com/&quot;&gt;Disqus&lt;/a&gt;.&lt;br /&gt;
+P.P.S. Код этого блога доступен на &lt;a href=&quot;https://github.com/kostenkoserg/kostenko.blog.src&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
 
 	</description>
     </item>
@@ -39,7 +110,11 @@ $ git push
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Все! Страничка доступна по &lt;a href=&quot;https://kostenkoserg.github.io&quot;&gt;https://kostenkoserg.github.io&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;/ru/img/first_github_page.png&quot; alt=&quot;first_github_page&quot; /&gt;&lt;br /&gt;
-По желанию, к сайту можно подвязать уже существующий домен, если по каким-либо соображениям .github.io не подходит.&lt;/p&gt;
+По желанию, к сайту можно подвязать уже существующий домен, если по каким-либо соображениям .github.io не подходит. Для этого нужно&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Добавить &lt;code&gt;A&lt;/code&gt; записи в настройках DNS провайдера с GitHub ипишниками&lt;/li&gt;
+&lt;li&gt;В настройках проекта на  GitHub указать DNS имя&lt;/li&gt;
+&lt;/ul&gt;
 &lt;h4&gt;Шаг 2. Генерация статического сайта с помощью Jbake&lt;/h4&gt;
 &lt;p&gt;&lt;a href=&quot;https://jbake.org/&quot;&gt;Jbake&lt;/a&gt; - это проект, с открытым исходным кодом, для генерации статических сайтов. Для Jbake доступна интеграция с  Gradle и Maven, из коробки поддержка Bootstrap и прозрачная интеграция с другими CSS фреймворками, а так же поддержка Freemarker, Groovy, Thymeleaf и Jade в качестве шаблонов.&lt;/p&gt;
 &lt;p&gt;Для начала работы с Jbake, качаем дистрибутив с &lt;a href=&quot;https://jbake.org/download.html&quot;&gt;сайта проекта&lt;/a&gt; и распаковываем архив куда-то себе. После чего генерируем структуру своего сайта:&lt;/p&gt;
