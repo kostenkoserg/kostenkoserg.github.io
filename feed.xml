@@ -6,9 +6,25 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Tue, 29 Jan 2019 15:44:48 +0200</pubDate>
-    <lastBuildDate>Tue, 29 Jan 2019 15:44:48 +0200</lastBuildDate>
+    <pubDate>Sat, 16 Feb 2019 11:07:05 +0200</pubDate>
+    <lastBuildDate>Sat, 16 Feb 2019 11:07:05 +0200</lastBuildDate>
 
+    <item>
+      <title>My first video</title>
+      <link>https://kostenko.org/blog/2019/02/github-jbake-blog-video.html</link>
+      <pubDate>Sat, 16 Feb 2019 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2019/02/github-jbake-blog-video.html</guid>
+      	<description>
+	
+Have puplished my first video (aboout blogging with jbake) on youtube! 
+
+&lt;br/&gt;&lt;br/&gt;
+&lt;center&gt;
+&lt;iframe width=&quot;560&quot; height=&quot;315&quot; src=&quot;https://www.youtube.com/embed/_0C2xTa8jsY&quot; frameborder=&quot;0&quot; allow=&quot;accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture&quot; allowfullscreen&gt;&lt;/iframe&gt;
+&lt;/center&gt;
+
+	</description>
+    </item>
     <item>
       <title>Jbake. Add tags, multi languages support and analytics</title>
       <link>https://kostenko.org/blog/2019/01/jbake-blog-improve.html</link>

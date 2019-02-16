@@ -6,9 +6,25 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Вт, 29 янв 2019 15:44:51 +0200</pubDate>
-    <lastBuildDate>Вт, 29 янв 2019 15:44:51 +0200</lastBuildDate>
+    <pubDate>Сб, 16 фев 2019 11:07:09 +0200</pubDate>
+    <lastBuildDate>Сб, 16 фев 2019 11:07:09 +0200</lastBuildDate>
 
+    <item>
+      <title>My first video</title>
+      <link>https://kostenko.org/blog/2019/02/github-jbake-blog-video.html</link>
+      <pubDate>Сб, 16 фев 2019 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2019/02/github-jbake-blog-video.html</guid>
+      	<description>
+	
+Моё первое видео (о том как я делал это блог) на youtube! 
+
+&lt;br/&gt;&lt;br/&gt;
+&lt;center&gt;
+&lt;iframe width=&quot;560&quot; height=&quot;315&quot; src=&quot;https://www.youtube.com/embed/_0C2xTa8jsY&quot; frameborder=&quot;0&quot; allow=&quot;accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture&quot; allowfullscreen&gt;&lt;/iframe&gt;
+&lt;/center&gt;
+
+	</description>
+    </item>
     <item>
       <title>Jbake. Добавляем теги, поддержку нескольких языков и аналитику</title>
       <link>https://kostenko.org/blog/2019/01/jbake-blog-improve.html</link>
