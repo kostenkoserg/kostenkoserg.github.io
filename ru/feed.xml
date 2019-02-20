@@ -6,8 +6,13 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
+<<<<<<< HEAD
     <pubDate>Ср, 20 фев 2019 17:29:32 +0200</pubDate>
     <lastBuildDate>Ср, 20 фев 2019 17:29:32 +0200</lastBuildDate>
+=======
+    <pubDate>Вс, 17 фев 2019 21:45:32 +0200</pubDate>
+    <lastBuildDate>Вс, 17 фев 2019 21:45:32 +0200</lastBuildDate>
+>>>>>>> 386d9511915c2f1e5d37156c044e278442038439
 
     <item>
       <title>Моё первое видео</title>
