@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>How to generate ssh keys on Linux</title>
+    <title>Как сгенерировать ssh ключи в Linux</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -78,31 +78,31 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>How to generate ssh keys on Linux</h1>
+		<h1>Как сгенерировать ssh ключи в Linux</h1>
 	</div>
 
-	<p><em>20 February 2019</em></p>
+	<p><em>20 февраля 2019</em></p>
 
-	<p><p>Sometimes, by security or usability reasons authentication with SSH keys looks much better than passwords. To generate personal keys, please, do next:</p>
+	<p><p>Часто, по соображения безопасности или юзабилити, предпочтительнее использовать ssh ключи вместо паролей. Для этого нужно:</p>
 <ul>
-<li>Login your remote instance</li>
-<li>Generate ssh keys by</li>
+<li>Логинимся на удаленный инстанс</li>
+<li>Генерируем ключи</li>
 </ul>
 <pre><code>ssh-keygen -t rsa -f ~/.ssh/[KEY_FILENAME] -C [USERNAME]
 cat [KEY_FILENAME].pub &gt;&gt; ~/.ssh/authorized_keys
 </code></pre>
 <ul>
-<li>Download private key ([KEY_FILENAME]) to your local PC</li>
-<li>Try to connect from your local with key:</li>
+<li>Скачиваем приватный ключ  ([KEY_FILENAME]) себе</li>
+<li>Заходим на хост с использованием ключа</li>
 </ul>
 <pre><code>chmod 400 [KEY_FILENAME]
 ssh -i [KEY_FILENAME] [USERNAME]@yourhost.com
 </code></pre>
-<p>To disable root login and password based login refer to  <code>/etc/ssh/sshd_config</code> and edid next sections:</p>
+<p>Для того, что бы запретить логиниться с паролем и под рутом, отредактируйте  <code>/etc/ssh/sshd_config</code>:</p>
 <pre><code>PasswordAuthentication no
 PermitRootLogin no
 </code></pre>
-<p>Then reload ssh server</p>
+<p>Затем перезагрузите ssh сервер</p>
 <pre><code>sudo service ssh restart
 </code></pre>
 </p>

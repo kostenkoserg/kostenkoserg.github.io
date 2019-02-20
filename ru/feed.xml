@@ -6,48 +6,48 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Wed, 20 Feb 2019 17:37:10 +0200</pubDate>
-    <lastBuildDate>Wed, 20 Feb 2019 17:37:10 +0200</lastBuildDate>
+    <pubDate>Ср, 20 фев 2019 17:42:30 +0200</pubDate>
+    <lastBuildDate>Ср, 20 фев 2019 17:42:30 +0200</lastBuildDate>
 
     <item>
-      <title>How to generate ssh keys on Linux</title>
+      <title>Как сгенерировать ssh ключи в Linux</title>
       <link>https://kostenko.org/blog/2019/02/linux-generate-private-shh-key.html</link>
-      <pubDate>Wed, 20 Feb 2019 00:00:00 +0200</pubDate>
+      <pubDate>Ср, 20 фев 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/02/linux-generate-private-shh-key.html</guid>
       	<description>
-	&lt;p&gt;Sometimes, by security or usability reasons authentication with SSH keys looks much better than passwords. To generate personal keys, please, do next:&lt;/p&gt;
+	&lt;p&gt;Часто, по соображения безопасности или юзабилити, предпочтительнее использовать ssh ключи вместо паролей. Для этого нужно:&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Login your remote instance&lt;/li&gt;
-&lt;li&gt;Generate ssh keys by&lt;/li&gt;
+&lt;li&gt;Логинимся на удаленный инстанс&lt;/li&gt;
+&lt;li&gt;Генерируем ключи&lt;/li&gt;
 &lt;/ul&gt;
 &lt;pre&gt;&lt;code&gt;ssh-keygen -t rsa -f ~/.ssh/[KEY_FILENAME] -C [USERNAME]
 cat [KEY_FILENAME].pub &amp;gt;&amp;gt; ~/.ssh/authorized_keys
 &lt;/code&gt;&lt;/pre&gt;
 &lt;ul&gt;
-&lt;li&gt;Download private key ([KEY_FILENAME]) to your local PC&lt;/li&gt;
-&lt;li&gt;Try to connect from your local with key:&lt;/li&gt;
+&lt;li&gt;Скачиваем приватный ключ  ([KEY_FILENAME]) себе&lt;/li&gt;
+&lt;li&gt;Заходим на хост с использованием ключа&lt;/li&gt;
 &lt;/ul&gt;
 &lt;pre&gt;&lt;code&gt;chmod 400 [KEY_FILENAME]
 ssh -i [KEY_FILENAME] [USERNAME]@yourhost.com
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;To disable root login and password based login refer to  &lt;code&gt;/etc/ssh/sshd_config&lt;/code&gt; and edid next sections:&lt;/p&gt;
+&lt;p&gt;Для того, что бы запретить логиниться с паролем и под рутом, отредактируйте  &lt;code&gt;/etc/ssh/sshd_config&lt;/code&gt;:&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;PasswordAuthentication no
 PermitRootLogin no
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Then reload ssh server&lt;/p&gt;
+&lt;p&gt;Затем перезагрузите ssh сервер&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;sudo service ssh restart
 &lt;/code&gt;&lt;/pre&gt;
 
 	</description>
     </item>
     <item>
-      <title>My first video</title>
+      <title>Моё первое видео</title>
       <link>https://kostenko.org/blog/2019/02/github-jbake-blog-video.html</link>
-      <pubDate>Sat, 16 Feb 2019 00:00:00 +0200</pubDate>
+      <pubDate>Сб, 16 фев 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/02/github-jbake-blog-video.html</guid>
       	<description>
 	
-Have published my first YouTube video (about blogging with jbake)!
+Моё первое видео (о том как я делал это блог) на youtube!
 
 &lt;br/&gt;&lt;br/&gt;
 &lt;div class=&quot;row&quot;&gt;
@@ -57,26 +57,26 @@ Have published my first YouTube video (about blogging with jbake)!
 	</description>
     </item>
     <item>
-      <title>Jbake. Add tags, multi languages support and analytics</title>
+      <title>Jbake. Добавляем теги, поддержку нескольких языков и аналитику</title>
       <link>https://kostenko.org/blog/2019/01/jbake-blog-improve.html</link>
-      <pubDate>Sat, 19 Jan 2019 00:00:00 +0200</pubDate>
+      <pubDate>Сб, 19 янв 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/01/jbake-blog-improve.html</guid>
       	<description>
-	&lt;h4&gt;1. Tags&lt;/h4&gt;
-&lt;p&gt;Jbake supports tagging out of the box. It means that engine will generate separate page for each tag. To enable this feature on your blog you need to change &lt;code&gt;render.tags&lt;/code&gt; property in your &lt;code&gt;jbake.properties&lt;/code&gt; file&lt;/p&gt;
+	&lt;h4&gt;1. Теги&lt;/h4&gt;
+&lt;p&gt;Jbake поддерживает работу с тегами из коробки и при использовании тегов в описании будет генерироваться отдельная страница под каждый тег. Достаточно отредактировать параметр &lt;code&gt;render.tags&lt;/code&gt; в конфигурационном файле &lt;code&gt;jbake.properties&lt;/code&gt;&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;render.tags=true
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Next  modify template file depends on where you whant to reneder tags. For this blog I am using freemarker templates and made desition to put tags as part of menu bar. So, chages of my &lt;code&gt;menu.ftl&lt;/code&gt; below:&lt;/p&gt;
+&lt;p&gt;Теперь в зависимости от того, где мы хотим разместить список тегов, редактируем соответствующий темплейт. Для этого блога я использую freemarker и решил вывести теги в меню в виде выпадающего списка. Соответственно, изменив  ``menu.ftl`, как показано ниже:&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;  &amp;lt;ul class=&amp;quot;dropdown-menu&amp;quot;&amp;gt;
       &amp;lt;#list tags as tag&amp;gt;
         &amp;lt;li&amp;gt;&amp;lt;a href=&amp;quot;${content.rootpath}${tag.uri}&amp;quot;&amp;gt;${tag.name}&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
       &amp;lt;/#list&amp;gt;
   &amp;lt;/ul&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;That&apos;s is it!&lt;/p&gt;
-&lt;h4&gt;2. Multi languages&lt;/h4&gt;
-&lt;p&gt;Now let&apos;s talk about multilanguage support. It is pity, but Jbake does not support blogging in different languages at the same time by default. So, we need a some hacks to do that. First idea  I had was about two the same sites  in different languages. It is not big deal, but in case changes for  templates, assets or images  you will need to do it twice. What is not so good.&lt;/p&gt;
-&lt;p&gt;Instead of full copy  I did additional directory &lt;code&gt;content_ru&lt;/code&gt; just with content.&lt;/p&gt;
+&lt;p&gt;Готово!&lt;/p&gt;
+&lt;h4&gt;2. Контент на нескольких языках&lt;/h4&gt;
+&lt;p&gt;К сожалению, Jbake пока не поддерживает мультиязычные блоги на уровне метаданных и для обеспечения этой функциональности мне пришлость проделать несколько нехитрых упражнений. Сперва, я просто хотел сделать полную копию с другим языком контента, но в случае любых изменений для шаблонов, скриптов, изображений - правки пришлось бы делать дважды. Что не есть хорошо.&lt;/p&gt;
+&lt;p&gt;Вместо этого я просто создал каталог &lt;code&gt;content_ru&lt;/code&gt; в корне проекта.&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;├── assets  
 ├── content  
 ├── content_ru
@@ -84,8 +84,7 @@ Have published my first YouTube video (about blogging with jbake)!
 ├── jbake.properties
 ├── README.md  
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;In &lt;code&gt;jbake.properies&lt;/code&gt; you can specify which content should be used.&lt;/p&gt;
-&lt;p&gt;So, I  choosen english as default language and bake my blog in the next way:&lt;/p&gt;
+&lt;p&gt;К счастью, в &lt;code&gt;jbake.properies&lt;/code&gt; есть возможность установить каталог контента, который будет использован при генерации, что позволяет держать несколько директорий в проекте.  Теперь сгенерировать мультиязычный блог можно используя скрипт:&lt;/p&gt;
 &lt;p&gt;bakeblog.sh:&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;#!/bin/bash
 
@@ -107,20 +106,20 @@ jbake -b . output/ru
 rm jbake.properties
 mv jbake.properties.orig jbake.properties
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Now let’s add to the menu bar links to choose language:&lt;/p&gt;
+&lt;p&gt;Добавим возможность переключения языков в меню:&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;&amp;lt;!-- switch language --&amp;gt;
 &amp;lt;ul class=&amp;quot;nav navbar-nav navbar-right&amp;quot;&amp;gt;
   &amp;lt;li&amp;gt;&amp;lt;a href=&amp;quot;/&amp;quot;&amp;gt;en&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
   &amp;lt;li&amp;gt;&amp;lt;a href=&amp;quot;/ru&amp;quot;&amp;gt;ru&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
 &amp;lt;/ul&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Done!&lt;/p&gt;
-&lt;h4&gt;3. Analytics&lt;/h4&gt;
-&lt;p&gt;To enable &lt;a href=&quot;https://analytics.google.com&quot;&gt;Google analytics&lt;/a&gt; functionality on your Jbake based  site, you need to do few simple steps:&lt;/p&gt;
+&lt;p&gt;На этом все!&lt;/p&gt;
+&lt;h4&gt;3. Аналитика&lt;/h4&gt;
+&lt;p&gt;Для того что бы подключить &lt;a href=&quot;https://analytics.google.com&quot;&gt;Google analytics&lt;/a&gt; нужно выполнить несколько простых шагов&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Register your resource on  google analytics&lt;/li&gt;
-&lt;li&gt;Get provided by GA code snippet&lt;/li&gt;
-&lt;li&gt;Paste provided snippet to your &lt;code&gt;header.ftl&lt;/code&gt; as first block of &lt;code&gt;&amp;lt;HEAD&amp;gt;&lt;/code&gt; section.&lt;/li&gt;
+&lt;li&gt;Зарегестировать ресурс в GA&lt;/li&gt;
+&lt;li&gt;Получить сгенерированный GA фрагмент кода&lt;/li&gt;
+&lt;li&gt;Вставить этот код в &lt;code&gt;header.ftl&lt;/code&gt; первой строкой блока &lt;code&gt;&amp;lt;HEAD&amp;gt;&lt;/code&gt;.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;pre&gt;&lt;code&gt;&amp;lt;!-- Global site tag (gtag.js) - Google Analytics --&amp;gt;
 &amp;lt;head&amp;gt;
@@ -133,43 +132,43 @@ mv jbake.properties.orig jbake.properties
   &amp;lt;/script&amp;gt;
   ...
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Congrats! You are ready to blogging!&lt;/p&gt;
-&lt;p&gt;P.S. If you want to have comments for your posts, - refer to the services like &lt;a href=&quot;https://disqus.com/&quot;&gt;Disqus&lt;/a&gt; - it is aloso easy to integrate and nice to have for some reasons.&lt;br /&gt;
-P.P.S. Blog sources available on &lt;a href=&quot;https://github.com/kostenkoserg/kostenko.blog.src&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;P.S. При желании к блогу можно подключить возможность оставлять комментарии, используя например &lt;a href=&quot;https://disqus.com/&quot;&gt;Disqus&lt;/a&gt;.&lt;br /&gt;
+P.P.S. Код этого блога доступен на &lt;a href=&quot;https://github.com/kostenkoserg/kostenko.blog.src&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
 
 	</description>
     </item>
     <item>
-      <title>Start blogging with GitHub and Jbake</title>
+      <title>Как поднять блог на github и jbake</title>
       <link>https://kostenko.org/blog/2019/01/github-jbake-blog.html</link>
-      <pubDate>Fri, 18 Jan 2019 00:00:00 +0200</pubDate>
+      <pubDate>Пт, 18 янв 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/01/github-jbake-blog.html</guid>
       	<description>
-	&lt;p&gt;Hosting of personal blog, company blog or landing page of your project - easy enough with &lt;a href=&quot;https://pages.github.com/&quot;&gt;github&lt;/a&gt;. In this post i will try to explain how to do it in two steps.&lt;/p&gt;
-&lt;h4&gt;Step 1. Deploy static content to GitHub&lt;/h4&gt;
-&lt;p&gt;First of all we need an account on &lt;a href=&quot;https://github.com/&quot;&gt;github&lt;/a&gt; and base knoweledges about  &lt;a href=&quot;https://git-scm.com/&quot;&gt;git&lt;/a&gt;. Actually, as i know, another popular web-based Git-repository  &lt;a href=&quot;https://gitlab.com/&quot;&gt;GitLab&lt;/a&gt; also supports hosting of static content, so you can choose what you like more.&lt;/p&gt;
-&lt;p&gt;Now you need to create new project named as [account].github.io For example: kostenkoserg.github.io&lt;/p&gt;
+	&lt;p&gt;Развернуть свой персональный блог, блог компании или лендинг проекта используя &lt;a href=&quot;https://pages.github.com/&quot;&gt;github&lt;/a&gt; - задача, как оказалось, несложная и не требующая особых навыков. Здесь я, максимально конструктивно, постараюсь изложить основные шаги, которые необходимо сделать для того, что бы обзавестись личным блогом на небезизвестном ресурсе.&lt;/p&gt;
+&lt;h4&gt;Шаг 1. Хостим статику на github&lt;/h4&gt;
+&lt;p&gt;Для этого нам потребуются аккаунт на &lt;a href=&quot;https://github.com/&quot;&gt;github&lt;/a&gt; и базовые навыки работы с &lt;a href=&quot;https://git-scm.com/&quot;&gt;git&lt;/a&gt;. К слову сказать, все ниже изложенное можно проделать и для конкурирующего сервиса &lt;a href=&quot;https://gitlab.com/&quot;&gt;gitlab&lt;/a&gt;, - где кому больше нравится.&lt;/p&gt;
+&lt;p&gt;Далее, нужно просто создать проект, назвав его:  &amp;lt;логин&amp;gt;.github.io, например kostenkoserg.github.io&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;/ru/img/my_github_srcshot.png&quot; alt=&quot;github pages project screenshot&quot; /&gt;&lt;/p&gt;
-&lt;p&gt;Actually, we already did all necessary preparation for our hosting. Now just clone the project, create simple index.html and push it back to the repository:&lt;/p&gt;
+&lt;p&gt;В принципе, на этом вся подготовительная рабобта для хостинга статики и завершена. Теперь клонируем проект себе (пока пустой), создаём index.html и пушим в репозиторий:&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;$ git clone https://github.com/kostenkoserg/kostenkoserg.github.io.git
 $ cd kostenkoserg.github.io
 $ echo &amp;quot;Hello World!&amp;quot;
 $ git commit -m &amp;quot;my first github page&amp;quot;
 $ git push
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Congrats! Our new site currently available over world wide web: &lt;a href=&quot;https://kostenkoserg.github.io&quot;&gt;https://kostenkoserg.github.io&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Все! Страничка доступна по &lt;a href=&quot;https://kostenkoserg.github.io&quot;&gt;https://kostenkoserg.github.io&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;/ru/img/first_github_page.png&quot; alt=&quot;first_github_page&quot; /&gt;&lt;br /&gt;
-By the way  you also can use existing domain for your GitHub based site. For do that you just need to&lt;/p&gt;
+По желанию, к сайту можно подвязать уже существующий домен, если по каким-либо соображениям .github.io не подходит. Для этого нужно&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Add &lt;code&gt;A&lt;/code&gt; records to your DNS provider with GitHub IP&apos;s&lt;/li&gt;
-&lt;li&gt;Provide in GitHub project settings your DNS name&lt;/li&gt;
+&lt;li&gt;Добавить &lt;code&gt;A&lt;/code&gt; записи в настройках DNS провайдера с GitHub ипишниками&lt;/li&gt;
+&lt;li&gt;В настройках проекта на  GitHub указать DNS имя&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h4&gt;Step 2. Static blog generation with JBake&lt;/h4&gt;
-&lt;p&gt;&lt;a href=&quot;https://jbake.org/&quot;&gt;Jbake&lt;/a&gt; is a java based open source solution for static site generation. For JBake available integration with Gradle and Maven. Jbake out of the box supports Bootstrap and can be easy integrated with other CSS frameworks. As template engines JBake supports Freemarker, Groovy, Thymeleaf and Jade.&lt;/p&gt;
-&lt;p&gt;To start with let&apos;s download distribution from &lt;a href=&quot;https://jbake.org/download.html&quot;&gt;project site&lt;/a&gt; and extract the package to your favorite directory. Now we can generate static site with example content&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ /opt/jbake/bin/jbake -i
+&lt;h4&gt;Шаг 2. Генерация статического сайта с помощью Jbake&lt;/h4&gt;
+&lt;p&gt;&lt;a href=&quot;https://jbake.org/&quot;&gt;Jbake&lt;/a&gt; - это проект, с открытым исходным кодом, для генерации статических сайтов. Для Jbake доступна интеграция с  Gradle и Maven, из коробки поддержка Bootstrap и прозрачная интеграция с другими CSS фреймворками, а так же поддержка Freemarker, Groovy, Thymeleaf и Jade в качестве шаблонов.&lt;/p&gt;
+&lt;p&gt;Для начала работы с Jbake, качаем дистрибутив с &lt;a href=&quot;https://jbake.org/download.html&quot;&gt;сайта проекта&lt;/a&gt; и распаковываем архив куда-то себе. После чего генерируем структуру своего сайта:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ cd myblog
+$ /opt/jbake/bin/jbake -i
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;As result we should have site template with next structire:&lt;/p&gt;
+&lt;p&gt;В результате получаем следующую структуру каталогов и немного тестового контента:&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;├── assets
 │   ├── css
 │   │   ├── asciidoctor.css
@@ -204,29 +203,28 @@ By the way  you also can use existing domain for your GitHub based site. For do 
     ├── sitemap.ftl
     └── tags.ftl
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Let&apos;s generate site from above&lt;/p&gt;
+&lt;p&gt;Теперь генерируем сам сайт:&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;/opt/jbake/bin/jbake -b
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;After that we will have direcory &lt;code&gt;output&lt;/code&gt; with our static site.&lt;br /&gt;
-To check the result you can start embedded server and open  &lt;a href=&quot;http://localhost:8820/&quot;&gt;http://localhost:8820/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;В результате чего получим каталог &lt;code&gt;output&lt;/code&gt; с нашим статическим сайтом.&lt;br /&gt;
+Проверить, что получилось можно по &lt;a href=&quot;http://localhost:8820/&quot;&gt;http://localhost:8820/&lt;/a&gt;, запустив всторенный сервер&lt;/p&gt;
 &lt;pre&gt;&lt;code&gt;/opt/jbake/bin/jbake -s
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;&lt;img src=&quot;/ru/img/jbake_default_site.png&quot; alt=&quot;jbake_default_site&quot; /&gt;&lt;/p&gt;
-&lt;p&gt;Well done! Our static site ready for blogging. You just need edit content of  &lt;code&gt;content&lt;/code&gt; directory, regenerate site and push   &lt;code&gt;output&lt;/code&gt;  to GitHub repository.&lt;/p&gt;
-&lt;p&gt;Jbake supports few types of content: HTML, Markdown, AsciiDoc, - that is greate and allow you blogging with your favorite text editor. For this blog I am using &lt;a href=&quot;https://atom.io/&quot;&gt;Atom&lt;/a&gt; и &lt;a href=&quot;https://www.markdownguide.org/basic-syntax/&quot;&gt;Markdown&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Всё! наш статический сайт готов! Для полноценного ведения блога, теперь достаточно отредактировать содержимое каталога &lt;code&gt;content&lt;/code&gt;, перегенерировать сайт и запушить полученный &lt;code&gt;output&lt;/code&gt; в, созданный на первом шаге, github репозиторий.&lt;/p&gt;
+&lt;p&gt;Jbake поддерживает несколько форматов контента: HTML, Markdown, AsciiDoc, - что позволяет вести свой сайт, используя любой текстовый редактор. Я использую &lt;a href=&quot;https://atom.io/&quot;&gt;Atom&lt;/a&gt; и &lt;a href=&quot;https://www.markdownguide.org/basic-syntax/&quot;&gt;Markdown&lt;/a&gt;.&lt;/p&gt;
 
 	</description>
     </item>
     <item>
-      <title>My first blog post</title>
+      <title>Первая запись в блоге</title>
       <link>https://kostenko.org/blog/2019/01/start-blogging.html</link>
-      <pubDate>Thu, 17 Jan 2019 00:00:00 +0200</pubDate>
+      <pubDate>Чт, 17 янв 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/01/start-blogging.html</guid>
       	<description>
-	&lt;p&gt;I wanted to start a my own tech blog long ago. But by different reasons have started only now. First i wanted to do own blog engine, after spent lot of time to searching for nice look and feel  and  then sorting out popular solutions like wordpres, wix, blogger etc...&lt;/p&gt;
-&lt;p&gt;After all i found &lt;a href=&quot;https://pages.github.com/&quot;&gt;pages.github.io&lt;/a&gt; with their static site generator &lt;a href=&quot;https://jekyllrb.com/&quot;&gt;Jekyll&lt;/a&gt;. Last one looks good from different points of view. It is simple, it is for free, it is quick enough, it is stable.  Finally if GitHub it is a pretty nice place for work with source code why it can&apos;t be the same for a blog source ?&lt;/p&gt;
-&lt;p&gt;While investigating Jekyll (written on Rubby), i found  JVM based Jekyll analog - project &lt;a href=&quot;https://jbake.org/&quot;&gt;JBake&lt;/a&gt;. Оf course last one seemed to me most closer.&lt;/p&gt;
-&lt;p&gt;So, decision is made. Let&apos;s go!&lt;/p&gt;
+	&lt;p&gt;Мысли о собственном блоге посещали меня уже давно и достаточно регулярно, но в силу различных причин реализация задуманного откладывалась. Среди причин было и желание реализовать собственный движок для блогов (зачем-то), и поиск подходящих стилей (ведь так важно), и знакомство со специализированными решениями: wordpress, wix, blogger и другими...&lt;/p&gt;
+&lt;p&gt;В итоге, в качестве платформы был выбран &lt;a href=&quot;https://pages.github.com/&quot;&gt;pages.github.io&lt;/a&gt; с его генератором статического контента &lt;a href=&quot;https://jekyllrb.com/&quot;&gt;Jekyll&lt;/a&gt;. Последнее показалось мне самым сбалансированным решеним: понятно, бесплантно,  быстро, надежно. Да и найти лучшее место для технического блога сегодня, наверное, трудно. По мере знакомства с  предметной областью, мне попалась java-альтернатиа  Jekyll (рубби) в лице проекта &lt;a href=&quot;https://jbake.org/&quot;&gt;JBake&lt;/a&gt;, что как java-разработчику мне показалось ближе.&lt;/p&gt;
+&lt;p&gt;Ну что ж, решение принято, стек выбран, - вперёд!&lt;/p&gt;
 
 	</description>
     </item>

@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Jbake. Add tags, multi languages support and analytics</title>
+    <title>Jbake. Добавляем теги, поддержку нескольких языков и аналитику</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -78,26 +78,26 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Jbake. Add tags, multi languages support and analytics</h1>
+		<h1>Jbake. Добавляем теги, поддержку нескольких языков и аналитику</h1>
 	</div>
 
-	<p><em>19 January 2019</em></p>
+	<p><em>19 января 2019</em></p>
 
-	<p><h4>1. Tags</h4>
-<p>Jbake supports tagging out of the box. It means that engine will generate separate page for each tag. To enable this feature on your blog you need to change <code>render.tags</code> property in your <code>jbake.properties</code> file</p>
+	<p><h4>1. Теги</h4>
+<p>Jbake поддерживает работу с тегами из коробки и при использовании тегов в описании будет генерироваться отдельная страница под каждый тег. Достаточно отредактировать параметр <code>render.tags</code> в конфигурационном файле <code>jbake.properties</code></p>
 <pre><code>render.tags=true
 </code></pre>
-<p>Next  modify template file depends on where you whant to reneder tags. For this blog I am using freemarker templates and made desition to put tags as part of menu bar. So, chages of my <code>menu.ftl</code> below:</p>
+<p>Теперь в зависимости от того, где мы хотим разместить список тегов, редактируем соответствующий темплейт. Для этого блога я использую freemarker и решил вывести теги в меню в виде выпадающего списка. Соответственно, изменив  ``menu.ftl`, как показано ниже:</p>
 <pre><code>  &lt;ul class=&quot;dropdown-menu&quot;&gt;
       &lt;#list tags as tag&gt;
         &lt;li&gt;&lt;a href=&quot;${content.rootpath}${tag.uri}&quot;&gt;${tag.name}&lt;/a&gt;&lt;/li&gt;
       &lt;/#list&gt;
   &lt;/ul&gt;
 </code></pre>
-<p>That's is it!</p>
-<h4>2. Multi languages</h4>
-<p>Now let's talk about multilanguage support. It is pity, but Jbake does not support blogging in different languages at the same time by default. So, we need a some hacks to do that. First idea  I had was about two the same sites  in different languages. It is not big deal, but in case changes for  templates, assets or images  you will need to do it twice. What is not so good.</p>
-<p>Instead of full copy  I did additional directory <code>content_ru</code> just with content.</p>
+<p>Готово!</p>
+<h4>2. Контент на нескольких языках</h4>
+<p>К сожалению, Jbake пока не поддерживает мультиязычные блоги на уровне метаданных и для обеспечения этой функциональности мне пришлость проделать несколько нехитрых упражнений. Сперва, я просто хотел сделать полную копию с другим языком контента, но в случае любых изменений для шаблонов, скриптов, изображений - правки пришлось бы делать дважды. Что не есть хорошо.</p>
+<p>Вместо этого я просто создал каталог <code>content_ru</code> в корне проекта.</p>
 <pre><code>├── assets  
 ├── content  
 ├── content_ru
@@ -105,8 +105,7 @@
 ├── jbake.properties
 ├── README.md  
 </code></pre>
-<p>In <code>jbake.properies</code> you can specify which content should be used.</p>
-<p>So, I  choosen english as default language and bake my blog in the next way:</p>
+<p>К счастью, в <code>jbake.properies</code> есть возможность установить каталог контента, который будет использован при генерации, что позволяет держать несколько директорий в проекте.  Теперь сгенерировать мультиязычный блог можно используя скрипт:</p>
 <p>bakeblog.sh:</p>
 <pre><code>#!/bin/bash
 
@@ -128,20 +127,20 @@ jbake -b . output/ru
 rm jbake.properties
 mv jbake.properties.orig jbake.properties
 </code></pre>
-<p>Now let’s add to the menu bar links to choose language:</p>
+<p>Добавим возможность переключения языков в меню:</p>
 <pre><code>&lt;!-- switch language --&gt;
 &lt;ul class=&quot;nav navbar-nav navbar-right&quot;&gt;
   &lt;li&gt;&lt;a href=&quot;/&quot;&gt;en&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;/ru&quot;&gt;ru&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 </code></pre>
-<p>Done!</p>
-<h4>3. Analytics</h4>
-<p>To enable <a href="https://analytics.google.com">Google analytics</a> functionality on your Jbake based  site, you need to do few simple steps:</p>
+<p>На этом все!</p>
+<h4>3. Аналитика</h4>
+<p>Для того что бы подключить <a href="https://analytics.google.com">Google analytics</a> нужно выполнить несколько простых шагов</p>
 <ul>
-<li>Register your resource on  google analytics</li>
-<li>Get provided by GA code snippet</li>
-<li>Paste provided snippet to your <code>header.ftl</code> as first block of <code>&lt;HEAD&gt;</code> section.</li>
+<li>Зарегестировать ресурс в GA</li>
+<li>Получить сгенерированный GA фрагмент кода</li>
+<li>Вставить этот код в <code>header.ftl</code> первой строкой блока <code>&lt;HEAD&gt;</code>.</li>
 </ul>
 <pre><code>&lt;!-- Global site tag (gtag.js) - Google Analytics --&gt;
 &lt;head&gt;
@@ -154,9 +153,8 @@ mv jbake.properties.orig jbake.properties
   &lt;/script&gt;
   ...
 </code></pre>
-<p>Congrats! You are ready to blogging!</p>
-<p>P.S. If you want to have comments for your posts, - refer to the services like <a href="https://disqus.com/">Disqus</a> - it is aloso easy to integrate and nice to have for some reasons.<br />
-P.P.S. Blog sources available on <a href="https://github.com/kostenkoserg/kostenko.blog.src">GitHub</a></p>
+<p>P.S. При желании к блогу можно подключить возможность оставлять комментарии, используя например <a href="https://disqus.com/">Disqus</a>.<br />
+P.P.S. Код этого блога доступен на <a href="https://github.com/kostenkoserg/kostenko.blog.src">GitHub</a></p>
 </p>
 
 	<hr />

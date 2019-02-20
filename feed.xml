@@ -6,14 +6,40 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-<<<<<<< HEAD
-    <pubDate>Wed, 20 Feb 2019 17:29:29 +0200</pubDate>
-    <lastBuildDate>Wed, 20 Feb 2019 17:29:29 +0200</lastBuildDate>
-=======
-    <pubDate>Sun, 17 Feb 2019 21:45:27 +0200</pubDate>
-    <lastBuildDate>Sun, 17 Feb 2019 21:45:27 +0200</lastBuildDate>
->>>>>>> 386d9511915c2f1e5d37156c044e278442038439
+    <pubDate>Wed, 20 Feb 2019 17:42:26 +0200</pubDate>
+    <lastBuildDate>Wed, 20 Feb 2019 17:42:26 +0200</lastBuildDate>
 
+    <item>
+      <title>How to generate ssh keys on Linux</title>
+      <link>https://kostenko.org/blog/2019/02/linux-generate-private-shh-key.html</link>
+      <pubDate>Wed, 20 Feb 2019 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2019/02/linux-generate-private-shh-key.html</guid>
+      	<description>
+	&lt;p&gt;Sometimes, by security or usability reasons authentication with SSH keys looks much better than passwords. To generate personal keys, please, do next:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Login your remote instance&lt;/li&gt;
+&lt;li&gt;Generate ssh keys by&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;ssh-keygen -t rsa -f ~/.ssh/[KEY_FILENAME] -C [USERNAME]
+cat [KEY_FILENAME].pub &amp;gt;&amp;gt; ~/.ssh/authorized_keys
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ul&gt;
+&lt;li&gt;Download private key ([KEY_FILENAME]) to your local PC&lt;/li&gt;
+&lt;li&gt;Try to connect from your local with key:&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code&gt;chmod 400 [KEY_FILENAME]
+ssh -i [KEY_FILENAME] [USERNAME]@yourhost.com
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;To disable root login and password based login refer to  &lt;code&gt;/etc/ssh/sshd_config&lt;/code&gt; and edid next sections:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;PasswordAuthentication no
+PermitRootLogin no
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Then reload ssh server&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;sudo service ssh restart
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
     <item>
       <title>My first video</title>
       <link>https://kostenko.org/blog/2019/02/github-jbake-blog-video.html</link>
