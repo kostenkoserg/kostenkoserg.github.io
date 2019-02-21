@@ -24,7 +24,8 @@
     <link href="../../../css/bootstrap.min.css" rel="stylesheet">
     <link href="../../../css/asciidoctor.css" rel="stylesheet">
     <link href="../../../css/base.css" rel="stylesheet">
-    <link href="../../../css/prettify.css" rel="stylesheet">
+    <!--link href="../../../css/prettify.css" rel="stylesheet"-->
+    <link href="../../../css/prism.css" rel="stylesheet">
 
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
@@ -88,22 +89,22 @@
 <li>Логинимся на удаленный инстанс</li>
 <li>Генерируем ключи</li>
 </ul>
-<pre><code>ssh-keygen -t rsa -f ~/.ssh/[KEY_FILENAME] -C [USERNAME]
+<pre><code class="language-bash">ssh-keygen -t rsa -f ~/.ssh/[KEY_FILENAME] -C [USERNAME]
 cat [KEY_FILENAME].pub &gt;&gt; ~/.ssh/authorized_keys
 </code></pre>
 <ul>
 <li>Скачиваем приватный ключ  ([KEY_FILENAME]) себе</li>
 <li>Заходим на хост с использованием ключа</li>
 </ul>
-<pre><code>chmod 400 [KEY_FILENAME]
+<pre><code class="language-bash">chmod 400 [KEY_FILENAME]
 ssh -i [KEY_FILENAME] [USERNAME]@yourhost.com
 </code></pre>
 <p>Для того, что бы запретить логиниться с паролем и под рутом, отредактируйте  <code>/etc/ssh/sshd_config</code>:</p>
-<pre><code>PasswordAuthentication no
+<pre><code class="language-bash">PasswordAuthentication no
 PermitRootLogin no
 </code></pre>
 <p>Затем перезагрузите ssh сервер</p>
-<pre><code>sudo service ssh restart
+<pre><code class="language-bash">sudo service ssh restart
 </code></pre>
 </p>
 
@@ -124,7 +125,7 @@ PermitRootLogin no
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="../../../js/jquery-1.11.1.min.js"></script>
     <script src="../../../js/bootstrap.min.js"></script>
-    <script src="../../../js/prettify.js"></script>
-
+    <!--script src="../../../js/prettify.js"></script-->
+		<script src="../../../js/prism.js"></script>
   </body>
 </html>

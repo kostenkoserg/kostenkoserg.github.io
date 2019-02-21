@@ -6,8 +6,8 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Ср, 20 фев 2019 17:42:30 +0200</pubDate>
-    <lastBuildDate>Ср, 20 фев 2019 17:42:30 +0200</lastBuildDate>
+    <pubDate>Пт, 22 фев 2019 01:08:05 +0200</pubDate>
+    <lastBuildDate>Пт, 22 фев 2019 01:08:05 +0200</lastBuildDate>
 
     <item>
       <title>Как сгенерировать ssh ключи в Linux</title>
@@ -20,22 +20,22 @@
 &lt;li&gt;Логинимся на удаленный инстанс&lt;/li&gt;
 &lt;li&gt;Генерируем ключи&lt;/li&gt;
 &lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;ssh-keygen -t rsa -f ~/.ssh/[KEY_FILENAME] -C [USERNAME]
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;ssh-keygen -t rsa -f ~/.ssh/[KEY_FILENAME] -C [USERNAME]
 cat [KEY_FILENAME].pub &amp;gt;&amp;gt; ~/.ssh/authorized_keys
 &lt;/code&gt;&lt;/pre&gt;
 &lt;ul&gt;
 &lt;li&gt;Скачиваем приватный ключ  ([KEY_FILENAME]) себе&lt;/li&gt;
 &lt;li&gt;Заходим на хост с использованием ключа&lt;/li&gt;
 &lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;chmod 400 [KEY_FILENAME]
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;chmod 400 [KEY_FILENAME]
 ssh -i [KEY_FILENAME] [USERNAME]@yourhost.com
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Для того, что бы запретить логиниться с паролем и под рутом, отредактируйте  &lt;code&gt;/etc/ssh/sshd_config&lt;/code&gt;:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;PasswordAuthentication no
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;PasswordAuthentication no
 PermitRootLogin no
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Затем перезагрузите ssh сервер&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;sudo service ssh restart
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sudo service ssh restart
 &lt;/code&gt;&lt;/pre&gt;
 
 	</description>
@@ -64,10 +64,10 @@ PermitRootLogin no
       	<description>
 	&lt;h4&gt;1. Теги&lt;/h4&gt;
 &lt;p&gt;Jbake поддерживает работу с тегами из коробки и при использовании тегов в описании будет генерироваться отдельная страница под каждый тег. Достаточно отредактировать параметр &lt;code&gt;render.tags&lt;/code&gt; в конфигурационном файле &lt;code&gt;jbake.properties&lt;/code&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;render.tags=true
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;render.tags=true
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Теперь в зависимости от того, где мы хотим разместить список тегов, редактируем соответствующий темплейт. Для этого блога я использую freemarker и решил вывести теги в меню в виде выпадающего списка. Соответственно, изменив  ``menu.ftl`, как показано ниже:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;  &amp;lt;ul class=&amp;quot;dropdown-menu&amp;quot;&amp;gt;
+&lt;pre&gt;&lt;code class=&quot;language-html&quot;&gt;  &amp;lt;ul class=&amp;quot;dropdown-menu&amp;quot;&amp;gt;
       &amp;lt;#list tags as tag&amp;gt;
         &amp;lt;li&amp;gt;&amp;lt;a href=&amp;quot;${content.rootpath}${tag.uri}&amp;quot;&amp;gt;${tag.name}&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
       &amp;lt;/#list&amp;gt;
@@ -77,7 +77,7 @@ PermitRootLogin no
 &lt;h4&gt;2. Контент на нескольких языках&lt;/h4&gt;
 &lt;p&gt;К сожалению, Jbake пока не поддерживает мультиязычные блоги на уровне метаданных и для обеспечения этой функциональности мне пришлость проделать несколько нехитрых упражнений. Сперва, я просто хотел сделать полную копию с другим языком контента, но в случае любых изменений для шаблонов, скриптов, изображений - правки пришлось бы делать дважды. Что не есть хорошо.&lt;/p&gt;
 &lt;p&gt;Вместо этого я просто создал каталог &lt;code&gt;content_ru&lt;/code&gt; в корне проекта.&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;├── assets  
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;├── assets  
 ├── content  
 ├── content_ru
 ├── templates
@@ -86,7 +86,7 @@ PermitRootLogin no
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;К счастью, в &lt;code&gt;jbake.properies&lt;/code&gt; есть возможность установить каталог контента, который будет использован при генерации, что позволяет держать несколько директорий в проекте.  Теперь сгенерировать мультиязычный блог можно используя скрипт:&lt;/p&gt;
 &lt;p&gt;bakeblog.sh:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;#!/bin/bash
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;#!/bin/bash
 
 # Helper script to bake the blog
 # Author: kostenko
@@ -107,7 +107,7 @@ rm jbake.properties
 mv jbake.properties.orig jbake.properties
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Добавим возможность переключения языков в меню:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;&amp;lt;!-- switch language --&amp;gt;
+&lt;pre&gt;&lt;code class=&quot;language-html&quot;&gt;&amp;lt;!-- switch language --&amp;gt;
 &amp;lt;ul class=&amp;quot;nav navbar-nav navbar-right&amp;quot;&amp;gt;
   &amp;lt;li&amp;gt;&amp;lt;a href=&amp;quot;/&amp;quot;&amp;gt;en&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
   &amp;lt;li&amp;gt;&amp;lt;a href=&amp;quot;/ru&amp;quot;&amp;gt;ru&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
@@ -121,7 +121,7 @@ mv jbake.properties.orig jbake.properties
 &lt;li&gt;Получить сгенерированный GA фрагмент кода&lt;/li&gt;
 &lt;li&gt;Вставить этот код в &lt;code&gt;header.ftl&lt;/code&gt; первой строкой блока &lt;code&gt;&amp;lt;HEAD&amp;gt;&lt;/code&gt;.&lt;/li&gt;
 &lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;&amp;lt;!-- Global site tag (gtag.js) - Google Analytics --&amp;gt;
+&lt;pre&gt;&lt;code class=&quot;language-html&quot;&gt;&amp;lt;!-- Global site tag (gtag.js) - Google Analytics --&amp;gt;
 &amp;lt;head&amp;gt;
   &amp;lt;script async src=&amp;quot;https://www.googletagmanager.com/gtag/js?id=&amp;lt;YOUR_GA_ID&amp;gt;&amp;quot;&amp;gt;&amp;lt;/script&amp;gt;
   &amp;lt;script&amp;gt;
@@ -149,7 +149,7 @@ P.P.S. Код этого блога доступен на &lt;a href=&quot;https
 &lt;p&gt;Далее, нужно просто создать проект, назвав его:  &amp;lt;логин&amp;gt;.github.io, например kostenkoserg.github.io&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;/ru/img/my_github_srcshot.png&quot; alt=&quot;github pages project screenshot&quot; /&gt;&lt;/p&gt;
 &lt;p&gt;В принципе, на этом вся подготовительная рабобта для хостинга статики и завершена. Теперь клонируем проект себе (пока пустой), создаём index.html и пушим в репозиторий:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ git clone https://github.com/kostenkoserg/kostenkoserg.github.io.git
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ git clone https://github.com/kostenkoserg/kostenkoserg.github.io.git
 $ cd kostenkoserg.github.io
 $ echo &amp;quot;Hello World!&amp;quot;
 $ git commit -m &amp;quot;my first github page&amp;quot;
@@ -165,11 +165,11 @@ $ git push
 &lt;h4&gt;Шаг 2. Генерация статического сайта с помощью Jbake&lt;/h4&gt;
 &lt;p&gt;&lt;a href=&quot;https://jbake.org/&quot;&gt;Jbake&lt;/a&gt; - это проект, с открытым исходным кодом, для генерации статических сайтов. Для Jbake доступна интеграция с  Gradle и Maven, из коробки поддержка Bootstrap и прозрачная интеграция с другими CSS фреймворками, а так же поддержка Freemarker, Groovy, Thymeleaf и Jade в качестве шаблонов.&lt;/p&gt;
 &lt;p&gt;Для начала работы с Jbake, качаем дистрибутив с &lt;a href=&quot;https://jbake.org/download.html&quot;&gt;сайта проекта&lt;/a&gt; и распаковываем архив куда-то себе. После чего генерируем структуру своего сайта:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ cd myblog
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ cd myblog
 $ /opt/jbake/bin/jbake -i
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;В результате получаем следующую структуру каталогов и немного тестового контента:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;├── assets
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;├── assets
 │   ├── css
 │   │   ├── asciidoctor.css
 │   │   ├── base.css
@@ -204,11 +204,11 @@ $ /opt/jbake/bin/jbake -i
     └── tags.ftl
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Теперь генерируем сам сайт:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;/opt/jbake/bin/jbake -b
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;/opt/jbake/bin/jbake -b
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;В результате чего получим каталог &lt;code&gt;output&lt;/code&gt; с нашим статическим сайтом.&lt;br /&gt;
 Проверить, что получилось можно по &lt;a href=&quot;http://localhost:8820/&quot;&gt;http://localhost:8820/&lt;/a&gt;, запустив всторенный сервер&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;/opt/jbake/bin/jbake -s
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;/opt/jbake/bin/jbake -s
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;&lt;img src=&quot;/ru/img/jbake_default_site.png&quot; alt=&quot;jbake_default_site&quot; /&gt;&lt;/p&gt;
 &lt;p&gt;Всё! наш статический сайт готов! Для полноценного ведения блога, теперь достаточно отредактировать содержимое каталога &lt;code&gt;content&lt;/code&gt;, перегенерировать сайт и запушить полученный &lt;code&gt;output&lt;/code&gt; в, созданный на первом шаге, github репозиторий.&lt;/p&gt;

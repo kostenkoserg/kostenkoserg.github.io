@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-132824591-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-132824591-1');
+</script>
+
+    <meta charset="utf-8"/>
+    <title>Hibernate Search introduction. Deploying on WildFly.</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <meta name="keywords" content="">
+    <meta name="generator" content="JBake">
+
+    <!-- Le styles -->
+    <link href="../../../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../../../css/asciidoctor.css" rel="stylesheet">
+    <link href="../../../css/base.css" rel="stylesheet">
+    <!--link href="../../../css/prettify.css" rel="stylesheet"-->
+    <link href="../../../css/prism.css" rel="stylesheet">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+
+    <!-- Fav and touch icons -->
+    <!--<link rel="apple-touch-icon-precomposed" sizes="144x144" href="../assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="../assets/ico/apple-touch-icon-57-precomposed.png">-->
+    <link rel="shortcut icon" href="../../../favicon.ico">
+  </head>
+  <body onload="prettyPrint()">
+    <div id="wrap">
+
+	<!-- Fixed navbar -->
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../../../index.html">Sergii Kostenko's blog</a>
+        </div>
+        <div class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li><a href="../../../about.html">About</a></li>
+						<li><a href="../../../resume.html">Resume</a></li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown">Tags <b class="caret"></b></a>
+              <ul class="dropdown-menu">
+										<li><a href="../../../tags/JPA.html">JPA</a></li>
+										<li><a href="../../../tags/GitHub.html">GitHub</a></li>
+										<li><a href="../../../tags/Linux.html">Linux</a></li>
+										<li><a href="../../../tags/Wildfly.html">Wildfly</a></li>
+										<li><a href="../../../tags/Hibernate.html">Hibernate</a></li>
+										<li><a href="../../../tags/JBake.html">JBake</a></li>
+								</ul>
+						</li>
+          </ul>
+					<!-- switch language -->
+					<ul class="nav navbar-nav navbar-right">
+						<li><a href="/">en</a></li>
+						<li><a href="/ru">ru</a></li>
+						<li><a  class="icon-rss" href="../../../feed.xml"></a></li>
+					</ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </div>
+    <div class="container">
+
+	<div class="page-header">
+		<h1>Hibernate Search introduction. Deploying on WildFly.</h1>
+	</div>
+
+	<p><em>21 February 2019</em></p>
+
+	<p><p>Hibernate Search is a powerful solution to implement full text search capabilities (like google or amazon) in your EE application. Under the hood it will use Apache Lucene directly or over Elasticsearch to build the index. Hibernate Search can be easy integrated with JPA, Hibernate ORM, Infinispan and other sources. If you are use Wildfly - you are lucky, - Hibernate Search already integrated with last one.</p>
+<p>So, will see how it works on practice in few simple steps...</p>
+<p><strong>1. Let's start with gradle project using EE and hibernate-search dependencies</strong><br />
+<code>build.gradle:</code></p>
+<pre><code class="language-java">apply plugin: 'java'
+apply plugin: 'war'
+sourceCompatibility = '1.8'
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+repositories {
+    mavenCentral()
+}
+dependencies {
+    providedCompile 'javax:javaee-api:7.0'
+    providedCompile group: 'org.hibernate', name: 'hibernate-entitymanager', version: '5.4.1.Final'
+    providedCompile group: 'org.hibernate', name: 'hibernate-search-orm', version: '5.11.1.Final'
+    testCompile group: 'log4j', name: 'log4j', version: '1.2.17'
+    testCompile group: 'junit', name: 'junit', version: '4.10'
+    testCompile group: 'org.hsqldb', name: 'hsqldb', version: '2.3.2'
+    testCompile group: 'org.hibernate', name: 'hibernate-entitymanager', version: '5.4.1.Final'
+    testCompile group: 'org.hibernate', name: 'hibernate-search-orm', version: '5.11.1.Final'
+}
+</code></pre>
+<p><strong>2. Create standart JPA entity with hibernate-search annotations</strong><br />
+<code>src/main/java/org/.../BlogEntity.java:</code></p>
+<pre><code class="language-java">package org.kostenko.example.wildfly.hibernatesearch;
+
+import javax.persistence.*;
+import org.hibernate.search.annotations.*;
+
+@Entity
+@Indexed
+public class BlogEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column
+    @Field(store = Store.YES)
+    private String title;
+
+    @Column
+    @Field(store = Store.YES)
+    private String body;
+
+     // getters, setters
+}
+</code></pre>
+<p>Main Hibernate Search annotations:</p>
+<table>
+<thead>
+<tr><th>Annotation    </th><th> Description</th></tr>
+</thead>
+<tbody>
+<tr><td>@Indexed      </td><td> Marks which entities shall be indexed; Allows override the index name. Only @Indexed entities can be searched.</td></tr>
+<tr><td>@Field        </td><td> Marks an entity property to be indexed. Supports various options to customize the indexing format: <code>store</code> -  enum type indicating whether the value should be stored in the document. Defaults to <code>Store.NO</code> (Field value will not be stored in the index. Storing of values can be helpful to use projections and restore objects directly from index instead of mapped ORM entity), <code>index</code> -  enum defining whether the value should be indexed or not. Defaults to <code>Index.YES</code> </td></tr>
+<tr><td>@DocumentId   </td><td> Override the property being used as primary identifier in the index. Defaults to the property with JPA’s @Id. </td></tr>
+<tr><td>@SortableField</td><td> Marks a property so that it will be indexed in such way to allow efficient sorting on it.</td></tr>
+</tbody>
+</table>
+<p><strong>3. Add hibernate-search properties to persistence.xml</strong><br />
+<code>src/test/resources/META-INF/persistence.xml :</code></p>
+<pre><code class="language-xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;persistence version=&quot;2.0&quot; xmlns=&quot;http://java.sun.com/xml/ns/persistence&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xsi:schemaLocation=&quot;http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd&quot;&gt;
+    &lt;persistence-unit name=&quot;myDSTest&quot; transaction-type=&quot;RESOURCE_LOCAL&quot;&gt;
+        &lt;provider&gt;org.hibernate.jpa.HibernatePersistenceProvider&lt;/provider&gt;
+        &lt;class&gt;org.kostenko.example.wildfly.hibernatesearch.BlogEntity&lt;/class&gt;
+        &lt;exclude-unlisted-classes&gt;false&lt;/exclude-unlisted-classes&gt;
+        &lt;properties&gt;
+            &lt;property name=&quot;hibernate.dialect&quot; value=&quot;org.hibernate.dialect.HSQLDialect&quot;/&gt;
+            &lt;property name=&quot;hibernate.hbm2ddl.auto&quot; value=&quot;create-drop&quot;/&gt;
+            &lt;property name=&quot;hibernate.connection.driver_class&quot; value=&quot;org.hsqldb.jdbcDriver&quot;/&gt;
+            &lt;property name=&quot;hibernate.connection.username&quot; value=&quot;sa&quot;/&gt;
+            &lt;property name=&quot;hibernate.connection.password&quot; value=&quot;&quot;/&gt;
+            &lt;property name=&quot;hibernate.connection.url&quot; value=&quot;jdbc:hsqldb:mem:testdb&quot;/&gt;
+            &lt;property name=&quot;hibernate.showSql&quot; value=&quot;true&quot;/&gt;
+            &lt;!-- Hibernate Search --&gt;
+            &lt;property name=&quot;hibernate.search.default.directory_provider&quot; value=&quot;filesystem&quot; /&gt;
+            &lt;property name=&quot;hibernate.search.default.indexBase&quot; value=&quot;/tmp/index1&quot; /&gt;
+            &lt;property name=&quot;hibernate.search.default.indexmanager&quot; value=&quot;near-real-time&quot; /&gt;
+        &lt;/properties&gt;
+    &lt;/persistence-unit&gt;
+&lt;/persistence&gt;
+</code></pre>
+<p>As you can see from above, it is easy enough (just with few annotations) add Hibernate Search into your application. Now Hibernate will automatically build index each time the entity persisted, updated or removed through Hibernate ORM. The index can be stored in <code>ram</code> or on  <code>filesystem</code>. Others directory providers also available - refer official documentation for details.</p>
+<p>So, time to do simple test to show how it works with <strong>Lucene queries</strong></p>
+<p><code>src/test/java/org/.../JpaHibernateSearchTest :</code></p>
+<pre><code class="language-java">package org.kostenko.example.wildfly.hibernatesearch;
+
+import java.util.List;
+import javax.persistence.EntityManager;
+import org.junit.Test;
+import javax.persistence.Persistence;
+import junit.framework.Assert;
+import org.apache.lucene.search.Query;
+import org.hibernate.search.jpa.FullTextEntityManager;
+import org.hibernate.search.jpa.Search;
+import org.hibernate.search.query.dsl.QueryBuilder;
+import org.junit.BeforeClass;
+
+/**
+ * @author kostenko
+ */
+public class JpaHibernateSearchTest {
+
+    private static EntityManager entityManager;
+    private static FullTextEntityManager fullTextEntityManager;
+    private static QueryBuilder queryBuilder;
+
+    @BeforeClass
+    public static void init() {
+        entityManager = Persistence.createEntityManagerFactory(&quot;myDSTest&quot;).createEntityManager();
+        fullTextEntityManager = Search.getFullTextEntityManager(entityManager);
+        queryBuilder = fullTextEntityManager.getSearchFactory().buildQueryBuilder().forEntity(BlogEntity.class).get();
+    }
+
+    @Test
+    public void shouldPersistBlogEntity() {
+        for (int i = 0; i &lt; 1000; i++) {
+            BlogEntity blogEntity = new BlogEntity();
+            blogEntity.setTitle(&quot;Title&quot; + i);
+            blogEntity.setBody(&quot;BodyBody Body&quot; + i + &quot; look at my horse my horse is a amazing &quot; + i);
+            entityManager.getTransaction().begin();
+            entityManager.persist(blogEntity);
+            entityManager.getTransaction().commit();
+        }
+        Assert.assertEquals(1000, entityManager.createQuery(&quot;SELECT COUNT(b) FROM BlogEntity b&quot;, Number.class).getSingleResult().intValue());
+    }
+
+    /**
+     * Keyword Queries - searching for a specific word.
+     */
+    @Test
+    public void shouldSearchByKeywordQuery() throws Exception {
+
+        Query query = queryBuilder.keyword().onFields(&quot;title&quot;, &quot;body&quot;).matching(&quot;Body999&quot;).createQuery();
+
+        javax.persistence.Query persistenceQuery = fullTextEntityManager.createFullTextQuery(query, BlogEntity.class); // wrap Lucene query in a javax.persistence.Query
+        List&lt;BlogEntity&gt; result = persistenceQuery.getResultList();// execute search
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(&quot;Title999&quot;, result.get(0).getTitle());
+    }
+
+    /**
+     * Fuzzy Queries - we can define a limit of “fuzziness”
+     */
+    @Test
+    public void shouldSearchByFuzzyQuery() throws Exception {
+
+        Query query = queryBuilder.keyword().fuzzy().withEditDistanceUpTo(2).withPrefixLength(0).onField(&quot;title&quot;).matching(&quot;TAtle999&quot;).createQuery();
+
+        javax.persistence.Query persistenceQuery = fullTextEntityManager.createFullTextQuery(query, BlogEntity.class);
+        List&lt;BlogEntity&gt; result = persistenceQuery.getResultList();// execute search
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(&quot;Title999&quot;, result.get(0).getTitle());
+    }
+
+    /**
+     * Wildcard Queries - queries for which a part of a word is unknown ('?' - single character, '*' - character sequence)
+     */
+    @Test
+    public void shouldSearchByWildcardQuery() throws Exception {
+
+        Query query = queryBuilder.keyword().wildcard().onField(&quot;title&quot;).matching(&quot;?itle*&quot;).createQuery();
+
+        javax.persistence.Query persistenceQuery = fullTextEntityManager.createFullTextQuery(query, BlogEntity.class);
+        List&lt;BlogEntity&gt; result = persistenceQuery.getResultList();// execute search
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(1000, result.size());
+    }
+
+    /**
+     * Phrase Queries - search for exact or for approximate sentences
+     */
+    @Test
+    public void shouldSearchByPhraseQuery() throws Exception {
+
+        Query query = queryBuilder.phrase().withSlop(10).onField(&quot;body&quot;).sentence(&quot;look amazing horse 999&quot;).createQuery();
+
+        javax.persistence.Query persistenceQuery = fullTextEntityManager.createFullTextQuery(query, BlogEntity.class);
+        List&lt;BlogEntity&gt; result = persistenceQuery.getResultList();
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(&quot;Title999&quot;, result.get(0).getTitle());
+    }
+}
+</code></pre>
+<p>In the test above I used most basic use-cases. Please, refer to <a href="https://docs.jboss.org/hibernate/stable/search/reference/en-US/html_single/">official documentation</a> for advanced topics.</p>
+</p>
+
+	<hr />
+
+		</div>
+		<div id="push"></div>
+    </div>
+
+    <div id="footer">
+      <div class="container">
+        <p class="muted credit">&copy; 2019 | Mixed with <a href="http://getbootstrap.com/">Bootstrap v3.1.1</a> | Baked with <a href="http://jbake.org">JBake v2.6.3</a></p>
+      </div>
+    </div>
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="../../../js/jquery-1.11.1.min.js"></script>
+    <script src="../../../js/bootstrap.min.js"></script>
+    <!--script src="../../../js/prettify.js"></script-->
+		<script src="../../../js/prism.js"></script>
+  </body>
+</html>

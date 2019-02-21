@@ -24,7 +24,8 @@
     <link href="../../../css/bootstrap.min.css" rel="stylesheet">
     <link href="../../../css/asciidoctor.css" rel="stylesheet">
     <link href="../../../css/base.css" rel="stylesheet">
-    <link href="../../../css/prettify.css" rel="stylesheet">
+    <!--link href="../../../css/prettify.css" rel="stylesheet"-->
+    <link href="../../../css/prism.css" rel="stylesheet">
 
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
@@ -60,8 +61,11 @@
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown">Tags <b class="caret"></b></a>
               <ul class="dropdown-menu">
+										<li><a href="../../../tags/JPA.html">JPA</a></li>
 										<li><a href="../../../tags/GitHub.html">GitHub</a></li>
 										<li><a href="../../../tags/Linux.html">Linux</a></li>
+										<li><a href="../../../tags/Wildfly.html">Wildfly</a></li>
+										<li><a href="../../../tags/Hibernate.html">Hibernate</a></li>
 										<li><a href="../../../tags/JBake.html">JBake</a></li>
 								</ul>
 						</li>
@@ -85,10 +89,10 @@
 
 	<p><h4>1. Tags</h4>
 <p>Jbake supports tagging out of the box. It means that engine will generate separate page for each tag. To enable this feature on your blog you need to change <code>render.tags</code> property in your <code>jbake.properties</code> file</p>
-<pre><code>render.tags=true
+<pre><code class="language-bash">render.tags=true
 </code></pre>
 <p>Next  modify template file depends on where you whant to reneder tags. For this blog I am using freemarker templates and made desition to put tags as part of menu bar. So, chages of my <code>menu.ftl</code> below:</p>
-<pre><code>  &lt;ul class=&quot;dropdown-menu&quot;&gt;
+<pre><code class="language-html">  &lt;ul class=&quot;dropdown-menu&quot;&gt;
       &lt;#list tags as tag&gt;
         &lt;li&gt;&lt;a href=&quot;${content.rootpath}${tag.uri}&quot;&gt;${tag.name}&lt;/a&gt;&lt;/li&gt;
       &lt;/#list&gt;
@@ -98,7 +102,7 @@
 <h4>2. Multi languages</h4>
 <p>Now let's talk about multilanguage support. It is pity, but Jbake does not support blogging in different languages at the same time by default. So, we need a some hacks to do that. First idea  I had was about two the same sites  in different languages. It is not big deal, but in case changes for  templates, assets or images  you will need to do it twice. What is not so good.</p>
 <p>Instead of full copy  I did additional directory <code>content_ru</code> just with content.</p>
-<pre><code>├── assets  
+<pre><code class="language-bash">├── assets  
 ├── content  
 ├── content_ru
 ├── templates
@@ -108,7 +112,7 @@
 <p>In <code>jbake.properies</code> you can specify which content should be used.</p>
 <p>So, I  choosen english as default language and bake my blog in the next way:</p>
 <p>bakeblog.sh:</p>
-<pre><code>#!/bin/bash
+<pre><code class="language-bash">#!/bin/bash
 
 # Helper script to bake the blog
 # Author: kostenko
@@ -129,7 +133,7 @@ rm jbake.properties
 mv jbake.properties.orig jbake.properties
 </code></pre>
 <p>Now let’s add to the menu bar links to choose language:</p>
-<pre><code>&lt;!-- switch language --&gt;
+<pre><code class="language-html">&lt;!-- switch language --&gt;
 &lt;ul class=&quot;nav navbar-nav navbar-right&quot;&gt;
   &lt;li&gt;&lt;a href=&quot;/&quot;&gt;en&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;/ru&quot;&gt;ru&lt;/a&gt;&lt;/li&gt;
@@ -143,7 +147,7 @@ mv jbake.properties.orig jbake.properties
 <li>Get provided by GA code snippet</li>
 <li>Paste provided snippet to your <code>header.ftl</code> as first block of <code>&lt;HEAD&gt;</code> section.</li>
 </ul>
-<pre><code>&lt;!-- Global site tag (gtag.js) - Google Analytics --&gt;
+<pre><code class="language-html">&lt;!-- Global site tag (gtag.js) - Google Analytics --&gt;
 &lt;head&gt;
   &lt;script async src=&quot;https://www.googletagmanager.com/gtag/js?id=&lt;YOUR_GA_ID&gt;&quot;&gt;&lt;/script&gt;
   &lt;script&gt;
@@ -176,7 +180,7 @@ P.P.S. Blog sources available on <a href="https://github.com/kostenkoserg/kosten
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="../../../js/jquery-1.11.1.min.js"></script>
     <script src="../../../js/bootstrap.min.js"></script>
-    <script src="../../../js/prettify.js"></script>
-
+    <!--script src="../../../js/prettify.js"></script-->
+		<script src="../../../js/prism.js"></script>
   </body>
 </html>

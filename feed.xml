@@ -6,9 +6,205 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Wed, 20 Feb 2019 17:42:26 +0200</pubDate>
-    <lastBuildDate>Wed, 20 Feb 2019 17:42:26 +0200</lastBuildDate>
+    <pubDate>Fri, 22 Feb 2019 01:08:01 +0200</pubDate>
+    <lastBuildDate>Fri, 22 Feb 2019 01:08:01 +0200</lastBuildDate>
 
+    <item>
+      <title>Hibernate Search introduction. Deploying on WildFly.</title>
+      <link>https://kostenko.org/blog/2019/02/wildfly-hibernate-search.html</link>
+      <pubDate>Thu, 21 Feb 2019 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2019/02/wildfly-hibernate-search.html</guid>
+      	<description>
+	&lt;p&gt;Hibernate Search is a powerful solution to implement full text search capabilities (like google or amazon) in your EE application. Under the hood it will use Apache Lucene directly or over Elasticsearch to build the index. Hibernate Search can be easy integrated with JPA, Hibernate ORM, Infinispan and other sources. If you are use Wildfly - you are lucky, - Hibernate Search already integrated with last one.&lt;/p&gt;
+&lt;p&gt;So, will see how it works on practice in few simple steps...&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;1. Let&apos;s start with gradle project using EE and hibernate-search dependencies&lt;/strong&gt;&lt;br /&gt;
+&lt;code&gt;build.gradle:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;apply plugin: &apos;java&apos;
+apply plugin: &apos;war&apos;
+sourceCompatibility = &apos;1.8&apos;
+[compileJava, compileTestJava]*.options*.encoding = &apos;UTF-8&apos;
+repositories {
+    mavenCentral()
+}
+dependencies {
+    providedCompile &apos;javax:javaee-api:7.0&apos;
+    providedCompile group: &apos;org.hibernate&apos;, name: &apos;hibernate-entitymanager&apos;, version: &apos;5.4.1.Final&apos;
+    providedCompile group: &apos;org.hibernate&apos;, name: &apos;hibernate-search-orm&apos;, version: &apos;5.11.1.Final&apos;
+    testCompile group: &apos;log4j&apos;, name: &apos;log4j&apos;, version: &apos;1.2.17&apos;
+    testCompile group: &apos;junit&apos;, name: &apos;junit&apos;, version: &apos;4.10&apos;
+    testCompile group: &apos;org.hsqldb&apos;, name: &apos;hsqldb&apos;, version: &apos;2.3.2&apos;
+    testCompile group: &apos;org.hibernate&apos;, name: &apos;hibernate-entitymanager&apos;, version: &apos;5.4.1.Final&apos;
+    testCompile group: &apos;org.hibernate&apos;, name: &apos;hibernate-search-orm&apos;, version: &apos;5.11.1.Final&apos;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;2. Create standart JPA entity with hibernate-search annotations&lt;/strong&gt;&lt;br /&gt;
+&lt;code&gt;src/main/java/org/.../BlogEntity.java:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;package org.kostenko.example.wildfly.hibernatesearch;
+
+import javax.persistence.*;
+import org.hibernate.search.annotations.*;
+
+@Entity
+@Indexed
+public class BlogEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column
+    @Field(store = Store.YES)
+    private String title;
+
+    @Column
+    @Field(store = Store.YES)
+    private String body;
+
+     // getters, setters
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Main Hibernate Search annotations:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;&lt;th&gt;Annotation    &lt;/th&gt;&lt;th&gt; Description&lt;/th&gt;&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;@Indexed      &lt;/td&gt;&lt;td&gt; Marks which entities shall be indexed; Allows override the index name. Only @Indexed entities can be searched.&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;@Field        &lt;/td&gt;&lt;td&gt; Marks an entity property to be indexed. Supports various options to customize the indexing format: &lt;code&gt;store&lt;/code&gt; -  enum type indicating whether the value should be stored in the document. Defaults to &lt;code&gt;Store.NO&lt;/code&gt; (Field value will not be stored in the index. Storing of values can be helpful to use projections and restore objects directly from index instead of mapped ORM entity), &lt;code&gt;index&lt;/code&gt; -  enum defining whether the value should be indexed or not. Defaults to &lt;code&gt;Index.YES&lt;/code&gt; &lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;@DocumentId   &lt;/td&gt;&lt;td&gt; Override the property being used as primary identifier in the index. Defaults to the property with JPA’s @Id. &lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;@SortableField&lt;/td&gt;&lt;td&gt; Marks a property so that it will be indexed in such way to allow efficient sorting on it.&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;strong&gt;3. Add hibernate-search properties to persistence.xml&lt;/strong&gt;&lt;br /&gt;
+&lt;code&gt;src/test/resources/META-INF/persistence.xml :&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;
+&amp;lt;persistence version=&amp;quot;2.0&amp;quot; xmlns=&amp;quot;http://java.sun.com/xml/ns/persistence&amp;quot; xmlns:xsi=&amp;quot;http://www.w3.org/2001/XMLSchema-instance&amp;quot; xsi:schemaLocation=&amp;quot;http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd&amp;quot;&amp;gt;
+    &amp;lt;persistence-unit name=&amp;quot;myDSTest&amp;quot; transaction-type=&amp;quot;RESOURCE_LOCAL&amp;quot;&amp;gt;
+        &amp;lt;provider&amp;gt;org.hibernate.jpa.HibernatePersistenceProvider&amp;lt;/provider&amp;gt;
+        &amp;lt;class&amp;gt;org.kostenko.example.wildfly.hibernatesearch.BlogEntity&amp;lt;/class&amp;gt;
+        &amp;lt;exclude-unlisted-classes&amp;gt;false&amp;lt;/exclude-unlisted-classes&amp;gt;
+        &amp;lt;properties&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.dialect&amp;quot; value=&amp;quot;org.hibernate.dialect.HSQLDialect&amp;quot;/&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.hbm2ddl.auto&amp;quot; value=&amp;quot;create-drop&amp;quot;/&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.connection.driver_class&amp;quot; value=&amp;quot;org.hsqldb.jdbcDriver&amp;quot;/&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.connection.username&amp;quot; value=&amp;quot;sa&amp;quot;/&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.connection.password&amp;quot; value=&amp;quot;&amp;quot;/&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.connection.url&amp;quot; value=&amp;quot;jdbc:hsqldb:mem:testdb&amp;quot;/&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.showSql&amp;quot; value=&amp;quot;true&amp;quot;/&amp;gt;
+            &amp;lt;!-- Hibernate Search --&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.search.default.directory_provider&amp;quot; value=&amp;quot;filesystem&amp;quot; /&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.search.default.indexBase&amp;quot; value=&amp;quot;/tmp/index1&amp;quot; /&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.search.default.indexmanager&amp;quot; value=&amp;quot;near-real-time&amp;quot; /&amp;gt;
+        &amp;lt;/properties&amp;gt;
+    &amp;lt;/persistence-unit&amp;gt;
+&amp;lt;/persistence&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;As you can see from above, it is easy enough (just with few annotations) add Hibernate Search into your application. Now Hibernate will automatically build index each time the entity persisted, updated or removed through Hibernate ORM. The index can be stored in &lt;code&gt;ram&lt;/code&gt; or on  &lt;code&gt;filesystem&lt;/code&gt;. Others directory providers also available - refer official documentation for details.&lt;/p&gt;
+&lt;p&gt;So, time to do simple test to show how it works with &lt;strong&gt;Lucene queries&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;src/test/java/org/.../JpaHibernateSearchTest :&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;package org.kostenko.example.wildfly.hibernatesearch;
+
+import java.util.List;
+import javax.persistence.EntityManager;
+import org.junit.Test;
+import javax.persistence.Persistence;
+import junit.framework.Assert;
+import org.apache.lucene.search.Query;
+import org.hibernate.search.jpa.FullTextEntityManager;
+import org.hibernate.search.jpa.Search;
+import org.hibernate.search.query.dsl.QueryBuilder;
+import org.junit.BeforeClass;
+
+/**
+ * @author kostenko
+ */
+public class JpaHibernateSearchTest {
+
+    private static EntityManager entityManager;
+    private static FullTextEntityManager fullTextEntityManager;
+    private static QueryBuilder queryBuilder;
+
+    @BeforeClass
+    public static void init() {
+        entityManager = Persistence.createEntityManagerFactory(&amp;quot;myDSTest&amp;quot;).createEntityManager();
+        fullTextEntityManager = Search.getFullTextEntityManager(entityManager);
+        queryBuilder = fullTextEntityManager.getSearchFactory().buildQueryBuilder().forEntity(BlogEntity.class).get();
+    }
+
+    @Test
+    public void shouldPersistBlogEntity() {
+        for (int i = 0; i &amp;lt; 1000; i++) {
+            BlogEntity blogEntity = new BlogEntity();
+            blogEntity.setTitle(&amp;quot;Title&amp;quot; + i);
+            blogEntity.setBody(&amp;quot;BodyBody Body&amp;quot; + i + &amp;quot; look at my horse my horse is a amazing &amp;quot; + i);
+            entityManager.getTransaction().begin();
+            entityManager.persist(blogEntity);
+            entityManager.getTransaction().commit();
+        }
+        Assert.assertEquals(1000, entityManager.createQuery(&amp;quot;SELECT COUNT(b) FROM BlogEntity b&amp;quot;, Number.class).getSingleResult().intValue());
+    }
+
+    /**
+     * Keyword Queries - searching for a specific word.
+     */
+    @Test
+    public void shouldSearchByKeywordQuery() throws Exception {
+
+        Query query = queryBuilder.keyword().onFields(&amp;quot;title&amp;quot;, &amp;quot;body&amp;quot;).matching(&amp;quot;Body999&amp;quot;).createQuery();
+
+        javax.persistence.Query persistenceQuery = fullTextEntityManager.createFullTextQuery(query, BlogEntity.class); // wrap Lucene query in a javax.persistence.Query
+        List&amp;lt;BlogEntity&amp;gt; result = persistenceQuery.getResultList();// execute search
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(&amp;quot;Title999&amp;quot;, result.get(0).getTitle());
+    }
+
+    /**
+     * Fuzzy Queries - we can define a limit of “fuzziness”
+     */
+    @Test
+    public void shouldSearchByFuzzyQuery() throws Exception {
+
+        Query query = queryBuilder.keyword().fuzzy().withEditDistanceUpTo(2).withPrefixLength(0).onField(&amp;quot;title&amp;quot;).matching(&amp;quot;TAtle999&amp;quot;).createQuery();
+
+        javax.persistence.Query persistenceQuery = fullTextEntityManager.createFullTextQuery(query, BlogEntity.class);
+        List&amp;lt;BlogEntity&amp;gt; result = persistenceQuery.getResultList();// execute search
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(&amp;quot;Title999&amp;quot;, result.get(0).getTitle());
+    }
+
+    /**
+     * Wildcard Queries - queries for which a part of a word is unknown (&apos;?&apos; - single character, &apos;*&apos; - character sequence)
+     */
+    @Test
+    public void shouldSearchByWildcardQuery() throws Exception {
+
+        Query query = queryBuilder.keyword().wildcard().onField(&amp;quot;title&amp;quot;).matching(&amp;quot;?itle*&amp;quot;).createQuery();
+
+        javax.persistence.Query persistenceQuery = fullTextEntityManager.createFullTextQuery(query, BlogEntity.class);
+        List&amp;lt;BlogEntity&amp;gt; result = persistenceQuery.getResultList();// execute search
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(1000, result.size());
+    }
+
+    /**
+     * Phrase Queries - search for exact or for approximate sentences
+     */
+    @Test
+    public void shouldSearchByPhraseQuery() throws Exception {
+
+        Query query = queryBuilder.phrase().withSlop(10).onField(&amp;quot;body&amp;quot;).sentence(&amp;quot;look amazing horse 999&amp;quot;).createQuery();
+
+        javax.persistence.Query persistenceQuery = fullTextEntityManager.createFullTextQuery(query, BlogEntity.class);
+        List&amp;lt;BlogEntity&amp;gt; result = persistenceQuery.getResultList();
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(&amp;quot;Title999&amp;quot;, result.get(0).getTitle());
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In the test above I used most basic use-cases. Please, refer to &lt;a href=&quot;https://docs.jboss.org/hibernate/stable/search/reference/en-US/html_single/&quot;&gt;official documentation&lt;/a&gt; for advanced topics.&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>How to generate ssh keys on Linux</title>
       <link>https://kostenko.org/blog/2019/02/linux-generate-private-shh-key.html</link>
@@ -20,22 +216,22 @@
 &lt;li&gt;Login your remote instance&lt;/li&gt;
 &lt;li&gt;Generate ssh keys by&lt;/li&gt;
 &lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;ssh-keygen -t rsa -f ~/.ssh/[KEY_FILENAME] -C [USERNAME]
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;ssh-keygen -t rsa -f ~/.ssh/[KEY_FILENAME] -C [USERNAME]
 cat [KEY_FILENAME].pub &amp;gt;&amp;gt; ~/.ssh/authorized_keys
 &lt;/code&gt;&lt;/pre&gt;
 &lt;ul&gt;
 &lt;li&gt;Download private key ([KEY_FILENAME]) to your local PC&lt;/li&gt;
 &lt;li&gt;Try to connect from your local with key:&lt;/li&gt;
 &lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;chmod 400 [KEY_FILENAME]
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;chmod 400 [KEY_FILENAME]
 ssh -i [KEY_FILENAME] [USERNAME]@yourhost.com
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;To disable root login and password based login refer to  &lt;code&gt;/etc/ssh/sshd_config&lt;/code&gt; and edid next sections:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;PasswordAuthentication no
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;PasswordAuthentication no
 PermitRootLogin no
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Then reload ssh server&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;sudo service ssh restart
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sudo service ssh restart
 &lt;/code&gt;&lt;/pre&gt;
 
 	</description>
@@ -64,10 +260,10 @@ Have published my first YouTube video (about blogging with jbake)!
       	<description>
 	&lt;h4&gt;1. Tags&lt;/h4&gt;
 &lt;p&gt;Jbake supports tagging out of the box. It means that engine will generate separate page for each tag. To enable this feature on your blog you need to change &lt;code&gt;render.tags&lt;/code&gt; property in your &lt;code&gt;jbake.properties&lt;/code&gt; file&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;render.tags=true
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;render.tags=true
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Next  modify template file depends on where you whant to reneder tags. For this blog I am using freemarker templates and made desition to put tags as part of menu bar. So, chages of my &lt;code&gt;menu.ftl&lt;/code&gt; below:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;  &amp;lt;ul class=&amp;quot;dropdown-menu&amp;quot;&amp;gt;
+&lt;pre&gt;&lt;code class=&quot;language-html&quot;&gt;  &amp;lt;ul class=&amp;quot;dropdown-menu&amp;quot;&amp;gt;
       &amp;lt;#list tags as tag&amp;gt;
         &amp;lt;li&amp;gt;&amp;lt;a href=&amp;quot;${content.rootpath}${tag.uri}&amp;quot;&amp;gt;${tag.name}&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
       &amp;lt;/#list&amp;gt;
@@ -77,7 +273,7 @@ Have published my first YouTube video (about blogging with jbake)!
 &lt;h4&gt;2. Multi languages&lt;/h4&gt;
 &lt;p&gt;Now let&apos;s talk about multilanguage support. It is pity, but Jbake does not support blogging in different languages at the same time by default. So, we need a some hacks to do that. First idea  I had was about two the same sites  in different languages. It is not big deal, but in case changes for  templates, assets or images  you will need to do it twice. What is not so good.&lt;/p&gt;
 &lt;p&gt;Instead of full copy  I did additional directory &lt;code&gt;content_ru&lt;/code&gt; just with content.&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;├── assets  
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;├── assets  
 ├── content  
 ├── content_ru
 ├── templates
@@ -87,7 +283,7 @@ Have published my first YouTube video (about blogging with jbake)!
 &lt;p&gt;In &lt;code&gt;jbake.properies&lt;/code&gt; you can specify which content should be used.&lt;/p&gt;
 &lt;p&gt;So, I  choosen english as default language and bake my blog in the next way:&lt;/p&gt;
 &lt;p&gt;bakeblog.sh:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;#!/bin/bash
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;#!/bin/bash
 
 # Helper script to bake the blog
 # Author: kostenko
@@ -108,7 +304,7 @@ rm jbake.properties
 mv jbake.properties.orig jbake.properties
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Now let’s add to the menu bar links to choose language:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;&amp;lt;!-- switch language --&amp;gt;
+&lt;pre&gt;&lt;code class=&quot;language-html&quot;&gt;&amp;lt;!-- switch language --&amp;gt;
 &amp;lt;ul class=&amp;quot;nav navbar-nav navbar-right&amp;quot;&amp;gt;
   &amp;lt;li&amp;gt;&amp;lt;a href=&amp;quot;/&amp;quot;&amp;gt;en&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
   &amp;lt;li&amp;gt;&amp;lt;a href=&amp;quot;/ru&amp;quot;&amp;gt;ru&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
@@ -122,7 +318,7 @@ mv jbake.properties.orig jbake.properties
 &lt;li&gt;Get provided by GA code snippet&lt;/li&gt;
 &lt;li&gt;Paste provided snippet to your &lt;code&gt;header.ftl&lt;/code&gt; as first block of &lt;code&gt;&amp;lt;HEAD&amp;gt;&lt;/code&gt; section.&lt;/li&gt;
 &lt;/ul&gt;
-&lt;pre&gt;&lt;code&gt;&amp;lt;!-- Global site tag (gtag.js) - Google Analytics --&amp;gt;
+&lt;pre&gt;&lt;code class=&quot;language-html&quot;&gt;&amp;lt;!-- Global site tag (gtag.js) - Google Analytics --&amp;gt;
 &amp;lt;head&amp;gt;
   &amp;lt;script async src=&amp;quot;https://www.googletagmanager.com/gtag/js?id=&amp;lt;YOUR_GA_ID&amp;gt;&amp;quot;&amp;gt;&amp;lt;/script&amp;gt;
   &amp;lt;script&amp;gt;
@@ -151,7 +347,7 @@ P.P.S. Blog sources available on &lt;a href=&quot;https://github.com/kostenkoser
 &lt;p&gt;Now you need to create new project named as [account].github.io For example: kostenkoserg.github.io&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;/ru/img/my_github_srcshot.png&quot; alt=&quot;github pages project screenshot&quot; /&gt;&lt;/p&gt;
 &lt;p&gt;Actually, we already did all necessary preparation for our hosting. Now just clone the project, create simple index.html and push it back to the repository:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ git clone https://github.com/kostenkoserg/kostenkoserg.github.io.git
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ git clone https://github.com/kostenkoserg/kostenkoserg.github.io.git
 $ cd kostenkoserg.github.io
 $ echo &amp;quot;Hello World!&amp;quot;
 $ git commit -m &amp;quot;my first github page&amp;quot;
@@ -167,10 +363,10 @@ By the way  you also can use existing domain for your GitHub based site. For do 
 &lt;h4&gt;Step 2. Static blog generation with JBake&lt;/h4&gt;
 &lt;p&gt;&lt;a href=&quot;https://jbake.org/&quot;&gt;Jbake&lt;/a&gt; is a java based open source solution for static site generation. For JBake available integration with Gradle and Maven. Jbake out of the box supports Bootstrap and can be easy integrated with other CSS frameworks. As template engines JBake supports Freemarker, Groovy, Thymeleaf and Jade.&lt;/p&gt;
 &lt;p&gt;To start with let&apos;s download distribution from &lt;a href=&quot;https://jbake.org/download.html&quot;&gt;project site&lt;/a&gt; and extract the package to your favorite directory. Now we can generate static site with example content&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ /opt/jbake/bin/jbake -i
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ /opt/jbake/bin/jbake -i
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;As result we should have site template with next structire:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;├── assets
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;├── assets
 │   ├── css
 │   │   ├── asciidoctor.css
 │   │   ├── base.css
@@ -205,11 +401,11 @@ By the way  you also can use existing domain for your GitHub based site. For do 
     └── tags.ftl
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Let&apos;s generate site from above&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;/opt/jbake/bin/jbake -b
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;/opt/jbake/bin/jbake -b
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;After that we will have direcory &lt;code&gt;output&lt;/code&gt; with our static site.&lt;br /&gt;
 To check the result you can start embedded server and open  &lt;a href=&quot;http://localhost:8820/&quot;&gt;http://localhost:8820/&lt;/a&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;/opt/jbake/bin/jbake -s
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;/opt/jbake/bin/jbake -s
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;&lt;img src=&quot;/ru/img/jbake_default_site.png&quot; alt=&quot;jbake_default_site&quot; /&gt;&lt;/p&gt;
 &lt;p&gt;Well done! Our static site ready for blogging. You just need edit content of  &lt;code&gt;content&lt;/code&gt; directory, regenerate site and push   &lt;code&gt;output&lt;/code&gt;  to GitHub repository.&lt;/p&gt;
