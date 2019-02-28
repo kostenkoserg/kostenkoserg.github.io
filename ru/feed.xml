@@ -6,9 +6,273 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Вт, 26 фев 2019 15:56:09 +0200</pubDate>
-    <lastBuildDate>Вт, 26 фев 2019 15:56:09 +0200</lastBuildDate>
+    <pubDate>Чт, 28 фев 2019 11:45:54 +0200</pubDate>
+    <lastBuildDate>Чт, 28 фев 2019 11:45:54 +0200</lastBuildDate>
 
+    <item>
+      <title>Hibernate Search вступление. Развертывание на WildFly.</title>
+      <link>https://kostenko.org/blog/2019/02/wildfly-hibernate-search.html</link>
+      <pubDate>Чт, 21 фев 2019 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2019/02/wildfly-hibernate-search.html</guid>
+      	<description>
+	&lt;p&gt;Hibernate  Search - это мощное решение для реализации возможностей полнотекстового поиска (как google или  amazon) в вашем ЕЕ приложении. Под капотом, для построения индекса, будет использоваться Apache Lucene напрямую, или через Elasticsearch. Hibernate Search может быть легко интегрирован с JPA, Hibernate ORM, Infinispan или другими источниками. Если вы используете Wildfly - вам повезло, - Hibernate Search с ним уже интегрирован.&lt;/p&gt;
+&lt;p&gt;Итак, посмотрим, как это работает на практике ...&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;1.Давайте начнем с gradle проекта, используя hibernate-search и EE зависимости&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;apply plugin: &apos;java&apos;
+apply plugin: &apos;war&apos;
+
+sourceCompatibility = &apos;1.8&apos;
+defaultTasks &apos;clean&apos;, &apos;build&apos;
+ext.libraryVersions = [
+    javaee                  : &apos;8.0&apos;,
+    wildfly                 : &apos;15.0.1.Final&apos;,
+    hibernatesearch         : &apos;5.11.1.Final&apos;,
+    hibernateentitymanager  : &apos;5.4.1.Final&apos;,
+    h2                      : &apos;1.4.198&apos;,
+    dom4j                   : &apos;2.1.1&apos;,
+    junit                   : &apos;4.12&apos;
+]
+configurations {
+    wildfly
+}
+repositories {
+    mavenCentral()
+}
+dependencies {
+    wildfly &amp;quot;org.wildfly:wildfly-dist:${libraryVersions.wildfly}@zip&amp;quot;
+    providedCompile &amp;quot;javax:javaee-api:${libraryVersions.javaee}&amp;quot;
+    providedCompile &amp;quot;org.hibernate:hibernate-search-orm:${libraryVersions.hibernatesearch}&amp;quot;
+    testCompile &amp;quot;junit:junit:${libraryVersions.junit}&amp;quot;
+    testCompile &amp;quot;com.h2database:h2:${libraryVersions.h2}&amp;quot;
+    testCompile &amp;quot;org.hibernate:hibernate-entitymanager:${libraryVersions.hibernateentitymanager}&amp;quot;
+    testCompile &amp;quot;org.hibernate:hibernate-search-orm:${libraryVersions.hibernatesearch}&amp;quot;
+    testCompile &amp;quot;org.dom4j:dom4j:${libraryVersions.dom4j}&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;**2. Создадим стандартную сущность JPA c Hibernate Search аннотациями **&lt;br /&gt;
+&lt;code&gt;src/main/java/org/.../BlogEntity.java:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;package org.kostenko.example.wildfly.hibernatesearch;
+
+import javax.persistence.*;
+import org.hibernate.search.annotations.*;
+
+@Entity
+@Indexed
+public class BlogEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column
+    @Field(store = Store.YES)
+    private String title;
+
+    @Column
+    @Field(store = Store.YES)
+    private String body;
+
+    // getters, setters
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Основные аннотации Hibernate Search:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;&lt;th&gt;Аннотация    &lt;/th&gt;&lt;th&gt; Описание&lt;/th&gt;&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;@Indexed      &lt;/td&gt;&lt;td&gt; Помечает, какие объекты должны быть индексированы; Позволяет переопределению имя индекса. Только объекты @Indexed могут быть найдены..&lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;@Field        &lt;/td&gt;&lt;td&gt; Помечает поле объекта, которое будет индексировано. Существует несколько вариантов работы с индексируемыми полями: &lt;code&gt;store&lt;/code&gt; -  перечислимый тип, указывающий, должно ли значение поля быть сохранено в индексе. По умолчанию - &lt;code&gt;Store.NO&lt;/code&gt; (Значение поля не будет сохранено в индексе.) Хранение значений может быть полезным для использования в механизме Projections,- что позволит восстанавливать значения полей непосредственно из индекса, минуя запросы к СУБД, &lt;code&gt;index&lt;/code&gt; -  перечисление, определяющее, следует ли индексировать поле или нет. По умолчанию - &lt;code&gt;Index.YES&lt;/code&gt; &lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;@DocumentId   &lt;/td&gt;&lt;td&gt; Позволяет переопределить идентификатор документа в индексе. По-умолчанию используется поля помеченное JPA-аннотацией @Id. &lt;/td&gt;&lt;/tr&gt;
+&lt;tr&gt;&lt;td&gt;@SortableField&lt;/td&gt;&lt;td&gt; Помечает что индексируемое поле может быть сортируемым.&lt;/td&gt;&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;strong&gt;3. Добавьте свойства hibernate-search в persistence.xml&lt;/strong&gt;&lt;br /&gt;
+&lt;code&gt;src/test/resources/META-INF/persistence.xml :&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;
+&amp;lt;persistence version=&amp;quot;2.0&amp;quot; xmlns=&amp;quot;http://java.sun.com/xml/ns/persistence&amp;quot; xmlns:xsi=&amp;quot;http://www.w3.org/2001/XMLSchema-instance&amp;quot; xsi:schemaLocation=&amp;quot;http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd&amp;quot;&amp;gt;
+    &amp;lt;persistence-unit name=&amp;quot;myDSTest&amp;quot; transaction-type=&amp;quot;RESOURCE_LOCAL&amp;quot;&amp;gt;
+        &amp;lt;provider&amp;gt;org.hibernate.jpa.HibernatePersistenceProvider&amp;lt;/provider&amp;gt;
+        &amp;lt;class&amp;gt;org.kostenko.example.wildfly.hibernatesearch.BlogEntity&amp;lt;/class&amp;gt;
+        &amp;lt;exclude-unlisted-classes&amp;gt;false&amp;lt;/exclude-unlisted-classes&amp;gt;
+        &amp;lt;properties&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.dialect&amp;quot; value=&amp;quot;org.hibernate.dialect.HSQLDialect&amp;quot;/&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.hbm2ddl.auto&amp;quot; value=&amp;quot;create-drop&amp;quot;/&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.connection.driver_class&amp;quot; value=&amp;quot;org.hsqldb.jdbcDriver&amp;quot;/&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.connection.username&amp;quot; value=&amp;quot;sa&amp;quot;/&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.connection.password&amp;quot; value=&amp;quot;&amp;quot;/&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.connection.url&amp;quot; value=&amp;quot;jdbc:hsqldb:mem:testdb&amp;quot;/&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.showSql&amp;quot; value=&amp;quot;true&amp;quot;/&amp;gt;
+            &amp;lt;!-- Hibernate Search --&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.search.default.directory_provider&amp;quot; value=&amp;quot;filesystem&amp;quot; /&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.search.default.indexBase&amp;quot; value=&amp;quot;/tmp/index1&amp;quot; /&amp;gt;
+            &amp;lt;property name=&amp;quot;hibernate.search.default.indexmanager&amp;quot; value=&amp;quot;near-real-time&amp;quot; /&amp;gt;
+        &amp;lt;/properties&amp;gt;
+    &amp;lt;/persistence-unit&amp;gt;
+&amp;lt;/persistence&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Как мы могли убедиться, добавить Hibernate Search в свое приложение достаточно легко, - всего пара аннотаций. Теперь Hibernate Search автоматически будет создавать индекс каждый раз, когда объект, будет изменен (создан, удален) через Hibernate ORM. Индекс может быть сохранен в &lt;code&gt;ram&lt;/code&gt; или &lt;code&gt;filesystem&lt;/code&gt;. Другие поставщики, также доступны.&lt;/p&gt;
+&lt;p&gt;Итак, пора сделать простой тест и посмотреть, как это работает с &lt;strong&gt;Lucene queries&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;src/test/java/org/.../JpaHibernateSearchTest :&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public class JpaHibernateSearchTest {
+
+    private static EntityManager entityManager;
+    private static FullTextEntityManager fullTextEntityManager;
+    private static QueryBuilder queryBuilder;
+
+    @BeforeClass
+    public static void init() {
+        entityManager = Persistence.createEntityManagerFactory(&amp;quot;myDSTest&amp;quot;).createEntityManager();
+        fullTextEntityManager = Search.getFullTextEntityManager(entityManager);
+        queryBuilder = fullTextEntityManager.getSearchFactory().buildQueryBuilder().forEntity(BlogEntity.class).get();
+        for (int i = 0; i &amp;lt; 1000; i++) {
+            BlogEntity blogEntity = new BlogEntity();
+            blogEntity.setTitle(&amp;quot;Title&amp;quot; + i);
+            blogEntity.setBody(&amp;quot;BodyBody Body&amp;quot; + i + &amp;quot; look at my horse my horse is a amazing &amp;quot; + i);
+            entityManager.getTransaction().begin();
+            entityManager.persist(blogEntity);
+            entityManager.getTransaction().commit();
+        }
+        Assert.assertEquals(1000, entityManager.createQuery(&amp;quot;SELECT COUNT(b) FROM BlogEntity b&amp;quot;, Number.class).getSingleResult().intValue());
+    }
+    /**
+     * Keyword Queries - searching for a specific word.
+     */
+    @Test
+    public void shouldSearchByKeywordQuery() throws Exception {
+        Query query = queryBuilder.keyword().onFields(&amp;quot;title&amp;quot;, &amp;quot;body&amp;quot;).matching(&amp;quot;Body999&amp;quot;).createQuery();
+        javax.persistence.Query persistenceQuery = fullTextEntityManager.createFullTextQuery(query, BlogEntity.class); // wrap Lucene query in a javax.persistence.Query
+        List&amp;lt;BlogEntity&amp;gt; result = persistenceQuery.getResultList();// execute search
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(&amp;quot;Title999&amp;quot;, result.get(0).getTitle());
+    }
+    /**
+     * Fuzzy Queries - we can define a limit of “fuzziness”
+     */
+    @Test
+    public void shouldSearchByFuzzyQuery() throws Exception {
+        Query query = queryBuilder.keyword().fuzzy().withEditDistanceUpTo(2).withPrefixLength(0).onField(&amp;quot;title&amp;quot;).matching(&amp;quot;TAtle999&amp;quot;).createQuery();
+        javax.persistence.Query persistenceQuery = fullTextEntityManager.createFullTextQuery(query, BlogEntity.class);
+        List&amp;lt;BlogEntity&amp;gt; result = persistenceQuery.getResultList();
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(&amp;quot;Title999&amp;quot;, result.get(0).getTitle());
+    }
+    /**
+     * Wildcard Queries - queries for which a part of a word is unknown (&apos;?&apos; - single character, &apos;*&apos; - character sequence)
+     */
+    @Test
+    public void shouldSearchByWildcardQuery() throws Exception {
+        Query query = queryBuilder.keyword().wildcard().onField(&amp;quot;title&amp;quot;).matching(&amp;quot;?itle*&amp;quot;).createQuery();
+        javax.persistence.Query persistenceQuery = fullTextEntityManager.createFullTextQuery(query, BlogEntity.class);
+        List&amp;lt;BlogEntity&amp;gt; result = persistenceQuery.getResultList();
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(1000, result.size());
+    }
+    /**
+     * Phrase Queries - search for exact or for approximate sentences
+     */
+    @Test
+    public void shouldSearchByPhraseQuery() throws Exception {
+        Query query = queryBuilder.phrase().withSlop(10).onField(&amp;quot;body&amp;quot;).sentence(&amp;quot;look amazing horse 999&amp;quot;).createQuery();
+        javax.persistence.Query persistenceQuery = fullTextEntityManager.createFullTextQuery(query, BlogEntity.class);
+        List&amp;lt;BlogEntity&amp;gt; result = persistenceQuery.getResultList();
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(&amp;quot;Title999&amp;quot;, result.get(0).getTitle());
+    }
+
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;В тесте, мы использовали основные юзкейсы. Но даже этого достаточно, чтобы почувствовать насколько &lt;code&gt;Apache Lucene search engine&lt;/code&gt; неплох. И увидеть, как легко его можно интегрировать с вашим приложением. Обратитесь к &lt;a href=&quot;https://docs.jboss.org/hibernate/stable/search/reference/en-US/html_single/&quot;&gt;официальной документации&lt;/a&gt; для детелей.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;4. Использование Hibernate Search с Wildfly&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Как я уже писал - Hibernate Search интегрирован в  Wildfly начиная с версии 10. Это означает, что эта функциональность активируется автоматически в случае, если вы используете по крайней мере одну ентити с &lt;code&gt;org.hibernate.search.annotations.Indexed&lt;/code&gt;.&lt;br /&gt;
+Итак, все что нам нужно, чтобы показать как это работает вместе, - это просто реализовать простой веб-сервис с похожей на юнит тест логикой и запустить его на сервере.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Path(&amp;quot;/&amp;quot;)
+@Stateless
+public class HibernateSearchDemoEndpoint {
+
+    @PersistenceContext
+    EntityManager entityManager;
+
+    /**
+     * Persist 1000 entities and rebuild index
+     * @return
+     */
+    @GET
+    @Path(&amp;quot;/init&amp;quot;)
+    @Transactional
+    public Response init() {
+        int count = entityManager.createQuery(&amp;quot;SELECT COUNT(b) FROM BlogEntity b&amp;quot;, Number.class).getSingleResult().intValue();
+        long time = System.currentTimeMillis();
+        for (int i = count; i &amp;lt; count + 1000; i++) {
+            BlogEntity blogEntity = new BlogEntity();
+            blogEntity.setTitle(&amp;quot;Title&amp;quot; + i);
+            blogEntity.setBody(&amp;quot;Body Body Body&amp;quot; + i + &amp;quot; look at my horse my horse is a amazing &amp;quot; + i);
+            entityManager.persist(blogEntity);
+        }
+        time = System.currentTimeMillis() - time;
+        return Response.ok().entity(String.format(&amp;quot;1000 records persisted. Current records %s Execution time = %s ms.&amp;quot;, count + 1000, time)).build();
+    }
+
+    /**
+     * Search by index
+     * @param q - query string
+     * @return
+     */
+    @GET
+    @Path(&amp;quot;/search&amp;quot;)
+    public Response search(@QueryParam(&amp;quot;q&amp;quot;) String q) {
+        FullTextEntityManager fullTextEntityManager = Search.getFullTextEntityManager(entityManager);
+        QueryBuilder queryBuilder = fullTextEntityManager.getSearchFactory().buildQueryBuilder().forEntity(BlogEntity.class).get();
+        long time = System.currentTimeMillis();
+        Query query = queryBuilder.keyword().onFields(&amp;quot;title&amp;quot;, &amp;quot;body&amp;quot;).matching(q).createQuery();
+        javax.persistence.Query persistenceQuery = fullTextEntityManager.createFullTextQuery(query, BlogEntity.class);
+        List&amp;lt;BlogEntity&amp;gt; result = persistenceQuery.getResultList();
+        time = System.currentTimeMillis() - time;
+        String resultStr = result.stream().map(Object::toString).collect(Collectors.joining(&amp;quot;,&amp;quot;));
+        return Response.ok().entity( String.format(&amp;quot;Found %s results. [%s] Execution time = %s ms.&amp;quot;,result.size(),resultStr,time)).build();
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Теперь, давайте добавим таск в наш &lt;code&gt;build.gradle&lt;/code&gt; для запуска  Wildfly прямо из проекта&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;task removeWildfly(type:Delete) {
+    delete &amp;quot;build/wildfly-${libraryVersions.wildfly}&amp;quot;
+}
+task resolveWildfly(type:Copy, dependsOn:removeWildfly) {
+    destinationDir = buildDir
+    from {zipTree(configurations.wildfly.singleFile)}
+}
+task run() {
+    dependsOn &apos;resolveWildfly&apos;
+    doLast {
+        copy {
+            from projectDir.toString() + &amp;quot;/build/libs/wildfly-hibernate-search-example.war&amp;quot;
+            into projectDir.toString() + &amp;quot;/build/wildfly-${libraryVersions.wildfly}/standalone/deployments&amp;quot;
+        }
+        exec {
+            workingDir = file(projectDir)
+            commandLine &amp;quot;./build/wildfly-${libraryVersions.wildfly}/bin/standalone.sh&amp;quot;, &amp;quot;--debug&amp;quot;, &amp;quot;5005&amp;quot;
+            ext.output = {
+                return standardOutput.toString()
+            }
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;run&lt;/code&gt; разархивирует wildfly в каталог проекта, задеплоит приложение и запустит сервер. Итак:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;gradle &amp;amp;&amp;amp; gradle run
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;проверим вывод, чтобы убедиться, что Hiberate создал Index соглсно  пути в  &lt;code&gt;persistence.xml&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;...
+15:15:37,386 INFO  [org.hibernate.search.store.impl.DirectoryProviderHelper] (MSC service thread 1-3) HSEARCH000041: Index directory not found, creating: &apos;/tmp/index2/org.kostenko.example.wildfly.hibernatesearch.BlogEntity&apos;
+...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;И, наконец, смотрим на результат в браузере&lt;br /&gt;
+&lt;img src=&quot;/img/2019-02-hibernate-search-1.png&quot; alt=&quot;create_index&quot; /&gt;&lt;br /&gt;
+&lt;img src=&quot;/img/2019-02-hibernate-search-2.png&quot; alt=&quot;serach_by_index&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;Исходный код проекта, доступен на &lt;a href=&quot;https://github.com/kostenkoserg/wildfly-hibernate-search-example&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Как сгенерировать ssh ключи в Linux</title>
       <link>https://kostenko.org/blog/2019/02/linux-generate-private-shh-key.html</link>
