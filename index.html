@@ -81,6 +81,18 @@
     </div>
     <div class="container">
 
+  			<a href="blog/2019/03/linux-build-ssh-tunnel.html"><h1>How to build ssh tunnel on Linux</h1></a>
+  			<p>15 March 2019</p>
+  			<p><p>SSH tunneling is routing local network traffic through SSH to remote hosts. Can be used, for example, to  connect to the remote application that was bound on remote local port.</p>
+<p>For example, to connect to mysql instance that was bound on remote local port <code>3306</code> you can use:</p>
+<pre><code class="language-bash">ssh -L 3366:localhost:3306 [USERNAME]@remotehost.com
+</code></pre>
+<p>or if you would like to connect with <a href="https://kostenko.org/blog/2019/02/linux-generate-private-shh-key.html">SSH keys</a> :</p>
+<pre><code class="language-bash">ssh -i [KEY_FILENAME] -L 3366:localhost:3306 [USERNAME]@remotehost.com
+</code></pre>
+<p>After you can connect to the database, using your favorite tool on localhost:3366</p>
+</p>
+				<hr/>
   			<a href="blog/2019/02/wildfly-hibernate-search.html"><h1>Hibernate Search introduction. Deploying on WildFly.</h1></a>
   			<p>21 February 2019</p>
   			<p><p>Hibernate Search is a powerful solution to implement full text search capabilities (like google or amazon) in your EE application. Under the hood it will use Apache Lucene directly or over Elasticsearch to build the index. Hibernate Search can be easy integrated with JPA, Hibernate ORM, Infinispan and other sources. If you are use Wildfly - you are lucky, - Hibernate Search already integrated with last one.</p>

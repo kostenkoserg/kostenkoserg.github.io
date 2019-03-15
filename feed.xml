@@ -6,9 +6,26 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Thu, 28 Feb 2019 11:45:50 +0200</pubDate>
-    <lastBuildDate>Thu, 28 Feb 2019 11:45:50 +0200</lastBuildDate>
+    <pubDate>Fri, 15 Mar 2019 17:43:07 +0200</pubDate>
+    <lastBuildDate>Fri, 15 Mar 2019 17:43:07 +0200</lastBuildDate>
 
+    <item>
+      <title>How to build ssh tunnel on Linux</title>
+      <link>https://kostenko.org/blog/2019/03/linux-build-ssh-tunnel.html</link>
+      <pubDate>Fri, 15 Mar 2019 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2019/03/linux-build-ssh-tunnel.html</guid>
+      	<description>
+	&lt;p&gt;SSH tunneling is routing local network traffic through SSH to remote hosts. Can be used, for example, to  connect to the remote application that was bound on remote local port.&lt;/p&gt;
+&lt;p&gt;For example, to connect to mysql instance that was bound on remote local port &lt;code&gt;3306&lt;/code&gt; you can use:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;ssh -L 3366:localhost:3306 [USERNAME]@remotehost.com
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;or if you would like to connect with &lt;a href=&quot;https://kostenko.org/blog/2019/02/linux-generate-private-shh-key.html&quot;&gt;SSH keys&lt;/a&gt; :&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;ssh -i [KEY_FILENAME] -L 3366:localhost:3306 [USERNAME]@remotehost.com
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;After you can connect to the database, using your favorite tool on localhost:3366&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Hibernate Search introduction. Deploying on WildFly.</title>
       <link>https://kostenko.org/blog/2019/02/wildfly-hibernate-search.html</link>
