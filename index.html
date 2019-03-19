@@ -61,6 +61,7 @@
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown">Tags <b class="caret"></b></a>
               <ul class="dropdown-menu">
+										<li><a href="tags/SQL.html">SQL</a></li>
 										<li><a href="tags/JPA.html">JPA</a></li>
 										<li><a href="tags/GitHub.html">GitHub</a></li>
 										<li><a href="tags/Linux.html">Linux</a></li>
@@ -81,6 +82,34 @@
     </div>
     <div class="container">
 
+  			<a href="blog/2019/03/sql-trick-conditional-count.html"><h1>SQL trick. Conditional count for select clause</h1></a>
+  			<p>16 March 2019</p>
+  			<p><p>To perform conditional logic in your SQL <code>SELECT</code> clause you can use <code>CASE</code> expression. Next SQL trick allows you perform conditional <code>count()</code> with your query.</p>
+<p>For example, to  select count of records with <code>id &gt; 5</code>:</p>
+<p>SQL:</p>
+<pre><code class="language-sql">SELECT SUM(CASE WHEN id &gt; 5 THEN 1 ELSE 0 END) FROM Table
+</code></pre>
+<p>JPQL:</p>
+<pre><code class="language-java">entityManager.createQuery(&quot;SELECT SUM(CASE WHEN b.id &gt; 5 THEN 1 ELSE 0 END) FROM BlogEntity b&quot;).getSingleResult()
+</code></pre>
+<p>Criteria API:</p>
+<pre><code class="language-java">CriteriaBuilder cb = em.getCriteriaBuilder();
+CriteriaQuery&lt;Number&gt; query = cb.createQuery(Number.class);
+Root&lt;BlogEntity&gt; blogEntity = query.from(BlogEntity.class);
+
+query.select(
+        cb.sum(
+                cb.&lt;Number&gt;selectCase()
+                        .when(cb.gt(blogEntity.get(&quot;id&quot;), 5), 1)
+                        .otherwise(0)
+        )
+);
+
+Number result = em.createQuery(query).getSingleResult();
+</code></pre>
+<p>Test cases source code available on  <a href="https://github.com/kostenkoserg/jpa-examples/blob/master/src/test/java/org/kostenko/example/jpa/JpaConditionalCountTest.java">GitHub</a></p>
+</p>
+				<hr/>
   			<a href="blog/2019/03/linux-build-ssh-tunnel.html"><h1>How to build ssh tunnel on Linux</h1></a>
   			<p>15 March 2019</p>
   			<p><p>SSH tunneling is routing local network traffic through SSH to remote hosts. Can be used, for example, to  connect to the remote application that was bound on remote local port.</p>
