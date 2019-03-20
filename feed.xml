@@ -6,9 +6,25 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Tue, 19 Mar 2019 17:41:57 +0200</pubDate>
-    <lastBuildDate>Tue, 19 Mar 2019 17:41:57 +0200</lastBuildDate>
+    <pubDate>Wed, 20 Mar 2019 12:37:48 +0200</pubDate>
+    <lastBuildDate>Wed, 20 Mar 2019 12:37:48 +0200</lastBuildDate>
 
+    <item>
+      <title>My Hibernate Search introduction video</title>
+      <link>https://kostenko.org/blog/2019/03/hibernate-search-intro-video.html</link>
+      <pubDate>Wed, 20 Mar 2019 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2019/03/hibernate-search-intro-video.html</guid>
+      	<description>
+	
+Have published my second YouTube video (about Hibernate Search and integration with Wildfly)!
+
+&lt;br/&gt;&lt;br/&gt;
+&lt;div class=&quot;row&quot;&gt;
+    &lt;iframe align =&quot;center&quot; class=&quot;col-md-offset-3 col-lg-6 col-md-6 col-sm-12 col-xs-12&quot; height=&quot;315&quot; src=&quot;https://www.youtube.com/embed/RuGyErfhmL0&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;true&quot;&gt;&lt;/iframe&gt;
+&lt;/div&gt;
+
+	</description>
+    </item>
     <item>
       <title>SQL trick. Conditional count for select clause</title>
       <link>https://kostenko.org/blog/2019/03/sql-trick-conditional-count.html</link>

@@ -6,8 +6,8 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Вт, 19 мар 2019 17:42:01 +0200</pubDate>
-    <lastBuildDate>Вт, 19 мар 2019 17:42:01 +0200</lastBuildDate>
+    <pubDate>Ср, 20 мар 2019 12:37:52 +0200</pubDate>
+    <lastBuildDate>Ср, 20 мар 2019 12:37:52 +0200</lastBuildDate>
 
     <item>
       <title>Hibernate Search вступление. Развертывание на WildFly.</title>
