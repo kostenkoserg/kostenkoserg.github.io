@@ -61,6 +61,7 @@
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown">Tags <b class="caret"></b></a>
               <ul class="dropdown-menu">
+										<li><a href="tags/SQL.html">SQL</a></li>
 										<li><a href="tags/JPA.html">JPA</a></li>
 										<li><a href="tags/GitHub.html">GitHub</a></li>
 										<li><a href="tags/Linux.html">Linux</a></li>
@@ -81,6 +82,57 @@
     </div>
     <div class="container">
 
+  			<a href="blog/2019/03/hibernate-search-intro-video.html"><h1>Видео знакомство с Hibernate Search</h1></a>
+  			<p>20 марта 2019</p>
+  			<p>
+Опубликовано мое второе видео на YouTube (о Hibernate Search и интеграции с Wildfly)!
+
+<br/><br/>
+<div class="row">
+    <iframe align ="center" class="col-md-offset-3 col-lg-6 col-md-6 col-sm-12 col-xs-12" height="315" src="https://www.youtube.com/embed/RuGyErfhmL0" frameborder="0" allowfullscreen="true"></iframe>
+</div>
+</p>
+				<hr/>
+  			<a href="blog/2019/03/sql-trick-conditional-count.html"><h1>SQL хак. Условный COUNT для выражения  SELECT</h1></a>
+  			<p>16 марта 2019</p>
+  			<p><p>Для выполнения условной логики в SQL <code>SELECT</code>, можно использовать выражение <code>CASE</code>. Следующий SQL хак  позволит вам выполнить условный <code>count()</code> для вашего запроса.</p>
+<p>Например, чтобы выбрать количество записей с <code>id &gt; 5</code>:</p>
+<p>SQL:</p>
+<pre><code class="language-sql">SELECT SUM(CASE WHEN id &gt; 5 THEN 1 ELSE 0 END) FROM Table
+</code></pre>
+<p>JPQL:</p>
+<pre><code class="language-java">entityManager.createQuery(&quot;SELECT SUM(CASE WHEN b.id &gt; 5 THEN 1 ELSE 0 END) FROM BlogEntity b&quot;).getSingleResult()
+</code></pre>
+<p>Criteria API:</p>
+<pre><code class="language-java">CriteriaBuilder cb = em.getCriteriaBuilder();
+CriteriaQuery&lt;Number&gt; query = cb.createQuery(Number.class);
+Root&lt;BlogEntity&gt; blogEntity = query.from(BlogEntity.class);
+
+query.select(
+        cb.sum(
+                cb.&lt;Number&gt;selectCase()
+                        .when(cb.gt(blogEntity.get(&quot;id&quot;), 5), 1)
+                        .otherwise(0)
+        )
+);
+
+Number result = em.createQuery(query).getSingleResult();
+</code></pre>
+<p>Исходный код, доступен на  <a href="https://github.com/kostenkoserg/jpa-examples/blob/master/src/test/java/org/kostenko/example/jpa/JpaConditionalCountTest.java">GitHub</a></p>
+</p>
+				<hr/>
+  			<a href="blog/2019/03/linux-build-ssh-tunnel.html"><h1>Как поднять ssh тоннель на Linux</h1></a>
+  			<p>15 марта 2019</p>
+  			<p><p>SSH тоннель позволяет перенаправлять локальный трафик через SSH на удаленный хост. Может быть использован, например, для соедиения с удаленным приложением, которое было запущено на локальном порту удаленного хоста.</p>
+<p>Например, чтобы соединиться с mysql, который был запущен на локальном порту <code>3306</code> хоста  remotehost.com, вы можете использовать:</p>
+<pre><code class="language-bash">ssh -L 3366:localhost:3306 [USERNAME]@remotehost.com
+</code></pre>
+<p>или с использованием  <a href="https://kostenko.org/blog/2019/02/linux-generate-private-shh-key.html">SSH keys</a> :</p>
+<pre><code class="language-bash">ssh -i [KEY_FILENAME] -L 3366:localhost:3306 [USERNAME]@remotehost.com
+</code></pre>
+<p>После этого, вы можете соединиться с базой, используя любимый тулинг на localhost:3366</p>
+</p>
+				<hr/>
   			<a href="blog/2019/02/wildfly-hibernate-search.html"><h1>Hibernate Search вступление. Развертывание на WildFly.</h1></a>
   			<p>21 февраля 2019</p>
   			<p><p>Hibernate  Search - это мощное решение для реализации возможностей полнотекстового поиска (как google или  amazon) в вашем ЕЕ приложении. Под капотом, для построения индекса, будет использоваться Apache Lucene напрямую, или через Elasticsearch. Hibernate Search может быть легко интегрирован с JPA, Hibernate ORM, Infinispan или другими источниками. Если вы используете Wildfly - вам повезло, - Hibernate Search с ним уже интегрирован.</p>

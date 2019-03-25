@@ -6,9 +6,75 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Ср, 20 мар 2019 12:37:52 +0200</pubDate>
-    <lastBuildDate>Ср, 20 мар 2019 12:37:52 +0200</lastBuildDate>
+    <pubDate>Пн, 25 мар 2019 10:56:14 +0200</pubDate>
+    <lastBuildDate>Пн, 25 мар 2019 10:56:14 +0200</lastBuildDate>
 
+    <item>
+      <title>Видео знакомство с Hibernate Search</title>
+      <link>https://kostenko.org/blog/2019/03/hibernate-search-intro-video.html</link>
+      <pubDate>Ср, 20 мар 2019 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2019/03/hibernate-search-intro-video.html</guid>
+      	<description>
+	
+Опубликовано мое второе видео на YouTube (о Hibernate Search и интеграции с Wildfly)!
+
+&lt;br/&gt;&lt;br/&gt;
+&lt;div class=&quot;row&quot;&gt;
+    &lt;iframe align =&quot;center&quot; class=&quot;col-md-offset-3 col-lg-6 col-md-6 col-sm-12 col-xs-12&quot; height=&quot;315&quot; src=&quot;https://www.youtube.com/embed/RuGyErfhmL0&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;true&quot;&gt;&lt;/iframe&gt;
+&lt;/div&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>SQL хак. Условный COUNT для выражения  SELECT</title>
+      <link>https://kostenko.org/blog/2019/03/sql-trick-conditional-count.html</link>
+      <pubDate>Сб, 16 мар 2019 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2019/03/sql-trick-conditional-count.html</guid>
+      	<description>
+	&lt;p&gt;Для выполнения условной логики в SQL &lt;code&gt;SELECT&lt;/code&gt;, можно использовать выражение &lt;code&gt;CASE&lt;/code&gt;. Следующий SQL хак  позволит вам выполнить условный &lt;code&gt;count()&lt;/code&gt; для вашего запроса.&lt;/p&gt;
+&lt;p&gt;Например, чтобы выбрать количество записей с &lt;code&gt;id &amp;gt; 5&lt;/code&gt;:&lt;/p&gt;
+&lt;p&gt;SQL:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;SELECT SUM(CASE WHEN id &amp;gt; 5 THEN 1 ELSE 0 END) FROM Table
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;JPQL:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;entityManager.createQuery(&amp;quot;SELECT SUM(CASE WHEN b.id &amp;gt; 5 THEN 1 ELSE 0 END) FROM BlogEntity b&amp;quot;).getSingleResult()
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Criteria API:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;CriteriaBuilder cb = em.getCriteriaBuilder();
+CriteriaQuery&amp;lt;Number&amp;gt; query = cb.createQuery(Number.class);
+Root&amp;lt;BlogEntity&amp;gt; blogEntity = query.from(BlogEntity.class);
+
+query.select(
+        cb.sum(
+                cb.&amp;lt;Number&amp;gt;selectCase()
+                        .when(cb.gt(blogEntity.get(&amp;quot;id&amp;quot;), 5), 1)
+                        .otherwise(0)
+        )
+);
+
+Number result = em.createQuery(query).getSingleResult();
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Исходный код, доступен на  &lt;a href=&quot;https://github.com/kostenkoserg/jpa-examples/blob/master/src/test/java/org/kostenko/example/jpa/JpaConditionalCountTest.java&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>Как поднять ssh тоннель на Linux</title>
+      <link>https://kostenko.org/blog/2019/03/linux-build-ssh-tunnel.html</link>
+      <pubDate>Пт, 15 мар 2019 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2019/03/linux-build-ssh-tunnel.html</guid>
+      	<description>
+	&lt;p&gt;SSH тоннель позволяет перенаправлять локальный трафик через SSH на удаленный хост. Может быть использован, например, для соедиения с удаленным приложением, которое было запущено на локальном порту удаленного хоста.&lt;/p&gt;
+&lt;p&gt;Например, чтобы соединиться с mysql, который был запущен на локальном порту &lt;code&gt;3306&lt;/code&gt; хоста  remotehost.com, вы можете использовать:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;ssh -L 3366:localhost:3306 [USERNAME]@remotehost.com
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;или с использованием  &lt;a href=&quot;https://kostenko.org/blog/2019/02/linux-generate-private-shh-key.html&quot;&gt;SSH keys&lt;/a&gt; :&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;ssh -i [KEY_FILENAME] -L 3366:localhost:3306 [USERNAME]@remotehost.com
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;После этого, вы можете соединиться с базой, используя любимый тулинг на localhost:3366&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Hibernate Search вступление. Развертывание на WildFly.</title>
       <link>https://kostenko.org/blog/2019/02/wildfly-hibernate-search.html</link>

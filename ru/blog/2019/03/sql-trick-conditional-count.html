@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Как сгенерировать ssh ключи в Linux</title>
+    <title>SQL хак. Условный COUNT для выражения  SELECT</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -83,33 +83,35 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Как сгенерировать ssh ключи в Linux</h1>
+		<h1>SQL хак. Условный COUNT для выражения  SELECT</h1>
 	</div>
 
-	<p><em>20 февраля 2019</em></p>
+	<p><em>16 марта 2019</em></p>
 
-	<p><p>Часто, по соображения безопасности или юзабилити, предпочтительнее использовать ssh ключи вместо паролей. Для этого нужно:</p>
-<ul>
-<li>Логинимся на удаленный инстанс</li>
-<li>Генерируем ключи</li>
-</ul>
-<pre><code class="language-bash">ssh-keygen -t rsa -f ~/.ssh/[KEY_FILENAME] -C [USERNAME]
-cat [KEY_FILENAME].pub &gt;&gt; ~/.ssh/authorized_keys
+	<p><p>Для выполнения условной логики в SQL <code>SELECT</code>, можно использовать выражение <code>CASE</code>. Следующий SQL хак  позволит вам выполнить условный <code>count()</code> для вашего запроса.</p>
+<p>Например, чтобы выбрать количество записей с <code>id &gt; 5</code>:</p>
+<p>SQL:</p>
+<pre><code class="language-sql">SELECT SUM(CASE WHEN id &gt; 5 THEN 1 ELSE 0 END) FROM Table
 </code></pre>
-<ul>
-<li>Скачиваем приватный ключ  ([KEY_FILENAME]) себе</li>
-<li>Заходим на хост с использованием ключа</li>
-</ul>
-<pre><code class="language-bash">chmod 400 [KEY_FILENAME]
-ssh -i [KEY_FILENAME] [USERNAME]@yourhost.com
+<p>JPQL:</p>
+<pre><code class="language-java">entityManager.createQuery(&quot;SELECT SUM(CASE WHEN b.id &gt; 5 THEN 1 ELSE 0 END) FROM BlogEntity b&quot;).getSingleResult()
 </code></pre>
-<p>Для того, что бы запретить логиниться с паролем и под рутом, отредактируйте  <code>/etc/ssh/sshd_config</code>:</p>
-<pre><code class="language-bash">PasswordAuthentication no
-PermitRootLogin no
+<p>Criteria API:</p>
+<pre><code class="language-java">CriteriaBuilder cb = em.getCriteriaBuilder();
+CriteriaQuery&lt;Number&gt; query = cb.createQuery(Number.class);
+Root&lt;BlogEntity&gt; blogEntity = query.from(BlogEntity.class);
+
+query.select(
+        cb.sum(
+                cb.&lt;Number&gt;selectCase()
+                        .when(cb.gt(blogEntity.get(&quot;id&quot;), 5), 1)
+                        .otherwise(0)
+        )
+);
+
+Number result = em.createQuery(query).getSingleResult();
 </code></pre>
-<p>Затем перезагрузите ssh сервер</p>
-<pre><code class="language-bash">sudo service ssh restart
-</code></pre>
+<p>Исходный код, доступен на  <a href="https://github.com/kostenkoserg/jpa-examples/blob/master/src/test/java/org/kostenko/example/jpa/JpaConditionalCountTest.java">GitHub</a></p>
 </p>
 
 	<hr />
