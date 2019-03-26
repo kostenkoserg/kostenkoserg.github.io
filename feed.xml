@@ -6,9 +6,36 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Mon, 25 Mar 2019 12:17:54 +0200</pubDate>
-    <lastBuildDate>Mon, 25 Mar 2019 12:17:54 +0200</lastBuildDate>
+    <pubDate>Tue, 26 Mar 2019 16:44:24 +0200</pubDate>
+    <lastBuildDate>Tue, 26 Mar 2019 16:44:24 +0200</lastBuildDate>
 
+    <item>
+      <title>Wildfly large request processing</title>
+      <link>https://kostenko.org/blog/2019/03/wildfly-large-request.html</link>
+      <pubDate>Tue, 26 Mar 2019 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2019/03/wildfly-large-request.html</guid>
+      	<description>
+	&lt;p&gt;By default Undertow subsystem on Wildfly AS configured to process requests with &lt;code&gt;max-post-size&lt;/code&gt;= 10MB. So, in case your request larger than 10MB you will get&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;java.io.IOException: UT000020: Connection terminated as request was larger than 10485760
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;To increase this parameter you can edit directly &lt;code&gt;standalone&lt;/code&gt; or &lt;code&gt;domain&lt;/code&gt; configuration, like&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;subsystem xmlns=&amp;quot;urn:jboss:domain:undertow:3.1&amp;quot;&amp;gt;
+  &amp;lt;buffer-cache name=&amp;quot;default&amp;quot;/&amp;gt;
+  &amp;lt;server name=&amp;quot;default-server&amp;quot;&amp;gt;
+    &amp;lt;http-listener name=&amp;quot;default&amp;quot; socket-binding=&amp;quot;http&amp;quot; max-post-size=&amp;quot;15728640&amp;quot; redirect-socket=&amp;quot;https&amp;quot; enable-http2=&amp;quot;true&amp;quot;/&amp;gt;
+    &amp;lt;https-listener name=&amp;quot;https&amp;quot; socket-binding=&amp;quot;https&amp;quot; max-post-size=&amp;quot;15728640&amp;quot; security-realm=&amp;quot;SSLRealm&amp;quot;/&amp;gt;
+....
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;or use CLI commands as shown below:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;/subsystem=undertow/server=default-server/http-listener=default/:write-attribute(name=max-post-size,value=15728640)
+/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=max-post-size,value=15728640)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Notice! If you are using Wildfly in domain mode with AJP load balancer, you also may need to change  &lt;code&gt;max-post-size&lt;/code&gt; for &lt;code&gt;ajp-listener&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;/subsystem=undertow/server=default-server/ajp-listener=ajp/:write-attribute(name=max-post-size,value=15728640)
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
     <item>
       <title>My Hibernate Search introduction video</title>
       <link>https://kostenko.org/blog/2019/03/hibernate-search-intro-video.html</link>
