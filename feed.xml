@@ -6,9 +6,141 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Tue, 26 Mar 2019 16:44:24 +0200</pubDate>
-    <lastBuildDate>Tue, 26 Mar 2019 16:44:24 +0200</lastBuildDate>
+    <pubDate>Tue, 9 Apr 2019 19:42:33 +0300</pubDate>
+    <lastBuildDate>Tue, 9 Apr 2019 19:42:33 +0300</lastBuildDate>
 
+    <item>
+      <title>Java EE CDI events. Dynamic qualifier.</title>
+      <link>https://kostenko.org/blog/2019/04/java-ee-cdi-events.html</link>
+      <pubDate>Mon, 8 Apr 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/04/java-ee-cdi-events.html</guid>
+      	<description>
+	&lt;p&gt;Java EE provides us really nice mechanism for event processing. Which is part of the CDI for Java specification. Dynamic qualifier for CDI Events can be very useful, for example, in domain driven design, web socket messages routing or any other stuff depends on needs.&lt;/p&gt;
+&lt;p&gt;Firing simple event looks like:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
+public class MyEventSource {
+
+    @Inject
+    private Event&amp;lt;String&amp;gt; myEvent;
+
+    public void fireEvent(){
+        myEvent.fire(&amp;quot;Hello World!&amp;quot;);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;then event observer like:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
+public class MyEventObserver {
+    public void observeEvent(@Observes String message){
+        System.out.println(message);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;With CDI Qualifier (fancy annotation) you can specify which observer should serve the event&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Qualifier
+@Retention(RUNTIME)
+@Target({METHOD, FIELD, PARAMETER, TYPE})
+public @interface Important {
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;For  example:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
+public class MyEventSource {
+
+    @Inject
+    @Important
+    private Event&amp;lt;String&amp;gt; myEvent;
+    ...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
+public class MyEventObserver {
+  public void observeEvent(@Observes @Important String message){
+    ...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;By default event will be fired in current transaction, but you can change this behavior with &lt;code&gt;@Observes&lt;/code&gt; attribute  &lt;code&gt;during&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
+public class TransactionEventObserver {
+    public void observeImportantMessage(@Observes(during = TransactionPhase.AFTER_SUCCESS) String message){
+        System.out.println(message);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Available next values:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;IN_PROGRESS&lt;/li&gt;
+&lt;li&gt;BEFORE_COMPLETION&lt;/li&gt;
+&lt;li&gt;AFTER_COMPLETION&lt;/li&gt;
+&lt;li&gt;AFTER_FAILURE&lt;/li&gt;
+&lt;li&gt;AFTER_SUCCESS&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Now, let&apos;s take a look on dynamically qualification of CDI event. In the example below we will create observer to serve user events like login, logout, registration etc from the abstract event source. As was noticed earlier, event can be fired from different sources depends on your needs.&lt;/p&gt;
+&lt;p&gt;So, first we need to create &lt;code&gt;Qualifier&lt;/code&gt; with available events values&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Qualifier
+@Target({METHOD, FIELD, PARAMETER, TYPE})
+@Retention(RUNTIME)
+public @interface UserEvent {
+
+    Routes value();
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;where Routes is enum with available values, for example:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public enum Routes {
+  LOGIN,
+  LOGOUT,
+  REGISTRATION
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Then we need to create child class of &lt;code&gt;javax.enterprise.util.AnnotationLiteral&lt;/code&gt; to possibility of inline instantiation of annotation type instance.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public class UserEventBinding extends AnnotationLiteral&amp;lt;UserEvent&amp;gt; implements UserEvent {
+
+    Routes routes;
+
+    public UserEventBinding(Routes routes) {
+        this.routes = routes;
+    }
+
+    @Override
+    public Routes value() {
+        return routes;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now, let&apos;s fire event with dynamically observer selection&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
+public class UserEventSource {
+
+    @Inject
+    private Event&amp;lt;String&amp;gt; userEvent;
+
+    public void fireEvent(Routes route){
+        userEvent.select(new UserEventBinding(route)).fire(&amp;quot;Instead of string you can use your object&amp;quot;);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;So, time to show how our Observer looks like&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;import static Routes.*;
+...
+
+@Named
+public class UserObserver {
+
+    public void registration(@Observes @UserEvent(REGISTRATION) String eventData) {
+      ....
+    }
+
+    public void login(@Observes @UserEvent(LOGIN) String eventData) {
+      ....
+    }
+
+    public void logout(@Observes @UserEvent(LOGIN) String eventData) {
+      ....
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;P.S. From Java EE 8 with CDI 2.0 you can use &lt;strong&gt;asynchronous CDI Events&lt;/strong&gt; whith &lt;code&gt;fireAsync&lt;/code&gt; method and  &lt;code&gt;@ObservesAsync&lt;/code&gt; annotation...&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Wildfly large request processing</title>
       <link>https://kostenko.org/blog/2019/03/wildfly-large-request.html</link>
