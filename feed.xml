@@ -6,11 +6,11 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Sat, 13 Apr 2019 14:20:19 +0300</pubDate>
-    <lastBuildDate>Sat, 13 Apr 2019 14:20:19 +0300</lastBuildDate>
+    <pubDate>Sat, 13 Apr 2019 18:31:04 +0300</pubDate>
+    <lastBuildDate>Sat, 13 Apr 2019 18:31:04 +0300</lastBuildDate>
 
     <item>
-      <title>JBake blog pagintation</title>
+      <title>JBake blog pagination</title>
       <link>https://kostenko.org/blog/2019/04/jbake-blog-pagination.html</link>
       <pubDate>Wed, 10 Apr 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/04/jbake-blog-pagination.html</guid>
