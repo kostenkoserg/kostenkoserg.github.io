@@ -6,9 +6,42 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Tue, 9 Apr 2019 19:42:33 +0300</pubDate>
-    <lastBuildDate>Tue, 9 Apr 2019 19:42:33 +0300</lastBuildDate>
+    <pubDate>Sat, 13 Apr 2019 14:20:19 +0300</pubDate>
+    <lastBuildDate>Sat, 13 Apr 2019 14:20:19 +0300</lastBuildDate>
 
+    <item>
+      <title>JBake blog pagintation</title>
+      <link>https://kostenko.org/blog/2019/04/jbake-blog-pagination.html</link>
+      <pubDate>Wed, 10 Apr 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/04/jbake-blog-pagination.html</guid>
+      	<description>
+	&lt;p&gt;To enable pagintation support on your JBake based blog you need to provide next properties in your &lt;code&gt;jbake.properties&lt;/code&gt; file:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;index.paginate=true
+index.posts_per_page=5
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;After that JBake will generate subdirectories &lt;code&gt;2,3,4...&lt;/code&gt; for your &lt;code&gt;index.html&lt;/code&gt;. Next, you need to update &lt;code&gt;index&lt;/code&gt; template to generate necessary count of posts per each index page and provide &amp;quot;previous&amp;quot;,&amp;quot;next&amp;quot; navigation buttons.&lt;/p&gt;
+&lt;p&gt;Below, I will show you freemarker template with pagination support, that I am using for this blog&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;&amp;lt;#include &amp;quot;header.ftl&amp;quot;&amp;gt;
+	&amp;lt;#include &amp;quot;menu.ftl&amp;quot;&amp;gt;
+	&amp;lt;#list posts as post&amp;gt;
+  		&amp;lt;#if (post.status == &amp;quot;published&amp;quot;  &amp;amp;&amp;amp; post?index &amp;gt;= (currentPageNumber-1) * config.index_posts_per_page?eval &amp;amp;&amp;amp; post?index &amp;lt; currentPageNumber * config.index_posts_per_page?eval)&amp;gt;
+				&amp;lt;a href=&amp;quot;${post.uri}&amp;quot;&amp;gt;&amp;lt;h1&amp;gt;&amp;lt;#escape x as x?xml&amp;gt;${post.title}&amp;lt;/#escape&amp;gt;&amp;lt;/h1&amp;gt;&amp;lt;/a&amp;gt;
+				&amp;lt;p&amp;gt;${post.date?string(&amp;quot;dd MMMM yyyy&amp;quot;)}&amp;lt;/p&amp;gt;
+  			&amp;lt;p&amp;gt;${post.body}&amp;lt;/p&amp;gt;
+				&amp;lt;hr/&amp;gt;
+  		&amp;lt;/#if&amp;gt;
+  	&amp;lt;/#list&amp;gt;
+		&amp;lt;ul class=&amp;quot;pager&amp;quot;&amp;gt;
+			&amp;lt;#if (currentPageNumber &amp;gt; 1)&amp;gt;&amp;lt;li class=&amp;quot;previous&amp;quot;&amp;gt;&amp;lt;a href=&amp;quot;${config.site_host}/${(currentPageNumber==2)?then(&apos;&apos;, currentPageNumber-1)}&amp;quot;&amp;gt;Previous&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;&amp;lt;/#if&amp;gt;
+			&amp;lt;li&amp;gt;Page: ${currentPageNumber}/${numberOfPages} (&amp;lt;a href=&amp;quot;${content.rootpath}${config.archive_file}&amp;quot;&amp;gt;archive&amp;lt;/a&amp;gt;)&amp;lt;/li&amp;gt;
+			&amp;lt;#if (currentPageNumber &amp;lt; numberOfPages)&amp;gt;&amp;lt;li class=&amp;quot;next&amp;quot;&amp;gt;&amp;lt;a href=&amp;quot;${config.site_host}/${currentPageNumber + 1}&amp;quot;&amp;gt;Next&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;&amp;lt;/#if&amp;gt;
+		&amp;lt;/ul&amp;gt;
+&amp;lt;#include &amp;quot;footer.ftl&amp;quot;&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Blog sources available on &lt;a href=&quot;https://github.com/kostenkoserg/kostenko.blog.src&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Java EE CDI events. Dynamic qualifier.</title>
       <link>https://kostenko.org/blog/2019/04/java-ee-cdi-events.html</link>
