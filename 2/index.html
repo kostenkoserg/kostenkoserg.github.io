@@ -84,6 +84,34 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2019/03/sql-trick-conditional-count.html"><h1>SQL trick. Conditional count for select clause</h1></a>
+				<p>16 March 2019</p>
+  			<p><p>To perform conditional logic in your SQL <code>SELECT</code> clause you can use <code>CASE</code> expression. Next SQL trick allows you perform conditional <code>count()</code> with your query.</p>
+<p>For example, to  select count of records with <code>id &gt; 5</code>:</p>
+<p>SQL:</p>
+<pre><code class="language-sql">SELECT SUM(CASE WHEN id &gt; 5 THEN 1 ELSE 0 END) FROM Table
+</code></pre>
+<p>JPQL:</p>
+<pre><code class="language-java">entityManager.createQuery(&quot;SELECT SUM(CASE WHEN b.id &gt; 5 THEN 1 ELSE 0 END) FROM BlogEntity b&quot;).getSingleResult()
+</code></pre>
+<p>Criteria API:</p>
+<pre><code class="language-java">CriteriaBuilder cb = em.getCriteriaBuilder();
+CriteriaQuery&lt;Number&gt; query = cb.createQuery(Number.class);
+Root&lt;BlogEntity&gt; blogEntity = query.from(BlogEntity.class);
+
+query.select(
+        cb.sum(
+                cb.&lt;Number&gt;selectCase()
+                        .when(cb.gt(blogEntity.get(&quot;id&quot;), 5), 1)
+                        .otherwise(0)
+        )
+);
+
+Number result = em.createQuery(query).getSingleResult();
+</code></pre>
+<p>Test cases source code available on  <a href="https://github.com/kostenkoserg/jpa-examples/blob/master/src/test/java/org/kostenko/example/jpa/JpaConditionalCountTest.java">GitHub</a></p>
+</p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/03/linux-build-ssh-tunnel.html"><h1>How to build ssh tunnel on Linux</h1></a>
 				<p>15 March 2019</p>
   			<p><p>SSH tunneling is routing local network traffic through SSH to remote hosts. Can be used, for example, to  connect to the remote application that was bound on remote local port.</p>
@@ -390,84 +418,6 @@ Have published my first YouTube video (about blogging with jbake)!
 <div class="row">
     <iframe align ="center" class="col-md-offset-3 col-lg-6 col-md-6 col-sm-12 col-xs-12" height="315" src="https://www.youtube.com/embed/_0C2xTa8jsY" frameborder="0" allowfullscreen="true"></iframe>
 </div>
-</p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2019/01/jbake-blog-improve.html"><h1>Jbake. Add tags, multi languages support and analytics</h1></a>
-				<p>19 January 2019</p>
-  			<p><h4>1. Tags</h4>
-<p>Jbake supports tagging out of the box. It means that engine will generate separate page for each tag. To enable this feature on your blog you need to change <code>render.tags</code> property in your <code>jbake.properties</code> file</p>
-<pre><code class="language-bash">render.tags=true
-</code></pre>
-<p>Next  modify template file depends on where you whant to reneder tags. For this blog I am using freemarker templates and made desition to put tags as part of menu bar. So, chages of my <code>menu.ftl</code> below:</p>
-<pre><code class="language-html">  &lt;ul class=&quot;dropdown-menu&quot;&gt;
-      &lt;#list tags as tag&gt;
-        &lt;li&gt;&lt;a href=&quot;${content.rootpath}${tag.uri}&quot;&gt;${tag.name}&lt;/a&gt;&lt;/li&gt;
-      &lt;/#list&gt;
-  &lt;/ul&gt;
-</code></pre>
-<p>That's is it!</p>
-<h4>2. Multi languages</h4>
-<p>Now let's talk about multilanguage support. It is pity, but Jbake does not support blogging in different languages at the same time by default. So, we need a some hacks to do that. First idea  I had was about two the same sites  in different languages. It is not big deal, but in case changes for  templates, assets or images  you will need to do it twice. What is not so good.</p>
-<p>Instead of full copy  I did additional directory <code>content_ru</code> just with content.</p>
-<pre><code class="language-bash">├── assets  
-├── content  
-├── content_ru
-├── templates
-├── jbake.properties
-├── README.md  
-</code></pre>
-<p>In <code>jbake.properies</code> you can specify which content should be used.</p>
-<p>So, I  choosen english as default language and bake my blog in the next way:</p>
-<p>bakeblog.sh:</p>
-<pre><code class="language-bash">#!/bin/bash
-
-# Helper script to bake the blog
-# Author: kostenko
-
-export PATH=&quot;/opt/jbake-2.6.3-bin/bin&quot;:$PATH
-rm -R ./output
-# Building en version
-export JBAKE_OPTS=&quot;-Duser.language=EN&quot;
-jbake -b
-# Build ru version
-export JBAKE_OPTS=&quot;-Duser.language=RU&quot;
-mv jbake.properties jbake.properties.orig
-cat jbake.properties.orig &gt;&gt; jbake.properties
-echo &quot;content.folder=content_ru&quot; &gt;&gt; jbake.properties
-jbake -b . output/ru
-# cleanup
-rm jbake.properties
-mv jbake.properties.orig jbake.properties
-</code></pre>
-<p>Now let’s add to the menu bar links to choose language:</p>
-<pre><code class="language-html">&lt;!-- switch language --&gt;
-&lt;ul class=&quot;nav navbar-nav navbar-right&quot;&gt;
-  &lt;li&gt;&lt;a href=&quot;/&quot;&gt;en&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;/ru&quot;&gt;ru&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-</code></pre>
-<p>Done!</p>
-<h4>3. Analytics</h4>
-<p>To enable <a href="https://analytics.google.com">Google analytics</a> functionality on your Jbake based  site, you need to do few simple steps:</p>
-<ul>
-<li>Register your resource on  google analytics</li>
-<li>Get provided by GA code snippet</li>
-<li>Paste provided snippet to your <code>header.ftl</code> as first block of <code>&lt;HEAD&gt;</code> section.</li>
-</ul>
-<pre><code class="language-html">&lt;!-- Global site tag (gtag.js) - Google Analytics --&gt;
-&lt;head&gt;
-  &lt;script async src=&quot;https://www.googletagmanager.com/gtag/js?id=&lt;YOUR_GA_ID&gt;&quot;&gt;&lt;/script&gt;
-  &lt;script&gt;
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', '&lt;YOUR_GA_ID&gt;');
-  &lt;/script&gt;
-  ...
-</code></pre>
-<p>Congrats! You are ready to blogging!</p>
-<p>P.S. If you want to have comments for your posts, - refer to the services like <a href="https://disqus.com/">Disqus</a> - it is aloso easy to integrate and nice to have for some reasons.<br />
-P.P.S. Blog sources available on <a href="https://github.com/kostenkoserg/kostenko.blog.src">GitHub</a></p>
 </p>
 				<hr/>
 

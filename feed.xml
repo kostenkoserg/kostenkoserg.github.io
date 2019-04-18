@@ -6,9 +6,89 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Sun, 14 Apr 2019 10:21:18 +0300</pubDate>
-    <lastBuildDate>Sun, 14 Apr 2019 10:21:18 +0300</lastBuildDate>
+    <pubDate>Thu, 18 Apr 2019 12:42:39 +0300</pubDate>
+    <lastBuildDate>Thu, 18 Apr 2019 12:42:39 +0300</lastBuildDate>
 
+    <item>
+      <title>Wildfly domain mode cluster and load balancing from the box</title>
+      <link>https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html</link>
+      <pubDate>Mon, 15 Apr 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/04/wildfly-cluster-domain-mode.html</guid>
+      	<description>
+	&lt;p&gt;Wildfly Application Server provide us two possible modes to setup cluster environment for the Java EE applications.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Standalone mode&lt;/strong&gt; - every standalone instance has its own management interface and configuration. You can manage one instance at a time. Configuration placed in &lt;code&gt;standalone.xml&lt;/code&gt; file.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Domain mode&lt;/strong&gt; - all Wildfly instances manage by special orchestration process called &lt;code&gt;domain controller&lt;/code&gt;. Using domain controller you can manage group of servers. Also you can mange groups as well. Each servers group can has its own configuration, deployments etc. Configuration placed in &lt;code&gt;domain.xml&lt;/code&gt; and &lt;code&gt;host.xml&lt;/code&gt; files.&lt;br /&gt;
+Example of a Wildfly server groups:&lt;br /&gt;
+&lt;img src=&quot;/img/2019-04-wildfly-cluster-domain-mode.png&quot; alt=&quot;wildfly-cluster-domain-mode&quot; /&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;From the version 10 Wildfly adds support for using the &lt;code&gt;Undertow&lt;/code&gt; subsystem as a load balancer. So, now all we need to build Java EE clustered infrastructure is Wildfly only. Let&apos;s do it.&lt;/p&gt;
+&lt;p&gt;Download latest version of application server from the &lt;a href=&quot;https://wildfly.org/downloads/&quot;&gt;https://wildfly.org/downloads/&lt;/a&gt; and unzip distributive after. To run Wildfly in domain mode, please execute:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;kostenko@kostenko:/opt/wildfly-16.0.0.Final/bin$ ./domain.sh
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Connect to the Wildfly CLI concole&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;kostenko@kostenko:/opt/wildfly-16.0.0.Final/bin$ ./jboss-cli.sh -c
+[domain@localhost:9990 /]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;By default Wildfly has preconfigured server groups &lt;code&gt;main-server-group&lt;/code&gt; and &lt;code&gt;other-server-group&lt;/code&gt;, so we need cleanup existing servers:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;:stop-servers(blocking=true)
+/host=master/server-config=server-one:remove
+/host=master/server-config=server-two:remove
+/host=master/server-config=server-three:remove
+/server-group=main-server-group:remove
+/server-group=other-server-group:remove
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Create new server group and servers, using the &lt;code&gt;full-ha&lt;/code&gt; profile so &lt;code&gt;mod_cluster&lt;/code&gt; support is included:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;/server-group=backend-servers:add(profile=full-ha, socket-binding-group=full-ha-sockets)
+/host=master/server-config=backend1:add(group=backend-servers, socket-binding-port-offset=100)
+/host=master/server-config=backend2:add(group=backend-servers, socket-binding-port-offset=200)
+
+#start the backend servers
+/server-group=backend-servers:start-servers(blocking=true)
+
+#add system properties (so we can tell them apart)
+/host=master/server-config=backend1/system-property=server.name:add(boot-time=false, value=backend1)
+/host=master/server-config=backend2/system-property=server.name:add(boot-time=false, value=backend2)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Then  set up the server group for load balancer&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;/server-group=load-balancer:add(profile=load-balancer, socket-binding-group=load-balancer-sockets)
+/host=master/server-config=load-balancer:add(group=load-balancer)
+/socket-binding-group=load-balancer-sockets/socket-binding=modcluster:write-attribute(name=interface, value=public)
+/server-group=load-balancer:start-servers
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now let&apos;s develop simple JAX-RS endpoint to show how it works:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Path(&amp;quot;/clusterdemo&amp;quot;)
+@Stateless
+public class ClusterDemoEndpoint {
+
+    @GET
+    @Path(&amp;quot;/serverinfo&amp;quot;)
+    public Response getServerInfo() {
+
+        return Response.ok().entity(&amp;quot;Server: &amp;quot; + System.getProperty(&amp;quot;server.name&amp;quot;)).build();
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Build project and deploy it to the &lt;code&gt;backend-servers&lt;/code&gt; group:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;[domain@localhost:9990 /] deploy ee-jax-rs-examples.war --server-groups=backend-servers
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And check the result by &lt;code&gt;http://localhost:8080/ee-jax-rs-examples/clusterdemo/serverinfo&lt;/code&gt; :&lt;br /&gt;
+&lt;img src=&quot;/img/2019-04-wildfly-cluster-domain-mode-1-2.gif&quot; alt=&quot;wildfly-cluster-domain-mode-1-2&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;Now we can easily add  servers to the group at runtime and requests will balancing automatically:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;[domain@localhost:9990 /] /host=master/server-config=backend3:add(group=backend-servers, socket-binding-port-offset=300)
+[domain@localhost:9990 /] /host=master/server-config=backend3/system-property=server.name:add(boot-time=false, value=backend3)
+[domain@localhost:9990 /] /server-group=backend-servers/:start-servers(blocking=true)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&quot;/img/2019-04-wildfly-cluster-domain-mode-1-2-3.gif&quot; alt=&quot;wildfly-cluster-domain-mode-1-2-3&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;That is it!&lt;br /&gt;
+Source code available on GitHub:  &lt;a href=&quot;https://github.com/kostenkoserg/ee-jax-rs-examples/blob/master/src/main/java/org/kostenko/example/jaxrs/ClusterDemoEndpoint.java&quot;&gt;Demo application&lt;/a&gt;,  &lt;a href=&quot;https://github.com/kostenkoserg/wildfly-configuration-examples/blob/master/wildfly-domain-mode-cluster.cli&quot;&gt;Wildlfly CLI &lt;/a&gt;&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>JBake blog pagination</title>
       <link>https://kostenko.org/blog/2019/04/jbake-blog-pagination.html</link>
