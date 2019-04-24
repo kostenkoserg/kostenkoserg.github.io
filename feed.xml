@@ -6,8 +6,8 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Thu, 18 Apr 2019 12:42:39 +0300</pubDate>
-    <lastBuildDate>Thu, 18 Apr 2019 12:42:39 +0300</lastBuildDate>
+    <pubDate>Wed, 24 Apr 2019 10:15:00 +0300</pubDate>
+    <lastBuildDate>Wed, 24 Apr 2019 10:15:00 +0300</lastBuildDate>
 
     <item>
       <title>Wildfly domain mode cluster and load balancing from the box</title>
