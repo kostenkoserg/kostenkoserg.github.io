@@ -6,9 +6,47 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Wed, 24 Apr 2019 10:15:00 +0300</pubDate>
-    <lastBuildDate>Wed, 24 Apr 2019 10:15:00 +0300</lastBuildDate>
+    <pubDate>Wed, 24 Apr 2019 17:49:21 +0300</pubDate>
+    <lastBuildDate>Wed, 24 Apr 2019 17:49:21 +0300</lastBuildDate>
 
+    <item>
+      <title>Improve performance of random number generation</title>
+      <link>https://kostenko.org/blog/2019/04/java-spedup-random-generation.html</link>
+      <pubDate>Thu, 18 Apr 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/04/java-spedup-random-generation.html</guid>
+      	<description>
+	&lt;p&gt;Directly or indirectly every developer uses random number generation during application development by different reasons:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;cryptography&lt;/li&gt;
+&lt;li&gt;simulations&lt;/li&gt;
+&lt;li&gt;game engines&lt;/li&gt;
+&lt;li&gt;UUID generation&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;and many more...&lt;/p&gt;
+&lt;p&gt;In Java we have &lt;strong&gt;insecure&lt;/strong&gt;: &lt;code&gt;java.util.Random&lt;/code&gt; and &lt;strong&gt;secure&lt;/strong&gt;: &lt;code&gt;java.security.SecureRandom&lt;/code&gt; random generators. Main differences between is&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Size&lt;/strong&gt; - 48(Random) vs 128(SecureRandom) bits, so the chances of repeating for last one are smaller.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Seed Generation&lt;/strong&gt; - Random uses the system clock and, so can be reproduced. SecureRandom takes random data from your OS (hardware)&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Security&lt;/strong&gt; - Consequently, the java.util.Random class must not be used either for security-critical applications or for protecting sensitive data.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;As result of above, for described reasons using SecureRandom implementation. You may never get performance issues with it until you need for number of random numbers which can be generated per time unit. Especially on cloud environment because of poor entropy.&lt;/p&gt;
+&lt;p&gt;By default SecureRandom will use random data from Linux kernel entropy pool &lt;code&gt;/dev/random&lt;/code&gt;. So in case pool went empty -  next generation can be delayed for &lt;strong&gt;several minutes&lt;/strong&gt;. You also can switch to the pseudo random number generator &lt;code&gt;/dev/urandom&lt;/code&gt; which is can be must faster (non blocking) but little bit less secure.&lt;/p&gt;
+&lt;p&gt;To make Java use &lt;code&gt;/dev/urandom&lt;/code&gt; you need to change &lt;code&gt;securerandom.source&lt;/code&gt; property in the file &lt;code&gt;jre/lib/security/java.security&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;securerandom.source=file:/dev/urandom
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The entropy gathering device can also be specified with the System property &lt;code&gt;java.security.egd&lt;/code&gt;. For example:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;java -Djava.security.egd=file:/dev/urandom MainClass
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;To check how much random data is currently available in the entropy pool, use next command:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;cat /proc/sys/kernel/random/entropy_avail
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Every number lower than 1.000 can be considered too low for normal operation; if you request more data than available the requesting process will block. To increase entropy of Linux environment you can use &lt;strong&gt;HA&lt;/strong&gt;rdware &lt;strong&gt;V&lt;/strong&gt;olatile &lt;strong&gt;E&lt;/strong&gt;ntropy &lt;strong&gt;G&lt;/strong&gt;athering and &lt;strong&gt;E&lt;/strong&gt;xpansion with &lt;code&gt;haveged&lt;/code&gt; open source implementation&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;apt-get install haveged
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;It will use additional hardware(CPU) statistic to increase entropy and as result speedup your application.&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Wildfly domain mode cluster and load balancing from the box</title>
       <link>https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html</link>
