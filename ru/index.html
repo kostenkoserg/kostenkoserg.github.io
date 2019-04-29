@@ -84,10 +84,10 @@
     <div class="container">
 
 
-				<a href="https://kostenko.org/ru/blog/2019/04/java-ee-cdi-events.html"><h1>Java EE CDI events. Dynamic qualifier.</h1></a>
+				<a href="https://kostenko.org/ru/blog/2019/04/java-ee-cdi-events.html"><h1>Java EE CDI события. Динамический квалификатор.</h1></a>
 				<p>08 апреля 2019</p>
-  			<p><p>Java EE provides us really nice mechanism for event processing. Which is part of the CDI for Java specification. Dynamic qualifier for CDI Events can be very useful, for example, in domain driven design, web socket messages routing or any other stuff depends on needs.</p>
-<p>Firing simple event looks like:</p>
+  			<p><p>Java ЕЕ предоставляет нам  хороший механизм для обработки событий, который является частью CDI для спецификации Java EE. Динамический CDI спецификатор может быть полезен для обработки событий, например, в domain driven архитектуре или при маршрутизации сообщений веб-сокета и т.д.</p>
+<p>Генерация простого события:</p>
 <pre><code class="language-java">@Named
 public class MyEventSource {
 
@@ -99,7 +99,7 @@ public class MyEventSource {
     }
 }
 </code></pre>
-<p>then event observer like:</p>
+<p>Наблюдатель события:</p>
 <pre><code class="language-java">@Named
 public class MyEventObserver {
     public void observeEvent(@Observes String message){
@@ -107,14 +107,14 @@ public class MyEventObserver {
     }
 }
 </code></pre>
-<p>With CDI Qualifier (fancy annotation) you can specify which observer should serve the event</p>
+<p>Используя CDI спецификатор,  можно определить, какой наблюдатель должен обработать событие</p>
 <pre><code class="language-java">@Qualifier
 @Retention(RUNTIME)
 @Target({METHOD, FIELD, PARAMETER, TYPE})
 public @interface Important {
 }
 </code></pre>
-<p>For  example:</p>
+<p>Например:</p>
 <pre><code class="language-java">@Named
 public class MyEventSource {
 
@@ -128,7 +128,7 @@ public class MyEventObserver {
   public void observeEvent(@Observes @Important String message){
     ...
 </code></pre>
-<p>By default event will be fired in current transaction, but you can change this behavior with <code>@Observes</code> attribute  <code>during</code></p>
+<p>По-умолчанию, событие будет обработано обсервером в текущей транзакции, но можно изменить это поведение,  используя <code>@Observes</code> атрибут  <code>during</code></p>
 <pre><code class="language-java">@Named
 public class TransactionEventObserver {
     public void observeImportantMessage(@Observes(during = TransactionPhase.AFTER_SUCCESS) String message){
@@ -136,7 +136,7 @@ public class TransactionEventObserver {
     }
 }
 </code></pre>
-<p>Available next values:</p>
+<p>Доступны следующие значения:</p>
 <ul>
 <li>IN_PROGRESS</li>
 <li>BEFORE_COMPLETION</li>
@@ -144,8 +144,8 @@ public class TransactionEventObserver {
 <li>AFTER_FAILURE</li>
 <li>AFTER_SUCCESS</li>
 </ul>
-<p>Now, let's take a look on dynamically qualification of CDI event. In the example below we will create observer to serve user events like login, logout, registration etc from the abstract event source. As was noticed earlier, event can be fired from different sources depends on your needs.</p>
-<p>So, first we need to create <code>Qualifier</code> with available events values</p>
+<p>Теперь давайте посмотрим как можно квалифицировать CDI события динамически. В примере ниже мы создадим обсервер для обработки пользовательских событий (вход в систему, выход, регистрация и т.д.), полученных из некого абстрактного источника.</p>
+<p>Итак, сначала нам нужно создать <code>Qualifier</code> с доступными значениями событий</p>
 <pre><code class="language-java">@Qualifier
 @Target({METHOD, FIELD, PARAMETER, TYPE})
 @Retention(RUNTIME)
@@ -154,14 +154,14 @@ public @interface UserEvent {
     Routes value();
 }
 </code></pre>
-<p>where Routes is enum with available values, for example:</p>
+<p>где Routes - это enum с доступными значениями, например:</p>
 <pre><code class="language-java">public enum Routes {
   LOGIN,
   LOGOUT,
   REGISTRATION
 }
 </code></pre>
-<p>Then we need to create child class of <code>javax.enterprise.util.AnnotationLiteral</code> to possibility of inline instantiation of annotation type instance.</p>
+<p>Потом нам нужно создать дочерний от <code>javax.enterprise.util.AnnotationLiteral</code> класс  для возможности использования квалификатора динамически.</p>
 <pre><code class="language-java">public class UserEventBinding extends AnnotationLiteral&lt;UserEvent&gt; implements UserEvent {
 
     Routes routes;
@@ -176,7 +176,7 @@ public @interface UserEvent {
     }
 }
 </code></pre>
-<p>Now, let's fire event with dynamically observer selection</p>
+<p>Теперь давайте сгенерируем событие, используя динамический выбор наблюдателей</p>
 <pre><code class="language-java">@Named
 public class UserEventSource {
 
@@ -188,7 +188,7 @@ public class UserEventSource {
     }
 }
 </code></pre>
-<p>So, time to show how our Observer looks like</p>
+<p>Время показать, как выглядит наш Observer.</p>
 <pre><code class="language-java">import static Routes.*;
 ...
 
@@ -203,12 +203,12 @@ public class UserObserver {
       ....
     }
 
-    public void logout(@Observes @UserEvent(LOGIN) String eventData) {
+    public void logout(@Observes @UserEvent(LOGOUT) String eventData) {
       ....
     }
 }
 </code></pre>
-<p>P.S. From Java EE 8 with CDI 2.0 you can use <strong>asynchronous CDI Events</strong> whith <code>fireAsync</code> method and  <code>@ObservesAsync</code> annotation...</p>
+<p>P.S. В Java EE 8 с CDI 2.0 вы можете использовать асинхронные события CDI с помощью метода <code>fireAsync</code> и аннотации <code>@ObserveAsync</code></p>
 </p>
 				<hr/>
 				<a href="https://kostenko.org/ru/blog/2019/03/wildfly-large-request.html"><h1>Wildfly обработка больших запросов</h1></a>
