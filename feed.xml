@@ -6,8 +6,8 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Wed, 24 Apr 2019 18:17:10 +0300</pubDate>
-    <lastBuildDate>Wed, 24 Apr 2019 18:17:10 +0300</lastBuildDate>
+    <pubDate>Mon, 29 Apr 2019 15:22:12 +0300</pubDate>
+    <lastBuildDate>Mon, 29 Apr 2019 15:22:12 +0300</lastBuildDate>
 
     <item>
       <title>Improve performance of random number generation</title>
@@ -307,7 +307,7 @@ public class UserObserver {
       ....
     }
 
-    public void logout(@Observes @UserEvent(LOGIN) String eventData) {
+    public void logout(@Observes @UserEvent(LOGOUT) String eventData) {
       ....
     }
 }

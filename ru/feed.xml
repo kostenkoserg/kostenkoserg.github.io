@@ -6,9 +6,168 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Ср, 24 апр 2019 18:17:14 +0300</pubDate>
-    <lastBuildDate>Ср, 24 апр 2019 18:17:14 +0300</lastBuildDate>
+    <pubDate>Пн, 29 апр 2019 15:22:17 +0300</pubDate>
+    <lastBuildDate>Пн, 29 апр 2019 15:22:17 +0300</lastBuildDate>
 
+    <item>
+      <title>Java EE CDI events. Dynamic qualifier.</title>
+      <link>https://kostenko.org/blog/2019/04/java-ee-cdi-events.html</link>
+      <pubDate>Пн, 8 апр 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/04/java-ee-cdi-events.html</guid>
+      	<description>
+	&lt;p&gt;Java EE provides us really nice mechanism for event processing. Which is part of the CDI for Java specification. Dynamic qualifier for CDI Events can be very useful, for example, in domain driven design, web socket messages routing or any other stuff depends on needs.&lt;/p&gt;
+&lt;p&gt;Firing simple event looks like:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
+public class MyEventSource {
+
+    @Inject
+    private Event&amp;lt;String&amp;gt; myEvent;
+
+    public void fireEvent(){
+        myEvent.fire(&amp;quot;Hello World!&amp;quot;);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;then event observer like:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
+public class MyEventObserver {
+    public void observeEvent(@Observes String message){
+        System.out.println(message);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;With CDI Qualifier (fancy annotation) you can specify which observer should serve the event&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Qualifier
+@Retention(RUNTIME)
+@Target({METHOD, FIELD, PARAMETER, TYPE})
+public @interface Important {
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;For  example:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
+public class MyEventSource {
+
+    @Inject
+    @Important
+    private Event&amp;lt;String&amp;gt; myEvent;
+    ...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
+public class MyEventObserver {
+  public void observeEvent(@Observes @Important String message){
+    ...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;By default event will be fired in current transaction, but you can change this behavior with &lt;code&gt;@Observes&lt;/code&gt; attribute  &lt;code&gt;during&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
+public class TransactionEventObserver {
+    public void observeImportantMessage(@Observes(during = TransactionPhase.AFTER_SUCCESS) String message){
+        System.out.println(message);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Available next values:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;IN_PROGRESS&lt;/li&gt;
+&lt;li&gt;BEFORE_COMPLETION&lt;/li&gt;
+&lt;li&gt;AFTER_COMPLETION&lt;/li&gt;
+&lt;li&gt;AFTER_FAILURE&lt;/li&gt;
+&lt;li&gt;AFTER_SUCCESS&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Now, let&apos;s take a look on dynamically qualification of CDI event. In the example below we will create observer to serve user events like login, logout, registration etc from the abstract event source. As was noticed earlier, event can be fired from different sources depends on your needs.&lt;/p&gt;
+&lt;p&gt;So, first we need to create &lt;code&gt;Qualifier&lt;/code&gt; with available events values&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Qualifier
+@Target({METHOD, FIELD, PARAMETER, TYPE})
+@Retention(RUNTIME)
+public @interface UserEvent {
+
+    Routes value();
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;where Routes is enum with available values, for example:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public enum Routes {
+  LOGIN,
+  LOGOUT,
+  REGISTRATION
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Then we need to create child class of &lt;code&gt;javax.enterprise.util.AnnotationLiteral&lt;/code&gt; to possibility of inline instantiation of annotation type instance.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public class UserEventBinding extends AnnotationLiteral&amp;lt;UserEvent&amp;gt; implements UserEvent {
+
+    Routes routes;
+
+    public UserEventBinding(Routes routes) {
+        this.routes = routes;
+    }
+
+    @Override
+    public Routes value() {
+        return routes;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now, let&apos;s fire event with dynamically observer selection&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
+public class UserEventSource {
+
+    @Inject
+    private Event&amp;lt;String&amp;gt; userEvent;
+
+    public void fireEvent(Routes route){
+        userEvent.select(new UserEventBinding(route)).fire(&amp;quot;Instead of string you can use your object&amp;quot;);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;So, time to show how our Observer looks like&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;import static Routes.*;
+...
+
+@Named
+public class UserObserver {
+
+    public void registration(@Observes @UserEvent(REGISTRATION) String eventData) {
+      ....
+    }
+
+    public void login(@Observes @UserEvent(LOGIN) String eventData) {
+      ....
+    }
+
+    public void logout(@Observes @UserEvent(LOGIN) String eventData) {
+      ....
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;P.S. From Java EE 8 with CDI 2.0 you can use &lt;strong&gt;asynchronous CDI Events&lt;/strong&gt; whith &lt;code&gt;fireAsync&lt;/code&gt; method and  &lt;code&gt;@ObservesAsync&lt;/code&gt; annotation...&lt;/p&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>Wildfly обработка больших запросов</title>
+      <link>https://kostenko.org/blog/2019/03/wildfly-large-request.html</link>
+      <pubDate>Вт, 26 мар 2019 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2019/03/wildfly-large-request.html</guid>
+      	<description>
+	&lt;p&gt;По умолчанию подсистема Undertow в Wildfly AS настроена на обработку запросов с &lt;code&gt;max-post-size&lt;/code&gt;= 10MB. В случае, если ваш запрос, больше, чем 10 МБ, вы получите&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;java.io.IOException: UT000020: Connection terminated as request was larger than 10485760
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Для увеличения этого параметра, можно отредактировать непосредственно &lt;code&gt;standalone&lt;/code&gt; или &lt;code&gt;domain&lt;/code&gt; конфигурации&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;subsystem xmlns=&amp;quot;urn:jboss:domain:undertow:3.1&amp;quot;&amp;gt;
+  &amp;lt;buffer-cache name=&amp;quot;default&amp;quot;/&amp;gt;
+  &amp;lt;server name=&amp;quot;default-server&amp;quot;&amp;gt;
+    &amp;lt;http-listener name=&amp;quot;default&amp;quot; socket-binding=&amp;quot;http&amp;quot; max-post-size=&amp;quot;15728640&amp;quot; redirect-socket=&amp;quot;https&amp;quot; enable-http2=&amp;quot;true&amp;quot;/&amp;gt;
+    &amp;lt;https-listener name=&amp;quot;https&amp;quot; socket-binding=&amp;quot;https&amp;quot; max-post-size=&amp;quot;15728640&amp;quot; security-realm=&amp;quot;SSLRealm&amp;quot;/&amp;gt;
+....
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;или используйте команды CLI как показано ниже:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;/subsystem=undertow/server=default-server/http-listener=default/:write-attribute(name=max-post-size,value=15728640)
+/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=max-post-size,value=15728640)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Заметьте! Если Вы используете Wildfly в доменном режиме с балансировщиком нагрузки AJP, вам также может потребоваться изменить  &lt;code&gt;max-post-size&lt;/code&gt; для &lt;code&gt;ajp-listener&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;/subsystem=undertow/server=default-server/ajp-listener=ajp/:write-attribute(name=max-post-size,value=15728640)
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
     <item>
       <title>Видео знакомство с Hibernate Search</title>
       <link>https://kostenko.org/blog/2019/03/hibernate-search-intro-video.html</link>

@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Как сгенерировать ssh ключи в Linux</title>
+    <title>Wildfly обработка больших запросов</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -85,32 +85,28 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Как сгенерировать ssh ключи в Linux</h1>
+		<h1>Wildfly обработка больших запросов</h1>
 	</div>
 
-	<p><em>20 февраля 2019</em></p>
+	<p><em>26 марта 2019</em></p>
 
-	<p><p>Часто, по соображения безопасности или юзабилити, предпочтительнее использовать ssh ключи вместо паролей. Для этого нужно:</p>
-<ul>
-<li>Логинимся на удаленный инстанс</li>
-<li>Генерируем ключи</li>
-</ul>
-<pre><code class="language-bash">ssh-keygen -t rsa -f ~/.ssh/[KEY_FILENAME] -C [USERNAME]
-cat [KEY_FILENAME].pub &gt;&gt; ~/.ssh/authorized_keys
+	<p><p>По умолчанию подсистема Undertow в Wildfly AS настроена на обработку запросов с <code>max-post-size</code>= 10MB. В случае, если ваш запрос, больше, чем 10 МБ, вы получите</p>
+<pre><code class="language-java">java.io.IOException: UT000020: Connection terminated as request was larger than 10485760
 </code></pre>
-<ul>
-<li>Скачиваем приватный ключ  ([KEY_FILENAME]) себе</li>
-<li>Заходим на хост с использованием ключа</li>
-</ul>
-<pre><code class="language-bash">chmod 400 [KEY_FILENAME]
-ssh -i [KEY_FILENAME] [USERNAME]@yourhost.com
+<p>Для увеличения этого параметра, можно отредактировать непосредственно <code>standalone</code> или <code>domain</code> конфигурации</p>
+<pre><code class="language-xml">&lt;subsystem xmlns=&quot;urn:jboss:domain:undertow:3.1&quot;&gt;
+  &lt;buffer-cache name=&quot;default&quot;/&gt;
+  &lt;server name=&quot;default-server&quot;&gt;
+    &lt;http-listener name=&quot;default&quot; socket-binding=&quot;http&quot; max-post-size=&quot;15728640&quot; redirect-socket=&quot;https&quot; enable-http2=&quot;true&quot;/&gt;
+    &lt;https-listener name=&quot;https&quot; socket-binding=&quot;https&quot; max-post-size=&quot;15728640&quot; security-realm=&quot;SSLRealm&quot;/&gt;
+....
 </code></pre>
-<p>Для того, что бы запретить логиниться с паролем и под рутом, отредактируйте  <code>/etc/ssh/sshd_config</code>:</p>
-<pre><code class="language-bash">PasswordAuthentication no
-PermitRootLogin no
+<p>или используйте команды CLI как показано ниже:</p>
+<pre><code class="language-bash">/subsystem=undertow/server=default-server/http-listener=default/:write-attribute(name=max-post-size,value=15728640)
+/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=max-post-size,value=15728640)
 </code></pre>
-<p>Затем перезагрузите ssh сервер</p>
-<pre><code class="language-bash">sudo service ssh restart
+<p>Заметьте! Если Вы используете Wildfly в доменном режиме с балансировщиком нагрузки AJP, вам также может потребоваться изменить  <code>max-post-size</code> для <code>ajp-listener</code></p>
+<pre><code class="language-bash">/subsystem=undertow/server=default-server/ajp-listener=ajp/:write-attribute(name=max-post-size,value=15728640)
 </code></pre>
 </p>
 
@@ -122,8 +118,8 @@ PermitRootLogin no
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/02/linux-generate-private-shh-key.html';
-	this.page.identifier = 'blog/2019/02/linux-generate-private-shh-key.html';
+	this.page.url = 'https://kostenko.org/blog/2019/03/wildfly-large-request.html';
+	this.page.identifier = 'blog/2019/03/wildfly-large-request.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE
