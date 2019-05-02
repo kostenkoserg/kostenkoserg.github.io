@@ -6,9 +6,25 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Mon, 29 Apr 2019 15:31:19 +0300</pubDate>
-    <lastBuildDate>Mon, 29 Apr 2019 15:31:19 +0300</lastBuildDate>
+    <pubDate>Thu, 2 May 2019 13:01:31 +0300</pubDate>
+    <lastBuildDate>Thu, 2 May 2019 13:01:31 +0300</lastBuildDate>
 
+    <item>
+      <title>My video about Wildfly domain mode clustering</title>
+      <link>https://kostenko.org/blog/2019/05/wildfly-domain-mode-cluster-video.html</link>
+      <pubDate>Thu, 2 May 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/05/wildfly-domain-mode-cluster-video.html</guid>
+      	<description>
+	
+Have published new YouTube video about Wildfly AS domain mode clustering
+
+&lt;br/&gt;&lt;br/&gt;
+&lt;div class=&quot;row&quot;&gt;
+    &lt;iframe align =&quot;center&quot; class=&quot;col-md-offset-3 col-lg-6 col-md-6 col-sm-12 col-xs-12&quot; height=&quot;315&quot; src=&quot;https://www.youtube.com/embed/dIT9e945OHs&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;true&quot;&gt;&lt;/iframe&gt;
+&lt;/div&gt;
+
+	</description>
+    </item>
     <item>
       <title>Improve performance of random number generation</title>
       <link>https://kostenko.org/blog/2019/04/java-spedup-random-generation.html</link>
