@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>How to generate ssh keys on Linux</title>
+    <title>Design DSL API in Java</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -88,32 +88,66 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>How to generate ssh keys on Linux</h1>
+		<h1>Design DSL API in Java</h1>
 	</div>
 
-	<p><em>20 February 2019</em></p>
+	<p><em>27 May 2019</em></p>
 
-	<p><p>Sometimes, by security or usability reasons authentication with SSH keys looks much better than passwords. To generate personal keys, please, do next:</p>
-<ul>
-<li>Login your remote instance</li>
-<li>Generate ssh keys by</li>
-</ul>
-<pre><code class="language-bash">ssh-keygen -t rsa -f ~/.ssh/[KEY_FILENAME] -C [USERNAME]
-cat [KEY_FILENAME].pub &gt;&gt; ~/.ssh/authorized_keys
+	<p><p>Well designed API is very important in case you expect your API will use someone else instead of just you. To build readable and writable DSL(domain specific language) in Java usually uses Builder pattern with few simple rules:<br />
+* Think twice about names for methods<br />
+* Restrict available values for each step</p>
+<p>So, lets see how it looks from source code perspective...</p>
+<p>Design API entry point</p>
+<pre><code class="language-java">public class MyAPI {
+    public static UserBuilder.Registration asUser() {
+        return new UserBuilder.User();
+    }
+}
 </code></pre>
-<ul>
-<li>Download private key ([KEY_FILENAME]) to your local PC</li>
-<li>Try to connect from your local with key:</li>
-</ul>
-<pre><code class="language-bash">chmod 400 [KEY_FILENAME]
-ssh -i [KEY_FILENAME] [USERNAME]@yourhost.com
+<p>Design builder using interfaces to restrict available values depends on current step</p>
+<pre><code class="language-java">public class UserBuilder {
+    public static class User implements Registration, Login, Password, Apply {
+        private String login;
+        private String password;
+
+        @Override
+        public Login doRegistration() {
+            return this;
+        }
+        @Override
+        public Password withLogin(String login) {
+            this.login = login;
+            return this;
+        }
+        @Override
+        public Apply withPassword(String password) {
+            this.password = password;
+            return this;
+        }
+        @Override
+        public void apply() {
+            // ...
+        }
+    }
+
+    public interface Registration {
+        Login doRegistration();
+    }
+    public interface Login {
+        Password withLogin(String login);
+    }
+    public interface Password {
+        Apply withPassword(String password);
+    }
+    public interface Apply {
+        void apply();
+    }
+}
 </code></pre>
-<p>To disable root login and password based login refer to  <code>/etc/ssh/sshd_config</code> and edid next sections:</p>
-<pre><code class="language-bash">PasswordAuthentication no
-PermitRootLogin no
-</code></pre>
-<p>Then reload ssh server</p>
-<pre><code class="language-bash">sudo service ssh restart
+<p>Then usage, with no chance to mistake, looks like</p>
+<pre><code class="language-java">asUser().doRegistration()
+        .withLogin(&quot;login&quot;).withPassword(&quot;password&quot;)
+        .apply();
 </code></pre>
 </p>
 
@@ -125,8 +159,8 @@ PermitRootLogin no
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/02/linux-generate-private-shh-key.html';
-	this.page.identifier = 'blog/2019/02/linux-generate-private-shh-key.html';
+	this.page.url = 'https://kostenko.org/blog/2019/05/design-dsl-api-java.html';
+	this.page.identifier = 'blog/2019/05/design-dsl-api-java.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE

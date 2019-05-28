@@ -6,9 +6,74 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Thu, 2 May 2019 13:01:31 +0300</pubDate>
-    <lastBuildDate>Thu, 2 May 2019 13:01:31 +0300</lastBuildDate>
+    <pubDate>Tue, 28 May 2019 13:42:01 +0300</pubDate>
+    <lastBuildDate>Tue, 28 May 2019 13:42:01 +0300</lastBuildDate>
 
+    <item>
+      <title>Design DSL API in Java</title>
+      <link>https://kostenko.org/blog/2019/05/design-dsl-api-java.html</link>
+      <pubDate>Mon, 27 May 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/05/design-dsl-api-java.html</guid>
+      	<description>
+	&lt;p&gt;Well designed API is very important in case you expect your API will use someone else instead of just you. To build readable and writable DSL(domain specific language) in Java usually uses Builder pattern with few simple rules:&lt;br /&gt;
+* Think twice about names for methods&lt;br /&gt;
+* Restrict available values for each step&lt;/p&gt;
+&lt;p&gt;So, lets see how it looks from source code perspective...&lt;/p&gt;
+&lt;p&gt;Design API entry point&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public class MyAPI {
+    public static UserBuilder.Registration asUser() {
+        return new UserBuilder.User();
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Design builder using interfaces to restrict available values depends on current step&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public class UserBuilder {
+    public static class User implements Registration, Login, Password, Apply {
+        private String login;
+        private String password;
+
+        @Override
+        public Login doRegistration() {
+            return this;
+        }
+        @Override
+        public Password withLogin(String login) {
+            this.login = login;
+            return this;
+        }
+        @Override
+        public Apply withPassword(String password) {
+            this.password = password;
+            return this;
+        }
+        @Override
+        public void apply() {
+            // ...
+        }
+    }
+
+    public interface Registration {
+        Login doRegistration();
+    }
+    public interface Login {
+        Password withLogin(String login);
+    }
+    public interface Password {
+        Apply withPassword(String password);
+    }
+    public interface Apply {
+        void apply();
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Then usage, with no chance to mistake, looks like&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;asUser().doRegistration()
+        .withLogin(&amp;quot;login&amp;quot;).withPassword(&amp;quot;password&amp;quot;)
+        .apply();
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
     <item>
       <title>My video about Wildfly domain mode clustering</title>
       <link>https://kostenko.org/blog/2019/05/wildfly-domain-mode-cluster-video.html</link>
