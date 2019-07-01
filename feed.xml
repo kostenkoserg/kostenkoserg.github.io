@@ -6,9 +6,36 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Mon, 1 Jul 2019 12:03:16 +0300</pubDate>
-    <lastBuildDate>Mon, 1 Jul 2019 12:03:16 +0300</lastBuildDate>
+    <pubDate>Mon, 1 Jul 2019 13:28:05 +0300</pubDate>
+    <lastBuildDate>Mon, 1 Jul 2019 13:28:05 +0300</lastBuildDate>
 
+    <item>
+      <title>Wildfly active-mq subsystem deadlock</title>
+      <link>https://kostenko.org/blog/2019/06/wildfly-activemq-deadlock.html</link>
+      <pubDate>Sat, 29 Jun 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/06/wildfly-activemq-deadlock.html</guid>
+      	<description>
+	&lt;p&gt;Recently got unusual height CPU utilizaton on random wildly cluster instance. Thread dump shows the reason of a problem:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;Found one Java-level deadlock:
+=============================
+
+&amp;quot;Thread-1 (ActiveMQ-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$2@46fcd20a-1114701218)&amp;quot;:
+  waiting to lock Monitor@0x00007f45f02e20f8 (Object@0x0000000603407950, a org/apache/activemq/artemis/core/server/cluster/impl/ClusterConnectionImpl$MessageFlowRecordImpl),
+  which is held by &amp;quot;Thread-29 (ActiveMQ-client-global-threads-2129186403)&amp;quot;
+&amp;quot;Thread-29 (ActiveMQ-client-global-threads-2129186403)&amp;quot;:
+  waiting to lock Monitor@0x00007f46203b5518 (Object@0x00000004cc79a7b8, a org/apache/activemq/artemis/core/server/impl/QueueImpl),
+  which is held by &amp;quot;Thread-1 (ActiveMQ-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$2@46fcd20a-1114701218)&amp;quot;
+
+Found a total of 1 deadlock.
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Below is part of official documentation:&lt;/p&gt;
+&lt;p&gt;&amp;quot;If thread-pool-max-size is set to a positive integer greater than zero, the thread pool is bounded. If requests come in and there are no free threads available in the pool, requests will block until a thread becomes available. It is recommended that a bounded thread pool be used with caution since it can lead to &lt;strong&gt;deadlock situations&lt;/strong&gt; if the upper bound is configured too low.&amp;quot;&lt;/p&gt;
+&lt;p&gt;So, solution is:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;/subsystem=messaging-activemq/server=default:write-attribute(name=thread-pool-max-size,value=-1)
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
     <item>
       <title>How to use custom ClassLoader to load jars in runtime</title>
       <link>https://kostenko.org/blog/2019/06/runtime-class-loading.html</link>
