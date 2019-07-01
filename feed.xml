@@ -6,9 +6,51 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Tue, 28 May 2019 13:45:38 +0300</pubDate>
-    <lastBuildDate>Tue, 28 May 2019 13:45:38 +0300</lastBuildDate>
+    <pubDate>Mon, 1 Jul 2019 12:03:16 +0300</pubDate>
+    <lastBuildDate>Mon, 1 Jul 2019 12:03:16 +0300</lastBuildDate>
 
+    <item>
+      <title>How to use custom ClassLoader to load jars in runtime</title>
+      <link>https://kostenko.org/blog/2019/06/runtime-class-loading.html</link>
+      <pubDate>Fri, 28 Jun 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/06/runtime-class-loading.html</guid>
+      	<description>
+	&lt;p&gt;To load calsses in runtime java uses ClassLoader mechanism which is based on next core principles:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;delegation&lt;/strong&gt; - by default uses &lt;code&gt;parent-first delegation&lt;/code&gt;, - child ClassLoader will be used if parent is not able to find or load class. This behavior can be changed to &lt;code&gt;child-first&lt;/code&gt; by overwriting &lt;code&gt;ClassLoader.loadClass(...)&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;visibility&lt;/strong&gt; - child ClassLoader is able to see all the classes loaded by parent but vice-versa is not true;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;uniqueness&lt;/strong&gt; - allows to load a class exactly once, which is basically achieved by delegation and ensures that child ClassLoader doesn&apos;t reload the class already loaded by parent;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The main scenarios to use custom ClassLoader is:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Class Instrumentation&lt;/strong&gt; - modifying classes at runtime. For example, to unit testing, debugging or monitoring;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Isolation of executions&lt;/strong&gt; - isolate several execution environments within a single process by making visible only a subset of classes for a particular thread, like it does in EE environments;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;So, let&apos;s see how using of custom ClassLoader looks from source code perspective:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;List&amp;lt;File&amp;gt; jars = Arrays.asList(new File(&amp;quot;/tmp/jars&amp;quot;).listFiles());
+URL[] urls = new URL[files.size()];
+for (int i = 0; i &amp;lt; jars.size(); i++) {
+    try {
+        urls[i] = jars.get(i).toURI().toURL();
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+URLClassLoader childClassLoader = new URLClassLoader(urls, ClassLoader.getSystemClassLoader());
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Then load class with custom ClassLoader:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;Class.forName(&amp;quot;org.kostenko.examples.core.classloader.ClassLoaderTest&amp;quot;, true , childClassLoader);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Note! If your loaded libraries uses some resources like properties or something else, you need to provide context class loader:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;Thread.currentThread().setContextClassLoader(childClassLoader);  
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Also, you can use custom ClassLoaders to load services with Java Service Provider Interface(SPI)&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;ServiceLoader&amp;lt;MyProvider&amp;gt; serviceLoader = ServiceLoader.load(MyProvider.class, childClassLoader);
+...
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
     <item>
       <title>Design DSL API in Java</title>
       <link>https://kostenko.org/blog/2019/05/design-dsl-api-java.html</link>
