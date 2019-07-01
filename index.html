@@ -103,7 +103,9 @@
 Found a total of 1 deadlock.
 </code></pre>
 <p>Below is part of official documentation:</p>
+<blockquote>
 <p>&quot;If thread-pool-max-size is set to a positive integer greater than zero, the thread pool is bounded. If requests come in and there are no free threads available in the pool, requests will block until a thread becomes available. It is recommended that a bounded thread pool be used with caution since it can lead to <strong>deadlock situations</strong> if the upper bound is configured too low.&quot;</p>
+</blockquote>
 <p>So, solution is:</p>
 <pre><code class="language-java">/subsystem=messaging-activemq/server=default:write-attribute(name=thread-pool-max-size,value=-1)
 </code></pre>
