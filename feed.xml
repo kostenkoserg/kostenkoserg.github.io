@@ -6,9 +6,31 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Mon, 1 Jul 2019 13:38:32 +0300</pubDate>
-    <lastBuildDate>Mon, 1 Jul 2019 13:38:32 +0300</lastBuildDate>
+    <pubDate>Fri, 5 Jul 2019 15:03:40 +0300</pubDate>
+    <lastBuildDate>Fri, 5 Jul 2019 15:03:40 +0300</lastBuildDate>
 
+    <item>
+      <title>Jenkins. Nice to have plugins</title>
+      <link>https://kostenko.org/blog/2019/07/jenkins-nice-to-have-plugins.html</link>
+      <pubDate>Fri, 5 Jul 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/07/jenkins-nice-to-have-plugins.html</guid>
+      	<description>
+	&lt;p&gt;Jenkins is leading open source automation tool that provides lot of plugins to make your CI better. Below is few of them that, on my opinion, can be helpful for any project.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;1. &lt;a href=&quot;https://plugins.jenkins.io/build-monitor-plugin&quot;&gt;Build Monitor Plugin&lt;/a&gt;&lt;/strong&gt; - provides a highly visible view of the status of selected Jenkins jobs;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;img src=&quot;/img/2019-07-jenkins-build-monitor-plugin.png&quot; alt=&quot;Build Monitor Plugin&quot; /&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;2. &lt;a href=&quot;https://plugins.jenkins.io/git-parameter&quot;&gt;Git Parameter Plugin&lt;/a&gt;&lt;/strong&gt; - adds ability to choose branches, tags or revisions from git repository configured in project;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;img src=&quot;/img/2019-07-jenkins-git-parameter-plugin.png&quot; alt=&quot;Git Parameter Plugin&quot; /&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;3. &lt;a href=&quot;https://plugins.jenkins.io/htmlpublisher&quot;&gt;HTML Publisher Plugin&lt;/a&gt;&lt;/strong&gt; - publish the html reports that your build generates to the job and build pages;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;img src=&quot;/img/2019-07-jenkins-html-report-plugin.png&quot; alt=&quot;Git Parameter Plugin&quot; /&gt;&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Wildfly active-mq subsystem deadlock</title>
       <link>https://kostenko.org/blog/2019/06/wildfly-activemq-deadlock.html</link>
