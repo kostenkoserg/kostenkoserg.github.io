@@ -6,9 +6,92 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Fri, 19 Jul 2019 11:31:56 +0300</pubDate>
-    <lastBuildDate>Fri, 19 Jul 2019 11:31:56 +0300</lastBuildDate>
+    <pubDate>Fri, 19 Jul 2019 11:34:54 +0300</pubDate>
+    <lastBuildDate>Fri, 19 Jul 2019 11:34:54 +0300</lastBuildDate>
 
+    <item>
+      <title>JMS Duplicate Message Detection with Wildfly</title>
+      <link>https://kostenko.org/blog/2019/07/wildfly-jms-duplicate-detection.html</link>
+      <pubDate>Fri, 19 Jul 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/07/wildfly-jms-duplicate-detection.html</guid>
+      	<description>
+	&lt;p&gt;To support JMS specification Wildfly uses Apache ActiveMQ Artemis over active-mq subsystem. Last one provides mechanism to filtering out duplicate messages without application code changes.&lt;/p&gt;
+&lt;p&gt;To enable duplicate message detection you just need to set a special property on the message to a unique value&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;message.setStringProperty(&amp;quot;_AMQ_DUPL_ID&amp;quot;, uniqueId);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;So, lets see how it works on practice and create simple Message Driven Bean to consume messages:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@JMSDestinationDefinition(
+        name = DuplicateJMSTestBean.DUPLICATE_QUEUE,
+        interfaceName = &amp;quot;javax.jms.Queue&amp;quot;
+)
+@MessageDriven(activationConfig = {
+    @ActivationConfigProperty(propertyName = &amp;quot;destinationLookup&amp;quot;, propertyValue = DuplicateJMSTestBean.DUPLICATE_QUEUE),
+    @ActivationConfigProperty(propertyName = &amp;quot;destinationType&amp;quot;, propertyValue = &amp;quot;javax.jms.Queue&amp;quot;)
+})
+@TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
+public class DuplicateJMSTestBean implements MessageListener {
+
+    public final static String DUPLICATE_QUEUE = &amp;quot;java:global/jms/duplicateTestQueue&amp;quot;;
+
+    @Override
+    public void onMessage(Message msg) {
+        System.out.println(&amp;quot;Got new message.&amp;quot;);
+        MessageStorage.messages.add(msg);
+        try {
+            Thread.sleep(5_000l);
+        } catch(Exception ignore) {}
+        System.out.println(&amp;quot;Message  successfully processed&amp;quot;);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And simple JAX-RS endpoint to produce messages&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Path(&amp;quot;/&amp;quot;)
+@Stateless
+@TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
+public class DuplicateTestEndpoint {
+
+    @Inject
+    private JMSContext context;
+    @Resource(lookup = DuplicateJMSTestBean.DUPLICATE_QUEUE)
+    private Queue queue;
+
+    @GET
+    @Path(&amp;quot;/sendmessage&amp;quot;)
+    public Response sendMessage(@QueryParam(&amp;quot;duplicate-id&amp;quot;) String duplicateId) {
+        try {
+            ObjectMessage message = context.createObjectMessage();
+            if (duplicateId == null) {
+                context.createProducer().send(queue, message);
+            } else {
+                message.setStringProperty(&amp;quot;_AMQ_DUPL_ID&amp;quot;, duplicateId);
+                context.createProducer().send(queue, message);
+            }
+            return Response.ok().entity(&amp;quot;Message was sent.  Recieved &amp;quot; + MessageStorage.messages.size() + &amp;quot; messagges: &amp;quot; + MessageStorage.messages).build();
+        } catch (Throwable e) {
+            return Response.ok().entity(&amp;quot;Error: &amp;quot; + e).build();
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now in case we send message with the same &lt;code&gt;_AMQ_DUPL_ID&lt;/code&gt; without transaction by &lt;code&gt;http://127.0.0.1:8080/jms-examples/sendmessage?duplicate-id=myuniqueid&lt;/code&gt; we will get in logs:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;WARN [org.apache.activemq.artemis.core.server] (Thread-448 (ActiveMQ-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$5@e47887a)) AMQ222059: Duplicate message detected - message will not be routed. Message information:
+CoreMessage[messageID=1505,durable=true,userID=3d27afde-a9fa-11e9-af5d-0242e352ec80,priority=4, timestamp=Fri Jul 19 10:53:04 EEST 2019,expiration=0, durable=true, address=jms.queue.jms-examples_jms-examples_jms-examples_java:global/jms/duplicateTestQueue,size=416,properties=TypedProperties[__AMQ_CID=38587489-a9fa-11e9-af5d-0242e352ec80,_AMQ_DUPL_ID=myuniqueid,_AMQ_ROUTING_TYPE=1]]@145077408
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;and message will NOT consume by consumer. In case you send message in transaction - you will get &lt;code&gt;Exception&lt;/code&gt; on commit.&lt;/p&gt;
+&lt;p&gt;Keep in mind, that to store IDs activemq uses circular fixed size cache&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;/subsystem=messaging-activemq/server=default:read-attribute(name=id-cache-size)
+{
+    &amp;quot;outcome&amp;quot; =&amp;gt; &amp;quot;success&amp;quot;,
+    &amp;quot;result&amp;quot; =&amp;gt; 20000
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;so, this value should be big enough to avoid rewriting. Also, you can configure persist cache or not (by default: &lt;code&gt;true&lt;/code&gt;)&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;/subsystem=messaging-activemq/server=default:write-attribute(name=persist-id-cache,value=false)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Source code available on &lt;a href=&quot;https://github.com/kostenkoserg/ee-jms-examples&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Jenkins. Nice to have plugins</title>
       <link>https://kostenko.org/blog/2019/07/jenkins-nice-to-have-plugins.html</link>
