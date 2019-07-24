@@ -6,9 +6,24 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Fri, 19 Jul 2019 11:34:54 +0300</pubDate>
-    <lastBuildDate>Fri, 19 Jul 2019 11:34:54 +0300</lastBuildDate>
+    <pubDate>Wed, 24 Jul 2019 10:31:07 +0300</pubDate>
+    <lastBuildDate>Wed, 24 Jul 2019 10:31:07 +0300</lastBuildDate>
 
+    <item>
+      <title>SQL trick. Insert if not exist</title>
+      <link>https://kostenko.org/blog/2019/07/sql-trick-insert-if-noe-exists.html</link>
+      <pubDate>Wed, 24 Jul 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/07/sql-trick-insert-if-noe-exists.html</guid>
+      	<description>
+	&lt;p&gt;Next SQL trick allows you perform conditional &lt;code&gt;INSERT&lt;/code&gt; with your query.&lt;/p&gt;
+&lt;p&gt;For example, lets do insert if record not exists yet:&lt;/p&gt;
+&lt;p&gt;SQL:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;INSERT INTO my_table (id, name)  
+    SELECT 1, &apos;name&apos; FROM dual  WHERE NOT EXISTS (SELECT 1 FROM my_table WHERE ID = 1);
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
     <item>
       <title>JMS Duplicate Message Detection with Wildfly</title>
       <link>https://kostenko.org/blog/2019/07/wildfly-jms-duplicate-detection.html</link>
