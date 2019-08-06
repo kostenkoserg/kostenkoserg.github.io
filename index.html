@@ -90,6 +90,32 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html"><h1>Wildfly. Configure load balancing metrics</h1></a>
+				<p>16 August 2019</p>
+  			<p><p>Previously i wrote about <a href="https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html">Wildfly domain mode cluster and load balancing from the box</a>. But what if we would like to do balancing depends on specific server behavior ?</p>
+<p>Wildfly subsystem <code>mod_cluster</code> provide us several predefined metric types to determine best request balancing:</p>
+<ul>
+<li><strong>cpu</strong>: based on CPU load</li>
+<li><strong>mem</strong>: based on system memory usage</li>
+<li><strong>heap</strong>: based on heap usage</li>
+<li><strong>sessions</strong>: based on number of web sessions</li>
+<li><strong>requests</strong>: based on amount of requests/sec</li>
+<li><strong>send-traffic</strong>: based on outgoing requests traffic</li>
+<li><strong>receive-traffic</strong>: based on incoming requests POST traffic</li>
+<li><strong>busyness</strong>: computes based on amount of Thread from Thread Pool usage that are busy servicing requests</li>
+<li><strong>connection-pool</strong>: based on JCA connections</li>
+</ul>
+<p>As well you also can configure <strong>weight</strong> (impact of a metric respect to other metrics) and <strong>capacity</strong> properties;<br />
+Below is example, how to change default based on CPU balancing to balancing based on busyness + CPU:</p>
+<pre><code class="language-java">/subsystem=modcluster/mod-cluster-config=configuration/dynamic-load-provider=configuration/load-metric=cpu:remove()
+/subsystem=modcluster/mod-cluster-config=configuration:add-metric(type=busyness,weight=2)
+/subsystem=modcluster/mod-cluster-config=configuration:add-metric(type=cpu,weight=1)
+</code></pre>
+<p>If predefined types is not enough, - you can provide <code>custom-load-metric</code> by implementing <code>org.jboss.modcluster.load.metric.impl.AbstractLoadMetric</code>. To possibility of using your custom metric,- you need to copy packaged JAR to <code>modcluster</code> module and update <code>module.xml</code>. Now you can use your custom metric with your configuration like</p>
+<pre><code class="language-java"> &lt;custom-load-metric class=&quot;org.kostenko.examples.wldfly.modcluster.MyBalancingMetric&quot;&gt;  
+</code></pre>
+</p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/07/sql-trick-insert-if-noe-exists.html"><h1>SQL trick. Insert if not exists</h1></a>
 				<p>24 July 2019</p>
   			<p><p>Next SQL trick allows you perform conditional <code>INSERT</code> with your query.</p>
@@ -193,30 +219,6 @@ CoreMessage[messageID=1505,durable=true,userID=3d27afde-a9fa-11e9-af5d-0242e352e
 <p><strong>3. <a href="https://plugins.jenkins.io/htmlpublisher">HTML Publisher Plugin</a></strong> - publish the html reports that your build generates to the job and build pages;</p>
 </blockquote>
 <p><img src="/img/2019-07-jenkins-html-report-plugin.png" alt="Git Parameter Plugin" /></p>
-</p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2019/06/wildfly-activemq-deadlock.html"><h1>Wildfly active-mq subsystem deadlock</h1></a>
-				<p>29 June 2019</p>
-  			<p><p>Recently got unusual height CPU utilizaton on random wildly cluster instance. Thread dump shows the reason of a problem:</p>
-<pre><code class="language-java">Found one Java-level deadlock:
-=============================
-
-&quot;Thread-1 (ActiveMQ-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$2@46fcd20a-1114701218)&quot;:
-  waiting to lock Monitor@0x00007f45f02e20f8 (Object@0x0000000603407950, a org/apache/activemq/artemis/core/server/cluster/impl/ClusterConnectionImpl$MessageFlowRecordImpl),
-  which is held by &quot;Thread-29 (ActiveMQ-client-global-threads-2129186403)&quot;
-&quot;Thread-29 (ActiveMQ-client-global-threads-2129186403)&quot;:
-  waiting to lock Monitor@0x00007f46203b5518 (Object@0x00000004cc79a7b8, a org/apache/activemq/artemis/core/server/impl/QueueImpl),
-  which is held by &quot;Thread-1 (ActiveMQ-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$2@46fcd20a-1114701218)&quot;
-
-Found a total of 1 deadlock.
-</code></pre>
-<p>Below is part of official documentation:</p>
-<blockquote>
-<p>&quot;If thread-pool-max-size is set to a positive integer greater than zero, the thread pool is bounded. If requests come in and there are no free threads available in the pool, requests will block until a thread becomes available. It is recommended that a bounded thread pool be used with caution since it can lead to <strong>deadlock situations</strong> if the upper bound is configured too low.&quot;</p>
-</blockquote>
-<p>So, solution is:</p>
-<pre><code class="language-java">/subsystem=messaging-activemq/server=default:write-attribute(name=thread-pool-max-size,value=-1)
-</code></pre>
 </p>
 				<hr/>
 

@@ -6,9 +6,40 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Fri, 26 Jul 2019 13:03:04 +0300</pubDate>
-    <lastBuildDate>Fri, 26 Jul 2019 13:03:04 +0300</lastBuildDate>
+    <pubDate>Tue, 6 Aug 2019 16:20:07 +0300</pubDate>
+    <lastBuildDate>Tue, 6 Aug 2019 16:20:07 +0300</lastBuildDate>
 
+    <item>
+      <title>Wildfly. Configure load balancing metrics</title>
+      <link>https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html</link>
+      <pubDate>Fri, 16 Aug 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/08/wildfly-load-balancing-metrics.html</guid>
+      	<description>
+	&lt;p&gt;Previously i wrote about &lt;a href=&quot;https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html&quot;&gt;Wildfly domain mode cluster and load balancing from the box&lt;/a&gt;. But what if we would like to do balancing depends on specific server behavior ?&lt;/p&gt;
+&lt;p&gt;Wildfly subsystem &lt;code&gt;mod_cluster&lt;/code&gt; provide us several predefined metric types to determine best request balancing:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;cpu&lt;/strong&gt;: based on CPU load&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;mem&lt;/strong&gt;: based on system memory usage&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;heap&lt;/strong&gt;: based on heap usage&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;sessions&lt;/strong&gt;: based on number of web sessions&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;requests&lt;/strong&gt;: based on amount of requests/sec&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;send-traffic&lt;/strong&gt;: based on outgoing requests traffic&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;receive-traffic&lt;/strong&gt;: based on incoming requests POST traffic&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;busyness&lt;/strong&gt;: computes based on amount of Thread from Thread Pool usage that are busy servicing requests&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;connection-pool&lt;/strong&gt;: based on JCA connections&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;As well you also can configure &lt;strong&gt;weight&lt;/strong&gt; (impact of a metric respect to other metrics) and &lt;strong&gt;capacity&lt;/strong&gt; properties;&lt;br /&gt;
+Below is example, how to change default based on CPU balancing to balancing based on busyness + CPU:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;/subsystem=modcluster/mod-cluster-config=configuration/dynamic-load-provider=configuration/load-metric=cpu:remove()
+/subsystem=modcluster/mod-cluster-config=configuration:add-metric(type=busyness,weight=2)
+/subsystem=modcluster/mod-cluster-config=configuration:add-metric(type=cpu,weight=1)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;If predefined types is not enough, - you can provide &lt;code&gt;custom-load-metric&lt;/code&gt; by implementing &lt;code&gt;org.jboss.modcluster.load.metric.impl.AbstractLoadMetric&lt;/code&gt;. To possibility of using your custom metric,- you need to copy packaged JAR to &lt;code&gt;modcluster&lt;/code&gt; module and update &lt;code&gt;module.xml&lt;/code&gt;. Now you can use your custom metric with your configuration like&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt; &amp;lt;custom-load-metric class=&amp;quot;org.kostenko.examples.wldfly.modcluster.MyBalancingMetric&amp;quot;&amp;gt;  
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
     <item>
       <title>SQL trick. Insert if not exists</title>
       <link>https://kostenko.org/blog/2019/07/sql-trick-insert-if-noe-exists.html</link>
