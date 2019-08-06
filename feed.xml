@@ -6,13 +6,13 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Tue, 6 Aug 2019 16:20:07 +0300</pubDate>
-    <lastBuildDate>Tue, 6 Aug 2019 16:20:07 +0300</lastBuildDate>
+    <pubDate>Tue, 6 Aug 2019 17:48:47 +0300</pubDate>
+    <lastBuildDate>Tue, 6 Aug 2019 17:48:47 +0300</lastBuildDate>
 
     <item>
       <title>Wildfly. Configure load balancing metrics</title>
       <link>https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html</link>
-      <pubDate>Fri, 16 Aug 2019 00:00:00 +0300</pubDate>
+      <pubDate>Tue, 6 Aug 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/08/wildfly-load-balancing-metrics.html</guid>
       	<description>
 	&lt;p&gt;Previously i wrote about &lt;a href=&quot;https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html&quot;&gt;Wildfly domain mode cluster and load balancing from the box&lt;/a&gt;. But what if we would like to do balancing depends on specific server behavior ?&lt;/p&gt;
@@ -37,6 +37,19 @@ Below is example, how to change default based on CPU balancing to balancing base
 &lt;p&gt;If predefined types is not enough, - you can provide &lt;code&gt;custom-load-metric&lt;/code&gt; by implementing &lt;code&gt;org.jboss.modcluster.load.metric.impl.AbstractLoadMetric&lt;/code&gt;. To possibility of using your custom metric,- you need to copy packaged JAR to &lt;code&gt;modcluster&lt;/code&gt; module and update &lt;code&gt;module.xml&lt;/code&gt;. Now you can use your custom metric with your configuration like&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt; &amp;lt;custom-load-metric class=&amp;quot;org.kostenko.examples.wldfly.modcluster.MyBalancingMetric&amp;quot;&amp;gt;  
 &lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>WFLYEJB0054: Failed to marshal EJB parameters</title>
+      <link>https://kostenko.org/blog/2019/08/WFLYEJB0054.html</link>
+      <pubDate>Mon, 5 Aug 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/08/WFLYEJB0054.html</guid>
+      	<description>
+	&lt;p&gt;Usually error &lt;code&gt;WFLYEJB0054: Failed to marshal EJB parameters&lt;/code&gt; can be throw by next reason:&lt;br /&gt;
+* Your data transfer object does not implement Serializable&lt;br /&gt;
+* Your transfered object does not exist in destination module classpath (for example, if you are using DTO without strong typing)&lt;/p&gt;
+&lt;p&gt;Also, you can catch this error with absolutely unexpected scenario and unclear stacktrace when your EJB throws some unchecked exception with stacktrace that has objects from points above.&lt;/p&gt;
 
 	</description>
     </item>
