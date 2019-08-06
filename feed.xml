@@ -6,8 +6,8 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Tue, 6 Aug 2019 17:48:47 +0300</pubDate>
-    <lastBuildDate>Tue, 6 Aug 2019 17:48:47 +0300</lastBuildDate>
+    <pubDate>Tue, 6 Aug 2019 17:50:52 +0300</pubDate>
+    <lastBuildDate>Tue, 6 Aug 2019 17:50:52 +0300</lastBuildDate>
 
     <item>
       <title>Wildfly. Configure load balancing metrics</title>
@@ -46,9 +46,11 @@ Below is example, how to change default based on CPU balancing to balancing base
       <pubDate>Mon, 5 Aug 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/08/WFLYEJB0054.html</guid>
       	<description>
-	&lt;p&gt;Usually error &lt;code&gt;WFLYEJB0054: Failed to marshal EJB parameters&lt;/code&gt; can be throw by next reason:&lt;br /&gt;
-* Your data transfer object does not implement Serializable&lt;br /&gt;
-* Your transfered object does not exist in destination module classpath (for example, if you are using DTO without strong typing)&lt;/p&gt;
+	&lt;p&gt;Usually error &lt;code&gt;WFLYEJB0054: Failed to marshal EJB parameters&lt;/code&gt; can be throw by next reason:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Your data transfer object does not implement Serializable&lt;/li&gt;
+&lt;li&gt;Your transfered object does not exist in destination module classpath (for example, if you are using DTO without strong typing)&lt;/li&gt;
+&lt;/ul&gt;
 &lt;p&gt;Also, you can catch this error with absolutely unexpected scenario and unclear stacktrace when your EJB throws some unchecked exception with stacktrace that has objects from points above.&lt;/p&gt;
 
 	</description>
