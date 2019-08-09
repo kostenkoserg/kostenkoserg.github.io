@@ -6,8 +6,8 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Fri, 9 Aug 2019 14:55:02 +0300</pubDate>
-    <lastBuildDate>Fri, 9 Aug 2019 14:55:02 +0300</lastBuildDate>
+    <pubDate>Fri, 9 Aug 2019 18:45:32 +0300</pubDate>
+    <lastBuildDate>Fri, 9 Aug 2019 18:45:32 +0300</lastBuildDate>
 
     <item>
       <title>Jakarta EE application multi module gradle template</title>
@@ -110,6 +110,77 @@ public class TestServiceImpl implements TestService {
 	</description>
     </item>
     <item>
+      <title>How to catch &apos;kill&apos; signals in java</title>
+      <link>https://kostenko.org/blog/2019/08/java-catch-os-signals.html</link>
+      <pubDate>Wed, 7 Aug 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/08/java-catch-os-signals.html</guid>
+      	<description>
+	&lt;p&gt;You can send different signals to your application using &lt;strong&gt;kill -l&lt;/strong&gt; command. By default &lt;strong&gt;kill&lt;/strong&gt; will sent &lt;code&gt;TERM&lt;/code&gt; signal. Java by default catches some types of signals, for example&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;kill -3 &amp;lt;PID&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;will dump Java stack traces to the standard error stream.&lt;/p&gt;
+&lt;p&gt;Also, you can catch &lt;code&gt;signal&lt;/code&gt; inside your application, like&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public class App {
+    public static void main(String... s) throws Exception {
+
+        Signal.handle(new Signal(&amp;quot;HUP&amp;quot;), signal -&amp;gt; {
+            System.out.println(signal.getName() + &amp;quot; (&amp;quot; + signal.getNumber() + &amp;quot;)&amp;quot;);
+        });
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        Thread.sleep(1000l);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;List of available signals you can get by executing &lt;code&gt;kill -l&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;kostenko@kostenko:~$ kill -l
+ 1) SIGHUP	 2) SIGINT	 3) SIGQUIT	 4) SIGILL	 5) SIGTRAP
+ 6) SIGABRT	 7) SIGBUS	 8) SIGFPE	 9) SIGKILL	10) SIGUSR1
+11) SIGSEGV	12) SIGUSR2	13) SIGPIPE	14) SIGALRM	15) SIGTERM
+16) SIGSTKFLT	17) SIGCHLD	18) SIGCONT	19) SIGSTOP	20) SIGTSTP
+21) SIGTTIN	22) SIGTTOU	23) SIGURG	24) SIGXCPU	25) SIGXFSZ
+26) SIGVTALRM	27) SIGPROF	28) SIGWINCH	29) SIGIO	30) SIGPWR
+31) SIGSYS	34) SIGRTMIN	35) SIGRTMIN+1	36) SIGRTMIN+2	37) SIGRTMIN+3
+38) SIGRTMIN+4	39) SIGRTMIN+5	40) SIGRTMIN+6	41) SIGRTMIN+7	42) SIGRTMIN+8
+43) SIGRTMIN+9	44) SIGRTMIN+10	45) SIGRTMIN+11	46) SIGRTMIN+12	47) SIGRTMIN+13
+48) SIGRTMIN+14	49) SIGRTMIN+15	50) SIGRTMAX-14	51) SIGRTMAX-13	52) SIGRTMAX-12
+53) SIGRTMAX-11	54) SIGRTMAX-10	55) SIGRTMAX-9	56) SIGRTMAX-8	57) SIGRTMAX-7
+58) SIGRTMAX-6	59) SIGRTMAX-5	60) SIGRTMAX-4	61) SIGRTMAX-3	62) SIGRTMAX-2
+63) SIGRTMAX-1	64) SIGRTMAX
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Notice! Not all signals can be catched in application, some of them reserved by OS. For example, if you will try to handle &lt;strong&gt;kill -SIGKILL (kill -9)&lt;/strong&gt; , then you get:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;Exception in thread &amp;quot;main&amp;quot; java.lang.IllegalArgumentException: Signal already used by VM or OS: SIGKILL
+	at java.base/jdk.internal.misc.Signal.handle(Signal.java:173)
+	at jdk.unsupported/sun.misc.Signal.handle(Signal.java:157)
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>Embedded Jetty server truncates responses</title>
+      <link>https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html</link>
+      <pubDate>Tue, 6 Aug 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/08/embedded-jetty-server-cut-responses.html</guid>
+      	<description>
+	&lt;p&gt;Jetty server has lot of configuration options. One of them is &lt;code&gt;OutputBufferSize&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;HttpConfiguration httpConfig = new HttpConfiguration();
+httpConfig.setOutputBufferSize(1024);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;If this property set to value less than your respopnse - jetty just will truncate last one.&lt;/p&gt;
+
+	</description>
+    </item>
+    <item>
       <title>Wildfly. Configure load balancing metrics</title>
       <link>https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html</link>
       <pubDate>Tue, 6 Aug 2019 00:00:00 +0300</pubDate>
@@ -137,20 +208,6 @@ Below is example, how to change default based on CPU balancing to balancing base
 &lt;p&gt;If predefined types is not enough, - you can provide &lt;code&gt;custom-load-metric&lt;/code&gt; by implementing &lt;code&gt;org.jboss.modcluster.load.metric.impl.AbstractLoadMetric&lt;/code&gt;. To possibility of using your custom metric,- you need to copy packaged JAR to &lt;code&gt;modcluster&lt;/code&gt; module and update &lt;code&gt;module.xml&lt;/code&gt;. Now you can use your custom metric with your configuration like&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt; &amp;lt;custom-load-metric class=&amp;quot;org.kostenko.examples.wldfly.modcluster.MyBalancingMetric&amp;quot;&amp;gt;  
 &lt;/code&gt;&lt;/pre&gt;
-
-	</description>
-    </item>
-    <item>
-      <title>Embedded Jetty server truncates responses</title>
-      <link>https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html</link>
-      <pubDate>Tue, 6 Aug 2019 00:00:00 +0300</pubDate>
-      <guid isPermaLink="false">blog/2019/08/embedded-jetty-server-cut-responses.html</guid>
-      	<description>
-	&lt;p&gt;Jetty server has lot of configuration options. One of them is &lt;code&gt;OutputBufferSize&lt;/code&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;HttpConfiguration httpConfig = new HttpConfiguration();
-httpConfig.setOutputBufferSize(1024);
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;If this property set to value less than your respopnse - jetty just will truncate last one.&lt;/p&gt;
 
 	</description>
     </item>
