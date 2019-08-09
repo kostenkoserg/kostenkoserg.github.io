@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Improve performance of random number generation</title>
+    <title>Embedded Jetty server truncates responses</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -93,64 +93,16 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Improve performance of random number generation</h1>
+		<h1>Embedded Jetty server truncates responses</h1>
 	</div>
 
-	<p><em>18 April 2019</em></p>
+	<p><em>06 August 2019</em></p>
 
-	<p><p>Directly or indirectly every developer uses random number generation during application development by different reasons:</p>
-<ul>
-<li>cryptography</li>
-<li>simulations</li>
-<li>game engines</li>
-<li>UUID generation</li>
-</ul>
-<p>and many more...</p>
-<p>In Java we have <strong>insecure</strong>: <code>java.util.Random</code> and <strong>secure</strong>: <code>java.security.SecureRandom</code> random generators. Main differences between is</p>
-<ul>
-<li><strong>Size</strong> - 48(Random) vs 128(SecureRandom) bits, so the chances of repeating for last one are smaller.</li>
-<li><strong>Seed Generation</strong> - Random uses the system clock and, so can be reproduced. SecureRandom takes random data from your OS (hardware)</li>
-<li><strong>Security</strong> - Consequently, the java.util.Random class must not be used either for security-critical applications or for protecting sensitive data.</li>
-</ul>
-<p>As result of above, for described reasons using of SecureRandom much preferable. You may never get performance issues with it until you need for number of random numbers which can be generated per time unit. Especially on cloud environment because of poor entropy.</p>
-<p>Simple ussage and speed comparison example:</p>
-<pre><code class="language-java">public class RandomGenerationTest {
-
-    private static int count = 100_000_000;
-
-    public static void main(String... s) throws Exception {
-        System.out.println(&quot;Start...&quot;);
-        doGeneration(new Random());
-        doGeneration(new SecureRandom());
-    }
-
-    private static void doGeneration(Random random) {
-        long time = System.currentTimeMillis();
-        for (int i = 0; i &lt; count; i++) {
-            random.nextInt();
-        }
-        time = System.currentTimeMillis() - time;
-        System.out.println(String.format(&quot;Generation of %s random numbers with %s time %s ms.&quot;, count, random.getClass().getName() ,time));
-    }
-}
+	<p><p>Jetty server has lot of configuration options. One of them is <code>OutputBufferSize</code></p>
+<pre><code class="language-java">HttpConfiguration httpConfig = new HttpConfiguration();
+httpConfig.setOutputBufferSize(1024);
 </code></pre>
-<pre><code class="language-java">Generation of 100000000 random numbers with java.util.Random time 930 ms.
-Generation of 100000000 random numbers with java.security.SecureRandom time 22036 ms.
-</code></pre>
-<p>By default SecureRandom will use random data from Linux kernel entropy pool <code>/dev/random</code>. So in case pool went empty -  next generation can be delayed for <strong>several minutes</strong>. You also can switch to the pseudo random number generator <code>/dev/urandom</code> which is can be must faster (non blocking) but little bit less secure.</p>
-<p>To make Java use <code>/dev/urandom</code> you need to change <code>securerandom.source</code> property in the file <code>jre/lib/security/java.security</code></p>
-<pre><code class="language-java">securerandom.source=file:/dev/urandom
-</code></pre>
-<p>The entropy gathering device can also be specified with the System property <code>java.security.egd</code>. For example:</p>
-<pre><code class="language-java">java -Djava.security.egd=file:/dev/urandom MainClass
-</code></pre>
-<p>To check how much random data is currently available in the entropy pool, use next command:</p>
-<pre><code class="language-java">cat /proc/sys/kernel/random/entropy_avail
-</code></pre>
-<p>Every number lower than 1.000 can be considered too low for normal operation; if you request more data than available the requesting process will block. To increase entropy of Linux environment you can use <strong>HA</strong>rdware <strong>V</strong>olatile <strong>E</strong>ntropy <strong>G</strong>athering and <strong>E</strong>xpansion with <code>haveged</code> open source implementation</p>
-<pre><code class="language-java">apt-get install haveged
-</code></pre>
-<p>It will use additional hardware(CPU) statistic to increase entropy and as result speedup your application.</p>
+<p>If this property set to value less than your respopnse - jetty just will truncate last one.</p>
 </p>
 
 	<hr />
@@ -161,8 +113,8 @@ Generation of 100000000 random numbers with java.security.SecureRandom time 2203
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/04/java-spedup-random-generation.html';
-	this.page.identifier = 'blog/2019/04/java-spedup-random-generation.html';
+	this.page.url = 'https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html';
+	this.page.identifier = 'blog/2019/08/embedded-jetty-server-cut-responses.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE

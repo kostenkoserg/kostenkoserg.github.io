@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Improve performance of random number generation</title>
+    <title>Jakarta EE applications multi module gradle template</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -93,64 +93,110 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Improve performance of random number generation</h1>
+		<h1>Jakarta EE applications multi module gradle template</h1>
 	</div>
 
-	<p><em>18 April 2019</em></p>
+	<p><em>08 August 2019</em></p>
 
-	<p><p>Directly or indirectly every developer uses random number generation during application development by different reasons:</p>
-<ul>
-<li>cryptography</li>
-<li>simulations</li>
-<li>game engines</li>
-<li>UUID generation</li>
-</ul>
-<p>and many more...</p>
-<p>In Java we have <strong>insecure</strong>: <code>java.util.Random</code> and <strong>secure</strong>: <code>java.security.SecureRandom</code> random generators. Main differences between is</p>
-<ul>
-<li><strong>Size</strong> - 48(Random) vs 128(SecureRandom) bits, so the chances of repeating for last one are smaller.</li>
-<li><strong>Seed Generation</strong> - Random uses the system clock and, so can be reproduced. SecureRandom takes random data from your OS (hardware)</li>
-<li><strong>Security</strong> - Consequently, the java.util.Random class must not be used either for security-critical applications or for protecting sensitive data.</li>
-</ul>
-<p>As result of above, for described reasons using of SecureRandom much preferable. You may never get performance issues with it until you need for number of random numbers which can be generated per time unit. Especially on cloud environment because of poor entropy.</p>
-<p>Simple ussage and speed comparison example:</p>
-<pre><code class="language-java">public class RandomGenerationTest {
-
-    private static int count = 100_000_000;
-
-    public static void main(String... s) throws Exception {
-        System.out.println(&quot;Start...&quot;);
-        doGeneration(new Random());
-        doGeneration(new SecureRandom());
-    }
-
-    private static void doGeneration(Random random) {
-        long time = System.currentTimeMillis();
-        for (int i = 0; i &lt; count; i++) {
-            random.nextInt();
-        }
-        time = System.currentTimeMillis() - time;
-        System.out.println(String.format(&quot;Generation of %s random numbers with %s time %s ms.&quot;, count, random.getClass().getName() ,time));
+	<p><p>In this post i will share simple and useful <strong>gradle</strong> template to organize multi module Jakarta EE application. We will implement typical one which consists from REST controller (<strong>module1</strong>) and some main logic (<strong>module2</strong>). Big picture of our application architecture is:</p>
+<p><img src="/img/2019-08-ee-multimodule-template-arch.png" alt="EE multi module application" /></p>
+<p>So, lets do initialization of project with next  gradle template:<br />
+<code>settings.gradle:</code></p>
+<pre><code class="language-java">rootProject.name = 'ee-application-multi-module-gradle-template'
+include 'module1'
+include 'module2:module2-api', 'module2:module2-core'
+</code></pre>
+<p><code>root build.gradle:</code></p>
+<pre><code class="language-java">defaultTasks 'clean', 'build'
+subprojects {
+    ext.libraryVersions = [
+        javaee                  : '8.0',
+    ]
+    defaultTasks 'clean', 'build'
+    repositories {
+        jcenter()
     }
 }
 </code></pre>
-<pre><code class="language-java">Generation of 100000000 random numbers with java.util.Random time 930 ms.
-Generation of 100000000 random numbers with java.security.SecureRandom time 22036 ms.
+<p>Above, we described initial application structure, where <strong>module1</strong> is flat sub project for our controller and <strong>module2</strong> is our main logic which consists from <code>API</code> and <code>Core</code> sub projects. As controller will use main logic API and we decided to separate application to modules (that means no big enterprise archive) - our sub projects should be simple enough:</p>
+<p><code>module1 build.gradle:</code></p>
+<pre><code class="language-java">apply plugin: 'war'
+dependencies {
+    compile project(':module2:module2-api')
+    providedCompile &quot;javax:javaee-api:${libraryVersions.javaee}&quot;
+}
 </code></pre>
-<p>By default SecureRandom will use random data from Linux kernel entropy pool <code>/dev/random</code>. So in case pool went empty -  next generation can be delayed for <strong>several minutes</strong>. You also can switch to the pseudo random number generator <code>/dev/urandom</code> which is can be must faster (non blocking) but little bit less secure.</p>
-<p>To make Java use <code>/dev/urandom</code> you need to change <code>securerandom.source</code> property in the file <code>jre/lib/security/java.security</code></p>
-<pre><code class="language-java">securerandom.source=file:/dev/urandom
+<p><code>module2:module2-api:</code></p>
+<pre><code class="language-java">apply plugin: 'java'
+dependencies {
+}
 </code></pre>
-<p>The entropy gathering device can also be specified with the System property <code>java.security.egd</code>. For example:</p>
-<pre><code class="language-java">java -Djava.security.egd=file:/dev/urandom MainClass
+<p><code>module2:module2-core:</code></p>
+<pre><code class="language-java">apply plugin: 'war'
+dependencies {
+    compile project(':module2:module2-api')
+    providedCompile &quot;javax:javaee-api:${libraryVersions.javaee}&quot;
+}
 </code></pre>
-<p>To check how much random data is currently available in the entropy pool, use next command:</p>
-<pre><code class="language-java">cat /proc/sys/kernel/random/entropy_avail
+<p>Actually, that's it!<br />
+Now we can implement our controller like:</p>
+<pre><code class="language-java">@Path(&quot;/&quot;)
+@Stateless
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+public class TestEndpoint {
+
+    @EJB(lookup = TestService.TOURNAMENT_SERVICE_JNDI)
+    TestService testService;
+
+    @GET
+    @Path(&quot;/test&quot;)
+    public Response test() {
+        SomethingDto something = testService.doSomething();
+        return Response.ok().entity(something.getMessage()).build();
+    }
 </code></pre>
-<p>Every number lower than 1.000 can be considered too low for normal operation; if you request more data than available the requesting process will block. To increase entropy of Linux environment you can use <strong>HA</strong>rdware <strong>V</strong>olatile <strong>E</strong>ntropy <strong>G</strong>athering and <strong>E</strong>xpansion with <code>haveged</code> open source implementation</p>
-<pre><code class="language-java">apt-get install haveged
+<p>In turn, main logic <code>API</code> contents from <code>Interface</code> and <code>DTO</code>:<br />
+<code>TestService.java:</code></p>
+<pre><code class="language-java">public interface TestService {
+
+  String TOURNAMENT_SERVICE_NAME = &quot;test-service&quot;;
+  String TOURNAMENT_SERVICE_JNDI =&quot;java:global/module2-core/&quot; + TOURNAMENT_SERVICE_NAME;
+
+  SomethingDto doSomething();
+}
 </code></pre>
-<p>It will use additional hardware(CPU) statistic to increase entropy and as result speedup your application.</p>
+<p><code>SomethingDto.java:</code></p>
+<pre><code class="language-java">public class SomethingDto implements Serializable{
+
+    private final String message;
+
+    public SomethingDto(String message) {
+        this.message = message;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+}
+</code></pre>
+<p>In the end, main logic <code>Core</code> contents from the logic that implements API:<br />
+<code>TestServiceImpl.java</code></p>
+<pre><code class="language-java">@Remote(TestService.class)
+@Stateless(name = TestService.TOURNAMENT_SERVICE_NAME)
+public class TestServiceImpl implements TestService {
+
+    @PersistenceContext
+    EntityManager entityManager;
+
+    @Override
+    public SomethingDto doSomething() {
+        TestEntity entity = entityManager.find(TestEntity.class, Long.MAX_VALUE);
+        return new SomethingDto(&quot;Hello Jakarta EE world!&quot;);
+    }
+}
+</code></pre>
+<p>Source code of this demo available on <a href="https://github.com/kostenkoserg/ee-application-multi-module-gradle-template">GitHub</a></p>
 </p>
 
 	<hr />
@@ -161,8 +207,8 @@ Generation of 100000000 random numbers with java.security.SecureRandom time 2203
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/04/java-spedup-random-generation.html';
-	this.page.identifier = 'blog/2019/04/java-spedup-random-generation.html';
+	this.page.url = 'https://kostenko.org/blog/2019/08/ee-application-multi-module-template.html';
+	this.page.identifier = 'blog/2019/08/ee-application-multi-module-template.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE

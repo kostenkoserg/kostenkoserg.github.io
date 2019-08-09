@@ -6,9 +6,117 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Tue, 6 Aug 2019 17:53:17 +0300</pubDate>
-    <lastBuildDate>Tue, 6 Aug 2019 17:53:17 +0300</lastBuildDate>
+    <pubDate>Fri, 9 Aug 2019 12:34:20 +0300</pubDate>
+    <lastBuildDate>Fri, 9 Aug 2019 12:34:20 +0300</lastBuildDate>
 
+    <item>
+      <title>Jakarta EE applications multi module gradle template</title>
+      <link>https://kostenko.org/blog/2019/08/ee-application-multi-module-template.html</link>
+      <pubDate>Thu, 8 Aug 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/08/ee-application-multi-module-template.html</guid>
+      	<description>
+	&lt;p&gt;In this post i will share simple and useful &lt;strong&gt;gradle&lt;/strong&gt; template to organize multi module Jakarta EE application. We will implement typical one which consists from REST controller (&lt;strong&gt;module1&lt;/strong&gt;) and some main logic (&lt;strong&gt;module2&lt;/strong&gt;). Big picture of our application architecture is:&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/img/2019-08-ee-multimodule-template-arch.png&quot; alt=&quot;EE multi module application&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;So, lets do initialization of project with next  gradle template:&lt;br /&gt;
+&lt;code&gt;settings.gradle:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;rootProject.name = &apos;ee-application-multi-module-gradle-template&apos;
+include &apos;module1&apos;
+include &apos;module2:module2-api&apos;, &apos;module2:module2-core&apos;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;root build.gradle:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;defaultTasks &apos;clean&apos;, &apos;build&apos;
+subprojects {
+    ext.libraryVersions = [
+        javaee                  : &apos;8.0&apos;,
+    ]
+    defaultTasks &apos;clean&apos;, &apos;build&apos;
+    repositories {
+        jcenter()
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Above, we described initial application structure, where &lt;strong&gt;module1&lt;/strong&gt; is flat sub project for our controller and &lt;strong&gt;module2&lt;/strong&gt; is our main logic which consists from &lt;code&gt;API&lt;/code&gt; and &lt;code&gt;Core&lt;/code&gt; sub projects. As controller will use main logic API and we decided to separate application to modules (that means no big enterprise archive) - our sub projects should be simple enough:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;module1 build.gradle:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;apply plugin: &apos;war&apos;
+dependencies {
+    compile project(&apos;:module2:module2-api&apos;)
+    providedCompile &amp;quot;javax:javaee-api:${libraryVersions.javaee}&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;module2:module2-api:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;apply plugin: &apos;java&apos;
+dependencies {
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;module2:module2-core:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;apply plugin: &apos;war&apos;
+dependencies {
+    compile project(&apos;:module2:module2-api&apos;)
+    providedCompile &amp;quot;javax:javaee-api:${libraryVersions.javaee}&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Actually, that&apos;s it!&lt;br /&gt;
+Now we can implement our controller like:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Path(&amp;quot;/&amp;quot;)
+@Stateless
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+public class TestEndpoint {
+
+    @EJB(lookup = TestService.TOURNAMENT_SERVICE_JNDI)
+    TestService testService;
+
+    @GET
+    @Path(&amp;quot;/test&amp;quot;)
+    public Response test() {
+        SomethingDto something = testService.doSomething();
+        return Response.ok().entity(something.getMessage()).build();
+    }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In turn, main logic &lt;code&gt;API&lt;/code&gt; contents from &lt;code&gt;Interface&lt;/code&gt; and &lt;code&gt;DTO&lt;/code&gt;:&lt;br /&gt;
+&lt;code&gt;TestService.java:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public interface TestService {
+
+  String TOURNAMENT_SERVICE_NAME = &amp;quot;test-service&amp;quot;;
+  String TOURNAMENT_SERVICE_JNDI =&amp;quot;java:global/module2-core/&amp;quot; + TOURNAMENT_SERVICE_NAME;
+
+  SomethingDto doSomething();
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;SomethingDto.java:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public class SomethingDto implements Serializable{
+
+    private final String message;
+
+    public SomethingDto(String message) {
+        this.message = message;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In the end, main logic &lt;code&gt;Core&lt;/code&gt; contents from the logic that implements API:&lt;br /&gt;
+&lt;code&gt;TestServiceImpl.java&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Remote(TestService.class)
+@Stateless(name = TestService.TOURNAMENT_SERVICE_NAME)
+public class TestServiceImpl implements TestService {
+
+    @PersistenceContext
+    EntityManager entityManager;
+
+    @Override
+    public SomethingDto doSomething() {
+        TestEntity entity = entityManager.find(TestEntity.class, Long.MAX_VALUE);
+        return new SomethingDto(&amp;quot;Hello Jakarta EE world!&amp;quot;);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Source code of this demo available on &lt;a href=&quot;https://github.com/kostenkoserg/ee-application-multi-module-gradle-template&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Wildfly. Configure load balancing metrics</title>
       <link>https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html</link>
@@ -37,6 +145,20 @@ Below is example, how to change default based on CPU balancing to balancing base
 &lt;p&gt;If predefined types is not enough, - you can provide &lt;code&gt;custom-load-metric&lt;/code&gt; by implementing &lt;code&gt;org.jboss.modcluster.load.metric.impl.AbstractLoadMetric&lt;/code&gt;. To possibility of using your custom metric,- you need to copy packaged JAR to &lt;code&gt;modcluster&lt;/code&gt; module and update &lt;code&gt;module.xml&lt;/code&gt;. Now you can use your custom metric with your configuration like&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt; &amp;lt;custom-load-metric class=&amp;quot;org.kostenko.examples.wldfly.modcluster.MyBalancingMetric&amp;quot;&amp;gt;  
 &lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>Embedded Jetty server truncates responses</title>
+      <link>https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html</link>
+      <pubDate>Tue, 6 Aug 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/08/embedded-jetty-server-cut-responses.html</guid>
+      	<description>
+	&lt;p&gt;Jetty server has lot of configuration options. One of them is &lt;code&gt;OutputBufferSize&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;HttpConfiguration httpConfig = new HttpConfiguration();
+httpConfig.setOutputBufferSize(1024);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;If this property set to value less than your respopnse - jetty just will truncate last one.&lt;/p&gt;
 
 	</description>
     </item>
