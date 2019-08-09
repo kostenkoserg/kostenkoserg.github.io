@@ -6,8 +6,8 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Fri, 9 Aug 2019 12:51:39 +0300</pubDate>
-    <lastBuildDate>Fri, 9 Aug 2019 12:51:39 +0300</lastBuildDate>
+    <pubDate>Fri, 9 Aug 2019 14:55:02 +0300</pubDate>
+    <lastBuildDate>Fri, 9 Aug 2019 14:55:02 +0300</lastBuildDate>
 
     <item>
       <title>Jakarta EE application multi module gradle template</title>
@@ -63,7 +63,7 @@ Now we can implement our controller like:&lt;/p&gt;
 @Produces(MediaType.APPLICATION_JSON)
 public class TestEndpoint {
 
-    @EJB(lookup = TestService.TOURNAMENT_SERVICE_JNDI)
+    @EJB(lookup = TestService.TEST_SERVICE_JNDI)
     TestService testService;
 
     @GET
