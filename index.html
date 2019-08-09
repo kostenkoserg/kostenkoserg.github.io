@@ -92,7 +92,7 @@
     <div class="container">
 
 
-				<a href="https://kostenko.org/blog/2019/08/ee-application-multi-module-template.html"><h1>Jakarta EE applications multi module gradle template</h1></a>
+				<a href="https://kostenko.org/blog/2019/08/ee-application-multi-module-template.html"><h1>Jakarta EE application multi module gradle template</h1></a>
 				<p>08 August 2019</p>
   			<p><p>In this post i will share simple and useful <strong>gradle</strong> template to organize multi module Jakarta EE application. We will implement typical one which consists from REST controller (<strong>module1</strong>) and some main logic (<strong>module2</strong>). Big picture of our application architecture is:</p>
 <p><img src="/img/2019-08-ee-multimodule-template-arch.png" alt="EE multi module application" /></p>
@@ -156,30 +156,21 @@ public class TestEndpoint {
 <code>TestService.java:</code></p>
 <pre><code class="language-java">public interface TestService {
 
-  String TOURNAMENT_SERVICE_NAME = &quot;test-service&quot;;
-  String TOURNAMENT_SERVICE_JNDI =&quot;java:global/module2-core/&quot; + TOURNAMENT_SERVICE_NAME;
+  String TEST_SERVICE_NAME = &quot;test-service&quot;;
+  String TEST_SERVICE_JNDI =&quot;java:global/module2-core/&quot; + TEST_SERVICE_NAME;
 
   SomethingDto doSomething();
 }
 </code></pre>
 <p><code>SomethingDto.java:</code></p>
 <pre><code class="language-java">public class SomethingDto implements Serializable{
-
-    private final String message;
-
-    public SomethingDto(String message) {
-        this.message = message;
-    }
-
-    public String getMessage() {
-        return message;
-    }
+  ...
 }
 </code></pre>
 <p>In the end, main logic <code>Core</code> contents from the logic that implements API:<br />
 <code>TestServiceImpl.java</code></p>
 <pre><code class="language-java">@Remote(TestService.class)
-@Stateless(name = TestService.TOURNAMENT_SERVICE_NAME)
+@Stateless(name = TestService.TEST_SERVICE_NAME)
 public class TestServiceImpl implements TestService {
 
     @PersistenceContext
@@ -192,6 +183,7 @@ public class TestServiceImpl implements TestService {
     }
 }
 </code></pre>
+<p>Described Jakarta EE application architecture allows us enjoy all power of EE with absolutely transparent inter module interactions and, the same time, stay close to micro service design - as we have no limits with using one container for all modules.</p>
 <p>Source code of this demo available on <a href="https://github.com/kostenkoserg/ee-application-multi-module-gradle-template">GitHub</a></p>
 </p>
 				<hr/>
