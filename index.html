@@ -64,6 +64,7 @@
 										<li><a href="tags/Gradle.html">Gradle</a></li>
 										<li><a href="tags/API.html">API</a></li>
 										<li><a href="tags/JPA.html">JPA</a></li>
+										<li><a href="tags/JMX.html">JMX</a></li>
 										<li><a href="tags/Jakarta EE.html">Jakarta EE</a></li>
 										<li><a href="tags/Linux.html">Linux</a></li>
 										<li><a href="tags/JBake.html">JBake</a></li>
@@ -92,6 +93,31 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2019/08/wildfly-jconsole-mbeans-list-problem.html"><h1>Wildfly JMX connection problems (so slow and terminates)</h1></a>
+				<p>19 August 2019</p>
+  			<p><p>JMX (Java Management Extensions ) - is a technology that provide us possibility to monitoring applications (application servers) by <strong>MBeans (Managed Bean)</strong> objects.<br />
+List of supported MBeans can be obtained by <strong>JConsole</strong> tool that already included to JDK. As JMX does not provide strong defined communication protocol, - implementations can be different depends on vendor.<br />
+For example, to connect to Wildfly Application Server you need to use included in distribution <code>jconsole.sh</code> script:</p>
+<pre><code class="language-java">&lt;WFLY_HOME&gt;/bin/jconsole.sh
+</code></pre>
+<p>or add <code>&lt;WFLY_HOME&gt;/bin/client/jboss-client.jar</code> to classpath:</p>
+<pre><code class="language-java">jconsole J-Djava.class.path=$JAVA_HOME\lib\tools.jar;$JAVA_HOME\lib\jconsole.jar;jboss-client.jar
+</code></pre>
+<p>By default, Wildfly uses <code>timeout = 60s</code> for <strong>remote JMX connections</strong>, after that connection will terminated:<br />
+<img src="/img/2019-08-jmx-jconsole.png" alt="jconsole terminated connection" /><br />
+To change default timeout value, use <code>org.jboss.remoting-jmx.timeout</code> property:</p>
+<pre><code class="language-java">./jconsole.sh -J-Dorg.jboss.remoting-jmx.timeout=300
+</code></pre>
+<p>But increasing timeouts, is not always good solution. So, lets search for the reason of slowness. To construct list of MBeans, jconsole recursively requests ALL MBeans, that can be extremely slow in case many deployments and many loggers. (Reported issue: <a href="https://issues.jboss.org/browse/WFCORE-3186">WFCORE-3186</a>). Partial solution here is reducing count of log files by changing rotating type from <code>periodic-size-rotating-file-handler</code>  to <code>size-rotating-file-handler</code>.</p>
+<p>Other reason of extremely slowness can be <code>Batch subsystem (JBeret)</code>. Last one stores a lot of working information in their tables (in memory or on remote DB, depends on configuration). If this tables big enough - it can negative affect performance of server. So, if you, no need for this data then just cleanup this stuff periodically. (for example, every redeploy in case you do it often enough):</p>
+<pre><code class="language-java">TRUNCATE TABLE PARTITION_EXECUTION CASCADE;
+TRUNCATE TABLE STEP_EXECUTION CASCADE;
+TRUNCATE TABLE JOB_EXECUTION CASCADE;
+TRUNCATE TABLE JOB_INSTANCE CASCADE;  
+</code></pre>
+<p>From other point of view, obtaining ALL MBeans is not good decision as well. So, just use tooling that allows to find MBeans by path.</p>
+</p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/08/ee-application-multi-module-template.html"><h1>Jakarta EE application multi module gradle template</h1></a>
 				<p>08 August 2019</p>
   			<p><p>In this post i will share simple and useful <strong>gradle</strong> template to organize multi module Jakarta EE application. We will implement typical one which consists from REST controller (<strong>module1</strong>) and some main logic (<strong>module2</strong>). Big picture of our application architecture is:</p>
@@ -263,15 +289,6 @@ Below is example, how to change default based on CPU balancing to balancing base
 <p>If predefined types is not enough, - you can provide <code>custom-load-metric</code> by implementing <code>org.jboss.modcluster.load.metric.impl.AbstractLoadMetric</code>. To possibility of using your custom metric,- you need to copy packaged JAR to <code>modcluster</code> module and update <code>module.xml</code>. Now you can use your custom metric with your configuration like</p>
 <pre><code class="language-java"> &lt;custom-load-metric class=&quot;org.kostenko.examples.wldfly.modcluster.MyBalancingMetric&quot;&gt;  
 </code></pre>
-</p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html"><h1>Embedded Jetty server truncates responses</h1></a>
-				<p>06 August 2019</p>
-  			<p><p>Jetty server has lot of configuration options. One of them is <code>OutputBufferSize</code></p>
-<pre><code class="language-java">HttpConfiguration httpConfig = new HttpConfiguration();
-httpConfig.setOutputBufferSize(1024);
-</code></pre>
-<p>If this property set to value less than your respopnse - jetty just will truncate last one.</p>
 </p>
 				<hr/>
 

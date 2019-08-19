@@ -6,9 +6,39 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Fri, 9 Aug 2019 18:45:32 +0300</pubDate>
-    <lastBuildDate>Fri, 9 Aug 2019 18:45:32 +0300</lastBuildDate>
+    <pubDate>Mon, 19 Aug 2019 10:34:12 +0300</pubDate>
+    <lastBuildDate>Mon, 19 Aug 2019 10:34:12 +0300</lastBuildDate>
 
+    <item>
+      <title>Wildfly JMX connection problems (so slow and terminates)</title>
+      <link>https://kostenko.org/blog/2019/08/wildfly-jconsole-mbeans-list-problem.html</link>
+      <pubDate>Mon, 19 Aug 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/08/wildfly-jconsole-mbeans-list-problem.html</guid>
+      	<description>
+	&lt;p&gt;JMX (Java Management Extensions ) - is a technology that provide us possibility to monitoring applications (application servers) by &lt;strong&gt;MBeans (Managed Bean)&lt;/strong&gt; objects.&lt;br /&gt;
+List of supported MBeans can be obtained by &lt;strong&gt;JConsole&lt;/strong&gt; tool that already included to JDK. As JMX does not provide strong defined communication protocol, - implementations can be different depends on vendor.&lt;br /&gt;
+For example, to connect to Wildfly Application Server you need to use included in distribution &lt;code&gt;jconsole.sh&lt;/code&gt; script:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;&amp;lt;WFLY_HOME&amp;gt;/bin/jconsole.sh
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;or add &lt;code&gt;&amp;lt;WFLY_HOME&amp;gt;/bin/client/jboss-client.jar&lt;/code&gt; to classpath:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;jconsole J-Djava.class.path=$JAVA_HOME\lib\tools.jar;$JAVA_HOME\lib\jconsole.jar;jboss-client.jar
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;By default, Wildfly uses &lt;code&gt;timeout = 60s&lt;/code&gt; for &lt;strong&gt;remote JMX connections&lt;/strong&gt;, after that connection will terminated:&lt;br /&gt;
+&lt;img src=&quot;/img/2019-08-jmx-jconsole.png&quot; alt=&quot;jconsole terminated connection&quot; /&gt;&lt;br /&gt;
+To change default timeout value, use &lt;code&gt;org.jboss.remoting-jmx.timeout&lt;/code&gt; property:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;./jconsole.sh -J-Dorg.jboss.remoting-jmx.timeout=300
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;But increasing timeouts, is not always good solution. So, lets search for the reason of slowness. To construct list of MBeans, jconsole recursively requests ALL MBeans, that can be extremely slow in case many deployments and many loggers. (Reported issue: &lt;a href=&quot;https://issues.jboss.org/browse/WFCORE-3186&quot;&gt;WFCORE-3186&lt;/a&gt;). Partial solution here is reducing count of log files by changing rotating type from &lt;code&gt;periodic-size-rotating-file-handler&lt;/code&gt;  to &lt;code&gt;size-rotating-file-handler&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Other reason of extremely slowness can be &lt;code&gt;Batch subsystem (JBeret)&lt;/code&gt;. Last one stores a lot of working information in their tables (in memory or on remote DB, depends on configuration). If this tables big enough - it can negative affect performance of server. So, if you, no need for this data then just cleanup this stuff periodically. (for example, every redeploy in case you do it often enough):&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;TRUNCATE TABLE PARTITION_EXECUTION CASCADE;
+TRUNCATE TABLE STEP_EXECUTION CASCADE;
+TRUNCATE TABLE JOB_EXECUTION CASCADE;
+TRUNCATE TABLE JOB_INSTANCE CASCADE;  
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;From other point of view, obtaining ALL MBeans is not good decision as well. So, just use tooling that allows to find MBeans by path.&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Jakarta EE application multi module gradle template</title>
       <link>https://kostenko.org/blog/2019/08/ee-application-multi-module-template.html</link>
@@ -167,20 +197,6 @@ public class TestServiceImpl implements TestService {
 	</description>
     </item>
     <item>
-      <title>Embedded Jetty server truncates responses</title>
-      <link>https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html</link>
-      <pubDate>Tue, 6 Aug 2019 00:00:00 +0300</pubDate>
-      <guid isPermaLink="false">blog/2019/08/embedded-jetty-server-cut-responses.html</guid>
-      	<description>
-	&lt;p&gt;Jetty server has lot of configuration options. One of them is &lt;code&gt;OutputBufferSize&lt;/code&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;HttpConfiguration httpConfig = new HttpConfiguration();
-httpConfig.setOutputBufferSize(1024);
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;If this property set to value less than your respopnse - jetty just will truncate last one.&lt;/p&gt;
-
-	</description>
-    </item>
-    <item>
       <title>Wildfly. Configure load balancing metrics</title>
       <link>https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html</link>
       <pubDate>Tue, 6 Aug 2019 00:00:00 +0300</pubDate>
@@ -208,6 +224,20 @@ Below is example, how to change default based on CPU balancing to balancing base
 &lt;p&gt;If predefined types is not enough, - you can provide &lt;code&gt;custom-load-metric&lt;/code&gt; by implementing &lt;code&gt;org.jboss.modcluster.load.metric.impl.AbstractLoadMetric&lt;/code&gt;. To possibility of using your custom metric,- you need to copy packaged JAR to &lt;code&gt;modcluster&lt;/code&gt; module and update &lt;code&gt;module.xml&lt;/code&gt;. Now you can use your custom metric with your configuration like&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt; &amp;lt;custom-load-metric class=&amp;quot;org.kostenko.examples.wldfly.modcluster.MyBalancingMetric&amp;quot;&amp;gt;  
 &lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>Embedded Jetty server truncates responses</title>
+      <link>https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html</link>
+      <pubDate>Tue, 6 Aug 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/08/embedded-jetty-server-cut-responses.html</guid>
+      	<description>
+	&lt;p&gt;Jetty server has lot of configuration options. One of them is &lt;code&gt;OutputBufferSize&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;HttpConfiguration httpConfig = new HttpConfiguration();
+httpConfig.setOutputBufferSize(1024);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;If this property set to value less than your respopnse - jetty just will truncate last one.&lt;/p&gt;
 
 	</description>
     </item>

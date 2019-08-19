@@ -64,6 +64,7 @@
 										<li><a href="../tags/Gradle.html">Gradle</a></li>
 										<li><a href="../tags/API.html">API</a></li>
 										<li><a href="../tags/JPA.html">JPA</a></li>
+										<li><a href="../tags/JMX.html">JMX</a></li>
 										<li><a href="../tags/Jakarta EE.html">Jakarta EE</a></li>
 										<li><a href="../tags/Linux.html">Linux</a></li>
 										<li><a href="../tags/JBake.html">JBake</a></li>
@@ -92,6 +93,15 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html"><h1>Embedded Jetty server truncates responses</h1></a>
+				<p>06 August 2019</p>
+  			<p><p>Jetty server has lot of configuration options. One of them is <code>OutputBufferSize</code></p>
+<pre><code class="language-java">HttpConfiguration httpConfig = new HttpConfiguration();
+httpConfig.setOutputBufferSize(1024);
+</code></pre>
+<p>If this property set to value less than your respopnse - jetty just will truncate last one.</p>
+</p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/08/WFLYEJB0054.html"><h1>WFLYEJB0054: Failed to marshal EJB parameters</h1></a>
 				<p>05 August 2019</p>
   			<p><p>Usually error <code>WFLYEJB0054: Failed to marshal EJB parameters</code> can be throw by next reason:</p>
@@ -205,30 +215,6 @@ CoreMessage[messageID=1505,durable=true,userID=3d27afde-a9fa-11e9-af5d-0242e352e
 <p><strong>3. <a href="https://plugins.jenkins.io/htmlpublisher">HTML Publisher Plugin</a></strong> - publish the html reports that your build generates to the job and build pages;</p>
 </blockquote>
 <p><img src="/img/2019-07-jenkins-html-report-plugin.png" alt="Git Parameter Plugin" /></p>
-</p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2019/06/wildfly-activemq-deadlock.html"><h1>Wildfly active-mq subsystem deadlock</h1></a>
-				<p>29 June 2019</p>
-  			<p><p>Recently got unusual height CPU utilizaton on random wildly cluster instance. Thread dump shows the reason of a problem:</p>
-<pre><code class="language-java">Found one Java-level deadlock:
-=============================
-
-&quot;Thread-1 (ActiveMQ-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$2@46fcd20a-1114701218)&quot;:
-  waiting to lock Monitor@0x00007f45f02e20f8 (Object@0x0000000603407950, a org/apache/activemq/artemis/core/server/cluster/impl/ClusterConnectionImpl$MessageFlowRecordImpl),
-  which is held by &quot;Thread-29 (ActiveMQ-client-global-threads-2129186403)&quot;
-&quot;Thread-29 (ActiveMQ-client-global-threads-2129186403)&quot;:
-  waiting to lock Monitor@0x00007f46203b5518 (Object@0x00000004cc79a7b8, a org/apache/activemq/artemis/core/server/impl/QueueImpl),
-  which is held by &quot;Thread-1 (ActiveMQ-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$2@46fcd20a-1114701218)&quot;
-
-Found a total of 1 deadlock.
-</code></pre>
-<p>Below is part of official documentation:</p>
-<blockquote>
-<p>&quot;If thread-pool-max-size is set to a positive integer greater than zero, the thread pool is bounded. If requests come in and there are no free threads available in the pool, requests will block until a thread becomes available. It is recommended that a bounded thread pool be used with caution since it can lead to <strong>deadlock situations</strong> if the upper bound is configured too low.&quot;</p>
-</blockquote>
-<p>So, solution is:</p>
-<pre><code class="language-java">/subsystem=messaging-activemq/server=default:write-attribute(name=thread-pool-max-size,value=-1)
-</code></pre>
 </p>
 				<hr/>
 

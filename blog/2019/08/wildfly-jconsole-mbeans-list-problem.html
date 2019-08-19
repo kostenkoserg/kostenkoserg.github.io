@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>How to catch &apos;kill&apos; signals in java</title>
+    <title>Wildfly JMX connection problems (so slow and terminates)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -94,59 +94,32 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>How to catch &apos;kill&apos; signals in java</h1>
+		<h1>Wildfly JMX connection problems (so slow and terminates)</h1>
 	</div>
 
-	<p><em>07 August 2019</em></p>
+	<p><em>19 August 2019</em></p>
 
-	<p><p>You can send different signals to your application using <strong>kill -l</strong> command. By default <strong>kill</strong> will sent <code>TERM</code> signal. Java by default catches some types of signals, for example</p>
-<pre><code class="language-java">kill -3 &lt;PID&gt;
+	<p><p>JMX (Java Management Extensions ) - is a technology that provide us possibility to monitoring applications (application servers) by <strong>MBeans (Managed Bean)</strong> objects.<br />
+List of supported MBeans can be obtained by <strong>JConsole</strong> tool that already included to JDK. As JMX does not provide strong defined communication protocol, - implementations can be different depends on vendor.<br />
+For example, to connect to Wildfly Application Server you need to use included in distribution <code>jconsole.sh</code> script:</p>
+<pre><code class="language-java">&lt;WFLY_HOME&gt;/bin/jconsole.sh
 </code></pre>
-<p>will dump Java stack traces to the standard error stream.</p>
-<p>Also, you can catch <code>signal</code> inside your application, like</p>
-<pre><code class="language-java">public class App {
-    public static void main(String... s) throws Exception {
-
-        Signal.handle(new Signal(&quot;HUP&quot;), signal -&gt; {
-            System.out.println(signal.getName() + &quot; (&quot; + signal.getNumber() + &quot;)&quot;);
-        });
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    try {
-                        Thread.sleep(1000l);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }).start();
-    }
-}
+<p>or add <code>&lt;WFLY_HOME&gt;/bin/client/jboss-client.jar</code> to classpath:</p>
+<pre><code class="language-java">jconsole J-Djava.class.path=$JAVA_HOME\lib\tools.jar;$JAVA_HOME\lib\jconsole.jar;jboss-client.jar
 </code></pre>
-<p>List of available signals you can get by executing <code>kill -l</code>:</p>
-<pre><code class="language-java">kostenko@kostenko:~$ kill -l
- 1) SIGHUP	 2) SIGINT	 3) SIGQUIT	 4) SIGILL	 5) SIGTRAP
- 6) SIGABRT	 7) SIGBUS	 8) SIGFPE	 9) SIGKILL	10) SIGUSR1
-11) SIGSEGV	12) SIGUSR2	13) SIGPIPE	14) SIGALRM	15) SIGTERM
-16) SIGSTKFLT	17) SIGCHLD	18) SIGCONT	19) SIGSTOP	20) SIGTSTP
-21) SIGTTIN	22) SIGTTOU	23) SIGURG	24) SIGXCPU	25) SIGXFSZ
-26) SIGVTALRM	27) SIGPROF	28) SIGWINCH	29) SIGIO	30) SIGPWR
-31) SIGSYS	34) SIGRTMIN	35) SIGRTMIN+1	36) SIGRTMIN+2	37) SIGRTMIN+3
-38) SIGRTMIN+4	39) SIGRTMIN+5	40) SIGRTMIN+6	41) SIGRTMIN+7	42) SIGRTMIN+8
-43) SIGRTMIN+9	44) SIGRTMIN+10	45) SIGRTMIN+11	46) SIGRTMIN+12	47) SIGRTMIN+13
-48) SIGRTMIN+14	49) SIGRTMIN+15	50) SIGRTMAX-14	51) SIGRTMAX-13	52) SIGRTMAX-12
-53) SIGRTMAX-11	54) SIGRTMAX-10	55) SIGRTMAX-9	56) SIGRTMAX-8	57) SIGRTMAX-7
-58) SIGRTMAX-6	59) SIGRTMAX-5	60) SIGRTMAX-4	61) SIGRTMAX-3	62) SIGRTMAX-2
-63) SIGRTMAX-1	64) SIGRTMAX
+<p>By default, Wildfly uses <code>timeout = 60s</code> for <strong>remote JMX connections</strong>, after that connection will terminated:<br />
+<img src="/img/2019-08-jmx-jconsole.png" alt="jconsole terminated connection" /><br />
+To change default timeout value, use <code>org.jboss.remoting-jmx.timeout</code> property:</p>
+<pre><code class="language-java">./jconsole.sh -J-Dorg.jboss.remoting-jmx.timeout=300
 </code></pre>
-<p>Notice! Not all signals can be catched in application, some of them reserved by OS. For example, if you will try to handle <strong>kill -SIGKILL (kill -9)</strong> , then you get:</p>
-<pre><code class="language-java">Exception in thread &quot;main&quot; java.lang.IllegalArgumentException: Signal already used by VM or OS: SIGKILL
-	at java.base/jdk.internal.misc.Signal.handle(Signal.java:173)
-	at jdk.unsupported/sun.misc.Signal.handle(Signal.java:157)
+<p>But increasing timeouts, is not always good solution. So, lets search for the reason of slowness. To construct list of MBeans, jconsole recursively requests ALL MBeans, that can be extremely slow in case many deployments and many loggers. (Reported issue: <a href="https://issues.jboss.org/browse/WFCORE-3186">WFCORE-3186</a>). Partial solution here is reducing count of log files by changing rotating type from <code>periodic-size-rotating-file-handler</code>  to <code>size-rotating-file-handler</code>.</p>
+<p>Other reason of extremely slowness can be <code>Batch subsystem (JBeret)</code>. Last one stores a lot of working information in their tables (in memory or on remote DB, depends on configuration). If this tables big enough - it can negative affect performance of server. So, if you, no need for this data then just cleanup this stuff periodically. (for example, every redeploy in case you do it often enough):</p>
+<pre><code class="language-java">TRUNCATE TABLE PARTITION_EXECUTION CASCADE;
+TRUNCATE TABLE STEP_EXECUTION CASCADE;
+TRUNCATE TABLE JOB_EXECUTION CASCADE;
+TRUNCATE TABLE JOB_INSTANCE CASCADE;  
 </code></pre>
+<p>From other point of view, obtaining ALL MBeans is not good decision as well. So, just use tooling that allows to find MBeans by path.</p>
 </p>
 
 	<hr />
@@ -157,8 +130,8 @@
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/08/java-catch-os-signals.html';
-	this.page.identifier = 'blog/2019/08/java-catch-os-signals.html';
+	this.page.url = 'https://kostenko.org/blog/2019/08/wildfly-jconsole-mbeans-list-problem.html';
+	this.page.identifier = 'blog/2019/08/wildfly-jconsole-mbeans-list-problem.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE
