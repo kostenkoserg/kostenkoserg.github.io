@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Первая запись в блоге</title>
+    <title>Как споймать &apos;убитые&apos; сигналы в Java</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -92,14 +92,59 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Первая запись в блоге</h1>
+		<h1>Как споймать &apos;убитые&apos; сигналы в Java</h1>
 	</div>
 
-	<p><em>17 января 2019</em></p>
+	<p><em>07 августа 2019</em></p>
 
-	<p><p>Мысли о собственном блоге посещали меня уже давно и достаточно регулярно, но в силу различных причин реализация задуманного откладывалась. Среди причин было и желание реализовать собственный движок для блогов (зачем-то), и поиск подходящих стилей (ведь так важно), и знакомство со специализированными решениями: wordpress, wix, blogger и другими...</p>
-<p>В итоге, в качестве платформы был выбран <a href="https://pages.github.com/">pages.github.io</a> с его генератором статического контента <a href="https://jekyllrb.com/">Jekyll</a>. Последнее показалось мне самым сбалансированным решеним: понятно, бесплантно,  быстро, надежно. Да и найти лучшее место для технического блога сегодня, наверное, трудно. По мере знакомства с  предметной областью, мне попалась java-альтернатиа  Jekyll (рубби) в лице проекта <a href="https://jbake.org/">JBake</a>, что как java-разработчику мне показалось ближе.</p>
-<p>Ну что ж, решение принято, стек выбран, - вперёд!</p>
+	<p><p>Вы можете отправлять разные сигналы в ваше приложение, используя команду <strong>kill -l</strong>. По умолчанию <strong>kill</strong> будет отправлять сигнао <code>TERM</code>. Java по умолчанию ловит несколько типов сигналов, например</p>
+<pre><code class="language-java">kill -3 &lt;PID&gt;
+</code></pre>
+<p>будет дампать трассировку стека Java к стандартным ошибкам</p>
+<p>Кроме того, вы можете поймать <code>сигнал</code> внутри вашего приложения, как</p>
+<pre><code class="language-java">public class App {
+    public static void main(String... s) throws Exception {
+
+        Signal.handle(new Signal(&quot;HUP&quot;), signal -&gt; {
+            System.out.println(signal.getName() + &quot; (&quot; + signal.getNumber() + &quot;)&quot;);
+        });
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        Thread.sleep(1000l);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
+}
+</code></pre>
+<p>Список доступных сигналов, которые вы можете получить, выполнив команду <code>kill -l</code>:</p>
+<pre><code class="language-java">kostenko@kostenko:~$ kill -l
+ 1) SIGHUP	 2) SIGINT	 3) SIGQUIT	 4) SIGILL	 5) SIGTRAP
+ 6) SIGABRT	 7) SIGBUS	 8) SIGFPE	 9) SIGKILL	10) SIGUSR1
+11) SIGSEGV	12) SIGUSR2	13) SIGPIPE	14) SIGALRM	15) SIGTERM
+16) SIGSTKFLT	17) SIGCHLD	18) SIGCONT	19) SIGSTOP	20) SIGTSTP
+21) SIGTTIN	22) SIGTTOU	23) SIGURG	24) SIGXCPU	25) SIGXFSZ
+26) SIGVTALRM	27) SIGPROF	28) SIGWINCH	29) SIGIO	30) SIGPWR
+31) SIGSYS	34) SIGRTMIN	35) SIGRTMIN+1	36) SIGRTMIN+2	37) SIGRTMIN+3
+38) SIGRTMIN+4	39) SIGRTMIN+5	40) SIGRTMIN+6	41) SIGRTMIN+7	42) SIGRTMIN+8
+43) SIGRTMIN+9	44) SIGRTMIN+10	45) SIGRTMIN+11	46) SIGRTMIN+12	47) SIGRTMIN+13
+48) SIGRTMIN+14	49) SIGRTMIN+15	50) SIGRTMAX-14	51) SIGRTMAX-13	52) SIGRTMAX-12
+53) SIGRTMAX-11	54) SIGRTMAX-10	55) SIGRTMAX-9	56) SIGRTMAX-8	57) SIGRTMAX-7
+58) SIGRTMAX-6	59) SIGRTMAX-5	60) SIGRTMAX-4	61) SIGRTMAX-3	62) SIGRTMAX-2
+63) SIGRTMAX-1	64) SIGRTMAX
+</code></pre>
+<p>Обратите внимание! Не все сигналы могут быть перехвачены в приложении, некоторые из них зарезервированы в ОС. Например, если вы попытается обратать  <strong>kill -SIGKILL (kill -9)</strong>, то вы получите:</p>
+<pre><code class="language-java">Exception in thread &quot;main&quot; java.lang.IllegalArgumentException: Signal already used by VM or OS: SIGKILL
+	at java.base/jdk.internal.misc.Signal.handle(Signal.java:173)
+	at jdk.unsupported/sun.misc.Signal.handle(Signal.java:157)
+</code></pre>
 </p>
 
 	<hr />
@@ -110,8 +155,8 @@
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/01/start-blogging.html';
-	this.page.identifier = 'blog/2019/01/start-blogging.html';
+	this.page.url = 'https://kostenko.org/blog/2019/08/java-catch-os-signals.html';
+	this.page.identifier = 'blog/2019/08/java-catch-os-signals.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE

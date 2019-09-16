@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Первая запись в блоге</title>
+    <title>Как использовать пользовательский ClassLoader для загрузки JAR-файлов во время выполнения</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -92,14 +92,44 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Первая запись в блоге</h1>
+		<h1>Как использовать пользовательский ClassLoader для загрузки JAR-файлов во время выполнения</h1>
 	</div>
 
-	<p><em>17 января 2019</em></p>
+	<p><em>28 июня 2019</em></p>
 
-	<p><p>Мысли о собственном блоге посещали меня уже давно и достаточно регулярно, но в силу различных причин реализация задуманного откладывалась. Среди причин было и желание реализовать собственный движок для блогов (зачем-то), и поиск подходящих стилей (ведь так важно), и знакомство со специализированными решениями: wordpress, wix, blogger и другими...</p>
-<p>В итоге, в качестве платформы был выбран <a href="https://pages.github.com/">pages.github.io</a> с его генератором статического контента <a href="https://jekyllrb.com/">Jekyll</a>. Последнее показалось мне самым сбалансированным решеним: понятно, бесплантно,  быстро, надежно. Да и найти лучшее место для технического блога сегодня, наверное, трудно. По мере знакомства с  предметной областью, мне попалась java-альтернатиа  Jekyll (рубби) в лице проекта <a href="https://jbake.org/">JBake</a>, что как java-разработчику мне показалось ближе.</p>
-<p>Ну что ж, решение принято, стек выбран, - вперёд!</p>
+	<p><p>Для загрузки классов во время выполнения java используют механизм ClassLoader, который основан на нескольких основных принципах:</p>
+<ul>
+<li><strong>делегирование</strong> - по умолчанию используют <code>parent-first delegation</code>, - наследник ClassLoader будет использоваться, если родитель не может найти или загрузить класс. Это поведение можно изменить на <code>child-first</code>, переписав <code>ClassLoader.loadClass(...)</code>;</li>
+<li><strong>видимость</strong> - наследник ClassLoader может видеть все классы, загруженные родителем, но наоборот не может;</li>
+<li><strong>уникальность</strong> - позволяет загрузить класс только один раз, что в основном достигается делегированием и гарантирует, что наследник ClassLoader не перезагрузит класс, уже загруженного родителя;</li>
+</ul>
+<p>Основные сценарии использования пользовательского ClassLoader:</p>
+<ul>
+<li><strong>Инструментарий класса</strong> - изменение классов во время выполнения. Например, для модульного тестирование, отладки или мониторинга;</li>
+<li><strong>Изоляция выполнения</strong> - изолировать несколько сред выполнения в одном процессе, делая видимыми только подмножество классов для конкретного потока, как это делается в средах EE;</li>
+</ul>
+<p>Итак, давайте посмотрим, как выглядит использование пользовательского ClassLoader с точки зрения исходного кода:</p>
+<pre><code class="language-java">List&lt;File&gt; jars = Arrays.asList(new File(&quot;/tmp/jars&quot;).listFiles());
+URL[] urls = new URL[files.size()];
+for (int i = 0; i &lt; jars.size(); i++) {
+    try {
+        urls[i] = jars.get(i).toURI().toURL();
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+URLClassLoader childClassLoader = new URLClassLoader(urls, ClassLoader.getSystemClassLoader());
+</code></pre>
+<p>Затем загрузите класс с пользовательским ClassLoader:</p>
+<pre><code class="language-java">Class.forName(&quot;org.kostenko.examples.core.classloader.ClassLoaderTest&quot;, true , childClassLoader);
+</code></pre>
+<p>Обратите внимение! Если ваши загруженные библеотеки используют некоторые ресурсы, такие как свойства или что-то ещё, вам нужно продоставить загрузчик класса котекста:</p>
+<pre><code class="language-java">Thread.currentThread().setContextClassLoader(childClassLoader);  
+</code></pre>
+<p>Кроме того, вы можете использовать пользовательские ClassLoaders для загрузки служб с помощью Java Service Provider Interface(SPI)</p>
+<pre><code class="language-java">ServiceLoader&lt;MyProvider&gt; serviceLoader = ServiceLoader.load(MyProvider.class, childClassLoader);
+...
+</code></pre>
 </p>
 
 	<hr />
@@ -110,8 +140,8 @@
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/01/start-blogging.html';
-	this.page.identifier = 'blog/2019/01/start-blogging.html';
+	this.page.url = 'https://kostenko.org/blog/2019/06/runtime-class-loading.html';
+	this.page.identifier = 'blog/2019/06/runtime-class-loading.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE

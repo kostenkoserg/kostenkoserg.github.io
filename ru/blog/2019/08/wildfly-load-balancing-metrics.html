@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Первая запись в блоге</title>
+    <title>Wildfly. Настройка показателей балансировки нагрузки</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -92,14 +92,33 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Первая запись в блоге</h1>
+		<h1>Wildfly. Настройка показателей балансировки нагрузки</h1>
 	</div>
 
-	<p><em>17 января 2019</em></p>
+	<p><em>06 августа 2019</em></p>
 
-	<p><p>Мысли о собственном блоге посещали меня уже давно и достаточно регулярно, но в силу различных причин реализация задуманного откладывалась. Среди причин было и желание реализовать собственный движок для блогов (зачем-то), и поиск подходящих стилей (ведь так важно), и знакомство со специализированными решениями: wordpress, wix, blogger и другими...</p>
-<p>В итоге, в качестве платформы был выбран <a href="https://pages.github.com/">pages.github.io</a> с его генератором статического контента <a href="https://jekyllrb.com/">Jekyll</a>. Последнее показалось мне самым сбалансированным решеним: понятно, бесплантно,  быстро, надежно. Да и найти лучшее место для технического блога сегодня, наверное, трудно. По мере знакомства с  предметной областью, мне попалась java-альтернатиа  Jekyll (рубби) в лице проекта <a href="https://jbake.org/">JBake</a>, что как java-разработчику мне показалось ближе.</p>
-<p>Ну что ж, решение принято, стек выбран, - вперёд!</p>
+	<p><p>Ранее я писал о <a href="https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html">Кластер доменного режима Wildfly и балансировка нагрузки из коробки</a>. Но что, если мы хотим выполнить балансировку зависящей от конкретного поведения сервера?</p>
+<p>Подсистема Wildfly <code>mod_cluster</code> предоставляет нам несколько предопределенных типов показателей для определения наилучшей балансировки запросов:</p>
+<ul>
+<li><strong>cpu</strong>: на основе загрузки процессора</li>
+<li><strong>mem</strong>: основано на использовании системной памяти</li>
+<li><strong>heap</strong>: на основе использования кучи</li>
+<li><strong>sessions</strong>: на основе количества веб-сессий</li>
+<li><strong>requests</strong>: на основе количества запросов / сек</li>
+<li><strong>send-traffic</strong>: based on outgoing requests traffic</li>
+<li><strong>receive-traffic</strong>: на основе трафика исходящих POST запросов</li>
+<li><strong>busyness</strong>: вычисляет на основе количества потоков из использования пула потоков, которые заняты обслуживанием запросов</li>
+<li><strong>connection-pool</strong>: на основе соединений JCA</li>
+</ul>
+<p>Также вы можете настроить <strong>weight</strong> (влияние метрики на другие метрики) и свойства <strong>capacity</strong> ;<br />
+Ниже приведен пример того, как изменить значение по умолчанию на основе балансировки ЦП на балансировку на основе busyness + ЦП:</p>
+<pre><code class="language-java">/subsystem=modcluster/mod-cluster-config=configuration/dynamic-load-provider=configuration/load-metric=cpu:remove()
+/subsystem=modcluster/mod-cluster-config=configuration:add-metric(type=busyness,weight=2)
+/subsystem=modcluster/mod-cluster-config=configuration:add-metric(type=cpu,weight=1)
+</code></pre>
+<p>Если этих предопределенных типов недостаточно, вы можете обеспечить <code>custom-load-metric</code>, реализовав <code>org.jboss.modcluster.load.metric.impl.AbstractLoadMetric</code>. Для возможности использования вашей пользовательской метрики,- вам необходимо скопировать упакованный JAR-файл в модуль <code>modcluster</code> и обновить<code>module.xml</code>. Теперь вы можете использовать свою собственную метрику с вашей конфигурацией, как:</p>
+<pre><code class="language-java"> &lt;custom-load-metric class=&quot;org.kostenko.examples.wldfly.modcluster.MyBalancingMetric&quot;&gt;  
+</code></pre>
 </p>
 
 	<hr />
@@ -110,8 +129,8 @@
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/01/start-blogging.html';
-	this.page.identifier = 'blog/2019/01/start-blogging.html';
+	this.page.url = 'https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html';
+	this.page.identifier = 'blog/2019/08/wildfly-load-balancing-metrics.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE

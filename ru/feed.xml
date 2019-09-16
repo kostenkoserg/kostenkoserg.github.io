@@ -6,9 +6,543 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Пн, 19 авг 2019 10:34:18 +0300</pubDate>
-    <lastBuildDate>Пн, 19 авг 2019 10:34:18 +0300</lastBuildDate>
+    <pubDate>Пн, 16 сен 2019 11:29:08 +0300</pubDate>
+    <lastBuildDate>Пн, 16 сен 2019 11:29:08 +0300</lastBuildDate>
 
+    <item>
+      <title>Проблемы с подключением JMX Wildfly (очень медленно и прекращается)</title>
+      <link>https://kostenko.org/blog/2019/08/wildfly-jconsole-mbeans-list-problem.html</link>
+      <pubDate>Пн, 19 авг 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/08/wildfly-jconsole-mbeans-list-problem.html</guid>
+      	<description>
+	&lt;p&gt;JMX (Java Management Extensions ) - это технология, которая предоставляет нам возможность мониторинга приложеий (серверов приложения) с помощью &lt;strong&gt;MBeans (Managed Bean)&lt;/strong&gt; объектов.&lt;br /&gt;
+Список поддерживаемых MBeans можно получить с помощью инструмента &lt;strong&gt;JConsole&lt;/strong&gt;, который уже включен в JDK. Поскольку JMX не обеспечивает строго определенный протокол коммуникации - реализация может отличаться в зависимости от производителя.&lt;br /&gt;
+Например, для подключения к серверу приложений Wildfly вам необходимо использовать включенный в дистрибутиву скрипт &lt;code&gt;jconsole.sh&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;&amp;lt;WFLY_HOME&amp;gt;/bin/jconsole.sh
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;или добавить &lt;code&gt;&amp;lt;WFLY_HOME&amp;gt;/bin/client/jboss-client.jar&lt;/code&gt; в classpath:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;jconsole J-Djava.class.path=$JAVA_HOME\lib\tools.jar;$JAVA_HOME\lib\jconsole.jar;jboss-client.jar
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;По умолчанию Wildfly использует &lt;code&gt;timeout = 60s&lt;/code&gt; для &lt;strong&gt;удаленных JMX-соединений&lt;/strong&gt;, после того как это соединение будет разорвано:&lt;br /&gt;
+&lt;img src=&quot;/img/2019-08-jmx-jconsole.png&quot; alt=&quot;jconsole terminated connection&quot; /&gt;&lt;br /&gt;
+Чтобы изменить значение timeout, используйте свойство &lt;code&gt;org.jboss.remoting-jmx.timeout&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;./jconsole.sh -J-Dorg.jboss.remoting-jmx.timeout=300
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Но увеличение таймаутов не всегда является хорошим решением.&lt;br /&gt;
+Итак, давайте искать причину медленной работы. Чтобы создать список MBeans, jconsole  рекурсивно запрашивает ВСЕ MBean, что может быть очень медленным в случае большого количества развертываний и большого количества логгеров. (Reported issue: &lt;a href=&quot;https://issues.jboss.org/browse/WFCORE-3186&quot;&gt;WFCORE-3186&lt;/a&gt;). Частичное решение заключается в уменьшении количества логов файлов путем измениния rotating типа из &lt;code&gt;periodic-size-rotating-file-handler&lt;/code&gt; на &lt;code&gt;size-rotating-file-handler&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Другой причиной крайне медленной работы может быть&lt;code&gt;Batch subsystem (JBeret)&lt;/code&gt;. Он хранит много рабочей информации в своих таблицах (в памяти или на удаленной БД, зависит от конфигурации). Если эти таблицы достаточно большие - это может негативно сказаться на производительность сервера.&lt;br /&gt;
+Так что, если вам не нужны эти данные, просто периодически очищайте их (например, каждое повторное развертывание, если вы делаете это достаточно часто):&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;TRUNCATE TABLE PARTITION_EXECUTION CASCADE;
+TRUNCATE TABLE STEP_EXECUTION CASCADE;
+TRUNCATE TABLE JOB_EXECUTION CASCADE;
+TRUNCATE TABLE JOB_INSTANCE CASCADE;  
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;С другой точки зрения, получений ВСЕХ MBeans не самое хорошое решение. Поэтому, просто используйте инструменты, которые позволят вам найти MBeans по пути.&lt;/p&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>Jakarta EE мультимодульный шаблон приложения</title>
+      <link>https://kostenko.org/blog/2019/08/ee-application-multi-module-template.html</link>
+      <pubDate>Чт, 8 авг 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/08/ee-application-multi-module-template.html</guid>
+      	<description>
+	&lt;p&gt;В этом посту я поделюсь простым и полезным &lt;strong&gt;gradle&lt;/strong&gt; шаблоном для создания мультимодульного Jakarta EE приложения. Мы реализуем один из типичных, который состоит из REST контроллера (&lt;strong&gt;module1&lt;/strong&gt;) и некоторой основной логики (&lt;strong&gt;module2&lt;/strong&gt;). Общая картина архитектуры нашего приложения выглядит вот так:&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/img/2019-08-ee-multimodule-template-arch.png&quot; alt=&quot;EE multi module application&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;Итак, давайте сделаем инициализацию проекта с помощью следующего gradle шаблона:&lt;br /&gt;
+&lt;code&gt;settings.gradle:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;rootProject.name = &apos;ee-application-multi-module-gradle-template&apos;
+include &apos;module1&apos;
+include &apos;module2:module2-api&apos;, &apos;module2:module2-core&apos;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;root build.gradle:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;defaultTasks &apos;clean&apos;, &apos;build&apos;
+subprojects {
+    ext.libraryVersions = [
+        javaee                  : &apos;8.0&apos;,
+    ]
+    defaultTasks &apos;clean&apos;, &apos;build&apos;
+    repositories {
+        jcenter()
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Выше, мы описали начальную структуру приложения, где &lt;strong&gt;module1&lt;/strong&gt; является плоским подпроектом для нашего контроллера, а &lt;strong&gt;module2&lt;/strong&gt; является нашей основной логикой, которая состоит из подпроектов &lt;code&gt;API&lt;/code&gt; и &lt;code&gt;Core&lt;/code&gt;. В качестве контроллера, мы будем использовать  основную логику API, и мы решили разделить приложение на модули (что означает отсутсвие общеорганизационных архивов) - наши подпроекты должны быть достаточно простыми:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;module1 build.gradle:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;apply plugin: &apos;war&apos;
+dependencies {
+    compile project(&apos;:module2:module2-api&apos;)
+    providedCompile &amp;quot;javax:javaee-api:${libraryVersions.javaee}&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;module2:module2-api:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;apply plugin: &apos;java&apos;
+dependencies {
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;module2:module2-core:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;apply plugin: &apos;war&apos;
+dependencies {
+    compile project(&apos;:module2:module2-api&apos;)
+    providedCompile &amp;quot;javax:javaee-api:${libraryVersions.javaee}&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;На самом деле, это всё!&lt;br /&gt;
+Теперь мы можем реализовать наш контроллер следующим образом:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Path(&amp;quot;/&amp;quot;)
+@Stateless
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+public class TestEndpoint {
+
+    @EJB(lookup = TestService.TEST_SERVICE_JNDI)
+    TestService testService;
+
+    @GET
+    @Path(&amp;quot;/test&amp;quot;)
+    public Response test() {
+        SomethingDto something = testService.doSomething();
+        return Response.ok().entity(something.getMessage()).build();
+    }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;В свою очередь, основная логика &lt;code&gt;API&lt;/code&gt; содержиться в &lt;code&gt;Interface&lt;/code&gt; и &lt;code&gt;DTO&lt;/code&gt;:&lt;br /&gt;
+&lt;code&gt;TestService.java:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public interface TestService {
+
+  String TEST_SERVICE_NAME = &amp;quot;test-service&amp;quot;;
+  String TEST_SERVICE_JNDI =&amp;quot;java:global/module2-core/&amp;quot; + TEST_SERVICE_NAME;
+
+  SomethingDto doSomething();
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;SomethingDto.java:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public class SomethingDto implements Serializable{
+  ...
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;В конце концов, основная логика &lt;code&gt;Core&lt;/code&gt; состоит из логики, реализующей API:&lt;br /&gt;
+&lt;code&gt;TestServiceImpl.java&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Remote(TestService.class)
+@Stateless(name = TestService.TEST_SERVICE_NAME)
+public class TestServiceImpl implements TestService {
+
+    @PersistenceContext
+    EntityManager entityManager;
+
+    @Override
+    public SomethingDto doSomething() {
+        TestEntity entity = entityManager.find(TestEntity.class, Long.MAX_VALUE);
+        return new SomethingDto(&amp;quot;Hello Jakarta EE world!&amp;quot;);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Описанная архитектура приложений Jakarta EE позволяет нам наслаждаться всеми возможностями ЕЕ с абсолютно прозрачными взаимодействиями между модулями и в то же время оставаться близким к дизайну микросервисов - поскольку у нас нет ограничений в использований одного контейнера для всех модулей.&lt;/p&gt;
+&lt;p&gt;Исходный код, доступен на &lt;a href=&quot;https://github.com/kostenkoserg/ee-application-multi-module-gradle-template&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>Как споймать &apos;убитые&apos; сигналы в Java</title>
+      <link>https://kostenko.org/blog/2019/08/java-catch-os-signals.html</link>
+      <pubDate>Ср, 7 авг 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/08/java-catch-os-signals.html</guid>
+      	<description>
+	&lt;p&gt;Вы можете отправлять разные сигналы в ваше приложение, используя команду &lt;strong&gt;kill -l&lt;/strong&gt;. По умолчанию &lt;strong&gt;kill&lt;/strong&gt; будет отправлять сигнао &lt;code&gt;TERM&lt;/code&gt;. Java по умолчанию ловит несколько типов сигналов, например&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;kill -3 &amp;lt;PID&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;будет дампать трассировку стека Java к стандартным ошибкам&lt;/p&gt;
+&lt;p&gt;Кроме того, вы можете поймать &lt;code&gt;сигнал&lt;/code&gt; внутри вашего приложения, как&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public class App {
+    public static void main(String... s) throws Exception {
+
+        Signal.handle(new Signal(&amp;quot;HUP&amp;quot;), signal -&amp;gt; {
+            System.out.println(signal.getName() + &amp;quot; (&amp;quot; + signal.getNumber() + &amp;quot;)&amp;quot;);
+        });
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        Thread.sleep(1000l);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Список доступных сигналов, которые вы можете получить, выполнив команду &lt;code&gt;kill -l&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;kostenko@kostenko:~$ kill -l
+ 1) SIGHUP	 2) SIGINT	 3) SIGQUIT	 4) SIGILL	 5) SIGTRAP
+ 6) SIGABRT	 7) SIGBUS	 8) SIGFPE	 9) SIGKILL	10) SIGUSR1
+11) SIGSEGV	12) SIGUSR2	13) SIGPIPE	14) SIGALRM	15) SIGTERM
+16) SIGSTKFLT	17) SIGCHLD	18) SIGCONT	19) SIGSTOP	20) SIGTSTP
+21) SIGTTIN	22) SIGTTOU	23) SIGURG	24) SIGXCPU	25) SIGXFSZ
+26) SIGVTALRM	27) SIGPROF	28) SIGWINCH	29) SIGIO	30) SIGPWR
+31) SIGSYS	34) SIGRTMIN	35) SIGRTMIN+1	36) SIGRTMIN+2	37) SIGRTMIN+3
+38) SIGRTMIN+4	39) SIGRTMIN+5	40) SIGRTMIN+6	41) SIGRTMIN+7	42) SIGRTMIN+8
+43) SIGRTMIN+9	44) SIGRTMIN+10	45) SIGRTMIN+11	46) SIGRTMIN+12	47) SIGRTMIN+13
+48) SIGRTMIN+14	49) SIGRTMIN+15	50) SIGRTMAX-14	51) SIGRTMAX-13	52) SIGRTMAX-12
+53) SIGRTMAX-11	54) SIGRTMAX-10	55) SIGRTMAX-9	56) SIGRTMAX-8	57) SIGRTMAX-7
+58) SIGRTMAX-6	59) SIGRTMAX-5	60) SIGRTMAX-4	61) SIGRTMAX-3	62) SIGRTMAX-2
+63) SIGRTMAX-1	64) SIGRTMAX
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Обратите внимание! Не все сигналы могут быть перехвачены в приложении, некоторые из них зарезервированы в ОС. Например, если вы попытается обратать  &lt;strong&gt;kill -SIGKILL (kill -9)&lt;/strong&gt;, то вы получите:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;Exception in thread &amp;quot;main&amp;quot; java.lang.IllegalArgumentException: Signal already used by VM or OS: SIGKILL
+	at java.base/jdk.internal.misc.Signal.handle(Signal.java:173)
+	at jdk.unsupported/sun.misc.Signal.handle(Signal.java:157)
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>Встроенный сервер Jetty урезает ответы</title>
+      <link>https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html</link>
+      <pubDate>Вт, 6 авг 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/08/embedded-jetty-server-cut-responses.html</guid>
+      	<description>
+	&lt;p&gt;Jetty сервер имеет множество вариантов конфигурации. Один из них, это &lt;code&gt;OutputBufferSize&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;HttpConfiguration httpConfig = new HttpConfiguration();
+httpConfig.setOutputBufferSize(1024);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Если это свойство будет назначено значение меньше, чем ваш ответ - jetty просто будет обрезать обрезать последний.&lt;/p&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>Wildfly. Настройка показателей балансировки нагрузки</title>
+      <link>https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html</link>
+      <pubDate>Вт, 6 авг 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/08/wildfly-load-balancing-metrics.html</guid>
+      	<description>
+	&lt;p&gt;Ранее я писал о &lt;a href=&quot;https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html&quot;&gt;Кластер доменного режима Wildfly и балансировка нагрузки из коробки&lt;/a&gt;. Но что, если мы хотим выполнить балансировку зависящей от конкретного поведения сервера?&lt;/p&gt;
+&lt;p&gt;Подсистема Wildfly &lt;code&gt;mod_cluster&lt;/code&gt; предоставляет нам несколько предопределенных типов показателей для определения наилучшей балансировки запросов:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;cpu&lt;/strong&gt;: на основе загрузки процессора&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;mem&lt;/strong&gt;: основано на использовании системной памяти&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;heap&lt;/strong&gt;: на основе использования кучи&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;sessions&lt;/strong&gt;: на основе количества веб-сессий&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;requests&lt;/strong&gt;: на основе количества запросов / сек&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;send-traffic&lt;/strong&gt;: based on outgoing requests traffic&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;receive-traffic&lt;/strong&gt;: на основе трафика исходящих POST запросов&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;busyness&lt;/strong&gt;: вычисляет на основе количества потоков из использования пула потоков, которые заняты обслуживанием запросов&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;connection-pool&lt;/strong&gt;: на основе соединений JCA&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Также вы можете настроить &lt;strong&gt;weight&lt;/strong&gt; (влияние метрики на другие метрики) и свойства &lt;strong&gt;capacity&lt;/strong&gt; ;&lt;br /&gt;
+Ниже приведен пример того, как изменить значение по умолчанию на основе балансировки ЦП на балансировку на основе busyness + ЦП:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;/subsystem=modcluster/mod-cluster-config=configuration/dynamic-load-provider=configuration/load-metric=cpu:remove()
+/subsystem=modcluster/mod-cluster-config=configuration:add-metric(type=busyness,weight=2)
+/subsystem=modcluster/mod-cluster-config=configuration:add-metric(type=cpu,weight=1)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Если этих предопределенных типов недостаточно, вы можете обеспечить &lt;code&gt;custom-load-metric&lt;/code&gt;, реализовав &lt;code&gt;org.jboss.modcluster.load.metric.impl.AbstractLoadMetric&lt;/code&gt;. Для возможности использования вашей пользовательской метрики,- вам необходимо скопировать упакованный JAR-файл в модуль &lt;code&gt;modcluster&lt;/code&gt; и обновить&lt;code&gt;module.xml&lt;/code&gt;. Теперь вы можете использовать свою собственную метрику с вашей конфигурацией, как:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt; &amp;lt;custom-load-metric class=&amp;quot;org.kostenko.examples.wldfly.modcluster.MyBalancingMetric&amp;quot;&amp;gt;  
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>WFLYEJB0054: Failed to marshal EJB parameters</title>
+      <link>https://kostenko.org/blog/2019/08/WFLYEJB0054.html</link>
+      <pubDate>Пн, 5 авг 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/08/WFLYEJB0054.html</guid>
+      	<description>
+	&lt;p&gt;Обычно ошибка &lt;code&gt;WFLYEJB0054: Failed to marshal EJB parameters&lt;/code&gt; может быть вызвана по следующим причинам:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Ваш объект передачи данных не имплементируется  Serializable&lt;/li&gt;
+&lt;li&gt;Ваш объект передачи данных не существует в пути к классу модуля назначения (например, если вы используете  DTO  без строгой типизации)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Кроме того, вы можете словить эту ошибку с абсолютно неожиданным сценарием и нечеткой трассировкой стека, когда ваш EJB выбрасывает несколько непроверяемых ошибок со стековой трассировкой, которая имеет объекты из точек выше.&lt;/p&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>SQL хак. Вставить, если не сущетсвует</title>
+      <link>https://kostenko.org/blog/2019/07/sql-trick-insert-if-noe-exists.html</link>
+      <pubDate>Ср, 24 июл 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/07/sql-trick-insert-if-noe-exists.html</guid>
+      	<description>
+	&lt;p&gt;Следующий SQL хак позволит вам выполнить условный &lt;code&gt;INSERT&lt;/code&gt; для вашего запроса.&lt;/p&gt;
+&lt;p&gt;Например, давайте сделаем вставку, если записи ещё не будет существовать:&lt;/p&gt;
+&lt;p&gt;SQL:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-sql&quot;&gt;INSERT INTO my_table (id, name)  
+    SELECT 1, &apos;name&apos; FROM dual  WHERE NOT EXISTS (SELECT 1 FROM my_table WHERE ID = 1);
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>JMS обнаружение дублирующихся сообщений с Wildfly</title>
+      <link>https://kostenko.org/blog/2019/07/wildfly-jms-duplicate-detection.html</link>
+      <pubDate>Пт, 19 июл 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/07/wildfly-jms-duplicate-detection.html</guid>
+      	<description>
+	&lt;p&gt;Для поддержки JMS спецификация Wildfly использует Apache ActiveMQ Artemis в подсистеме active-mq. Последнее предоставляет механизм фильтрации повторяющихся сообщений без изменения кода приложения.&lt;/p&gt;
+&lt;p&gt;Чтобы включить обнаружение повторяющихся сообщений, вам просто нужно установить специальное свойтсво сообщения с уникальным значением.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;message.setStringProperty(&amp;quot;_AMQ_DUPL_ID&amp;quot;, uniqueId);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Итак, давайте посмотрим, как это работает на практике и создадим простой Message Driven Bean для использования сообщений:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@JMSDestinationDefinition(
+        name = DuplicateJMSTestBean.DUPLICATE_QUEUE,
+        interfaceName = &amp;quot;javax.jms.Queue&amp;quot;
+)
+@MessageDriven(activationConfig = {
+    @ActivationConfigProperty(propertyName = &amp;quot;destinationLookup&amp;quot;, propertyValue = DuplicateJMSTestBean.DUPLICATE_QUEUE),
+    @ActivationConfigProperty(propertyName = &amp;quot;destinationType&amp;quot;, propertyValue = &amp;quot;javax.jms.Queue&amp;quot;)
+})
+@TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
+public class DuplicateJMSTestBean implements MessageListener {
+
+    public final static String DUPLICATE_QUEUE = &amp;quot;java:global/jms/duplicateTestQueue&amp;quot;;
+
+    @Override
+    public void onMessage(Message msg) {
+        System.out.println(&amp;quot;Got new message.&amp;quot;);
+        MessageStorage.messages.add(msg);
+        try {
+            Thread.sleep(5_000l);
+        } catch(Exception ignore) {}
+        System.out.println(&amp;quot;Message  successfully processed&amp;quot;);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;И простую конечную точку JAX-RS для создания сообщений&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Path(&amp;quot;/&amp;quot;)
+@Stateless
+@TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
+public class DuplicateTestEndpoint {
+
+    @Inject
+    private JMSContext context;
+    @Resource(lookup = DuplicateJMSTestBean.DUPLICATE_QUEUE)
+    private Queue queue;
+
+    @GET
+    @Path(&amp;quot;/sendmessage&amp;quot;)
+    public Response sendMessage(@QueryParam(&amp;quot;duplicate-id&amp;quot;) String duplicateId) {
+        try {
+            ObjectMessage message = context.createObjectMessage();
+            if (duplicateId == null) {
+                context.createProducer().send(queue, message);
+            } else {
+                message.setStringProperty(&amp;quot;_AMQ_DUPL_ID&amp;quot;, duplicateId);
+                context.createProducer().send(queue, message);
+            }
+            return Response.ok().entity(&amp;quot;Message was sent.  Recieved &amp;quot; + MessageStorage.messages.size() + &amp;quot; messagges: &amp;quot; + MessageStorage.messages).build();
+        } catch (Throwable e) {
+            return Response.ok().entity(&amp;quot;Error: &amp;quot; + e).build();
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Теперь в случае, если мы отправим сообщение с тем же &lt;code&gt;_AMQ_DUPL_ID&lt;/code&gt; без транзакции по адресу &lt;code&gt;http://127.0.0.1:8080/jms-examples/sendmessage?duplicate-id=myuniqueid&lt;/code&gt;, мы получим в логах:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;WARN [org.apache.activemq.artemis.core.server] (Thread-448 (ActiveMQ-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$5@e47887a)) AMQ222059: Duplicate message detected - message will not be routed. Message information:
+CoreMessage[messageID=1505,durable=true,userID=3d27afde-a9fa-11e9-af5d-0242e352ec80,priority=4, timestamp=Fri Jul 19 10:53:04 EEST 2019,expiration=0, durable=true, address=jms.queue.jms-examples_jms-examples_jms-examples_java:global/jms/duplicateTestQueue,size=416,properties=TypedProperties[__AMQ_CID=38587489-a9fa-11e9-af5d-0242e352ec80,_AMQ_DUPL_ID=myuniqueid,_AMQ_ROUTING_TYPE=1]]@145077408
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;и сообщение НЕ будет потребляться потребителем. Если вы отправите сообщение в транзакции - вы получите &lt;code&gt;Исключение&lt;/code&gt; при коммите.&lt;/p&gt;
+&lt;p&gt;Имейте в виду, что для хранения идентификаторов activemq, используют круговой кэш фиксированого размера.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;/subsystem=messaging-activemq/server=default:read-attribute(name=id-cache-size)
+{
+    &amp;quot;outcome&amp;quot; =&amp;gt; &amp;quot;success&amp;quot;,
+    &amp;quot;result&amp;quot; =&amp;gt; 20000
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Поэтому, это значение должно быть достаточно большими для того, чтобы избежать перезаписи. Также, вы можете сконфигурировать постоянный кэш или этого не делать (по умолчанию: &lt;code&gt;true&lt;/code&gt;)&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;/subsystem=messaging-activemq/server=default:write-attribute(name=persist-id-cache,value=false)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Исходный код, доступен на  &lt;a href=&quot;https://github.com/kostenkoserg/ee-jms-examples&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>Jenkins. Приятно иметь плагины</title>
+      <link>https://kostenko.org/blog/2019/07/jenkins-nice-to-have-plugins.html</link>
+      <pubDate>Пт, 5 июл 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/07/jenkins-nice-to-have-plugins.html</guid>
+      	<description>
+	&lt;p&gt;Jenkins - главный инструмент автоматизации с открытым исходным кодом, который предоставляет множество плагинов для улучшения вашего CI.&lt;br /&gt;
+Ниже приведены некоторые из них, которые, на мой взгляд, станут полезным для любого проекта.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;1. &lt;a href=&quot;https://plugins.jenkins.io/build-monitor-plugin&quot;&gt;Build Monitor Plugin&lt;/a&gt;&lt;/strong&gt; - обеспечивает весьма ощутимое представление о статусе выбранных заданий Jenkins;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;img src=&quot;/img/2019-07-jenkins-build-monitor-plugin.png&quot; alt=&quot;Build Monitor Plugin&quot; /&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;2. &lt;a href=&quot;https://plugins.jenkins.io/git-parameter&quot;&gt;Git Parameter Plugin&lt;/a&gt;&lt;/strong&gt; - добавляет возможность выбирать ветки, теги или ревизии из git-репозитория, настроенного в проекте;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;img src=&quot;/img/2019-07-jenkins-git-parameter-plugin.png&quot; alt=&quot;Git Parameter Plugin&quot; /&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;3. &lt;a href=&quot;https://plugins.jenkins.io/htmlpublisher&quot;&gt;HTML Publisher Plugin&lt;/a&gt;&lt;/strong&gt; - публикует HTML-отчёты, которые ваш билд сгенерировал для работы и сборки страниц;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;img src=&quot;/img/2019-07-jenkins-html-report-plugin.png&quot; alt=&quot;Git Parameter Plugin&quot; /&gt;&lt;/p&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>Взаимная блокировка подсистемы Wildfly ActiveMQ</title>
+      <link>https://kostenko.org/blog/2019/06/wildfly-activemq-deadlock.html</link>
+      <pubDate>Сб, 29 июн 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/06/wildfly-activemq-deadlock.html</guid>
+      	<description>
+	&lt;p&gt;В последнее время у меня была необычно высокая загрузка ЦП на случайном экземпляре Wildfly cluster.&lt;br /&gt;
+Дамп потока показывает причину проблемы:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;Found one Java-level deadlock:
+=============================
+
+&amp;quot;Thread-1 (ActiveMQ-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$2@46fcd20a-1114701218)&amp;quot;:
+  waiting to lock Monitor@0x00007f45f02e20f8 (Object@0x0000000603407950, a org/apache/activemq/artemis/core/server/cluster/impl/ClusterConnectionImpl$MessageFlowRecordImpl),
+  which is held by &amp;quot;Thread-29 (ActiveMQ-client-global-threads-2129186403)&amp;quot;
+&amp;quot;Thread-29 (ActiveMQ-client-global-threads-2129186403)&amp;quot;:
+  waiting to lock Monitor@0x00007f46203b5518 (Object@0x00000004cc79a7b8, a org/apache/activemq/artemis/core/server/impl/QueueImpl),
+  which is held by &amp;quot;Thread-1 (ActiveMQ-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$2@46fcd20a-1114701218)&amp;quot;
+
+Found a total of 1 deadlock.
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Ниже приведена часть официальной документации:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&amp;quot;Если для thread-pool-max-size установлено положительное целое число больше, чем 0, пул потоков будет ограничен. Если поступают запросы и в пуле нету свободных потоков, запросы будут блокироваться до тех пор, пока поток не станет доступным. Рекомендуется использовать пул ограниченных потоков с осторожностью, поскольку это может привести к &lt;strong&gt;тупиковым ситуациям&lt;/strong&gt;, если верхняя граница настроена слишком низко.&amp;quot;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;По-этому решение будет таковым:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;/subsystem=messaging-activemq/server=default:write-attribute(name=thread-pool-max-size,value=-1)
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>Как использовать пользовательский ClassLoader для загрузки JAR-файлов во время выполнения</title>
+      <link>https://kostenko.org/blog/2019/06/runtime-class-loading.html</link>
+      <pubDate>Пт, 28 июн 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/06/runtime-class-loading.html</guid>
+      	<description>
+	&lt;p&gt;Для загрузки классов во время выполнения java используют механизм ClassLoader, который основан на нескольких основных принципах:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;делегирование&lt;/strong&gt; - по умолчанию используют &lt;code&gt;parent-first delegation&lt;/code&gt;, - наследник ClassLoader будет использоваться, если родитель не может найти или загрузить класс. Это поведение можно изменить на &lt;code&gt;child-first&lt;/code&gt;, переписав &lt;code&gt;ClassLoader.loadClass(...)&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;видимость&lt;/strong&gt; - наследник ClassLoader может видеть все классы, загруженные родителем, но наоборот не может;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;уникальность&lt;/strong&gt; - позволяет загрузить класс только один раз, что в основном достигается делегированием и гарантирует, что наследник ClassLoader не перезагрузит класс, уже загруженного родителя;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Основные сценарии использования пользовательского ClassLoader:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Инструментарий класса&lt;/strong&gt; - изменение классов во время выполнения. Например, для модульного тестирование, отладки или мониторинга;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Изоляция выполнения&lt;/strong&gt; - изолировать несколько сред выполнения в одном процессе, делая видимыми только подмножество классов для конкретного потока, как это делается в средах EE;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Итак, давайте посмотрим, как выглядит использование пользовательского ClassLoader с точки зрения исходного кода:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;List&amp;lt;File&amp;gt; jars = Arrays.asList(new File(&amp;quot;/tmp/jars&amp;quot;).listFiles());
+URL[] urls = new URL[files.size()];
+for (int i = 0; i &amp;lt; jars.size(); i++) {
+    try {
+        urls[i] = jars.get(i).toURI().toURL();
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+URLClassLoader childClassLoader = new URLClassLoader(urls, ClassLoader.getSystemClassLoader());
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Затем загрузите класс с пользовательским ClassLoader:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;Class.forName(&amp;quot;org.kostenko.examples.core.classloader.ClassLoaderTest&amp;quot;, true , childClassLoader);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Обратите внимение! Если ваши загруженные библеотеки используют некоторые ресурсы, такие как свойства или что-то ещё, вам нужно продоставить загрузчик класса котекста:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;Thread.currentThread().setContextClassLoader(childClassLoader);  
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Кроме того, вы можете использовать пользовательские ClassLoaders для загрузки служб с помощью Java Service Provider Interface(SPI)&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;ServiceLoader&amp;lt;MyProvider&amp;gt; serviceLoader = ServiceLoader.load(MyProvider.class, childClassLoader);
+...
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>Моё видео про кластеризацию доменного режима Wildfly</title>
+      <link>https://kostenko.org/blog/2019/05/wildfly-domain-mode-cluster-video.html</link>
+      <pubDate>Чт, 2 мая 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/05/wildfly-domain-mode-cluster-video.html</guid>
+      	<description>
+	
+Загрузил новое видео на YouTube про кластеризацию доменного режима Wildfly. 
+
+&lt;br/&gt;&lt;br/&gt;
+&lt;div class=&quot;row&quot;&gt;
+    &lt;iframe align =&quot;center&quot; class=&quot;col-md-offset-3 col-lg-6 col-md-6 col-sm-12 col-xs-12&quot; height=&quot;315&quot; src=&quot;https://www.youtube.com/embed/dIT9e945OHs&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;true&quot;&gt;&lt;/iframe&gt;
+&lt;/div&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>Кластер доменного режима Wildfly и балансировка нагрузки из коробки</title>
+      <link>https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html</link>
+      <pubDate>Пн, 15 апр 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/04/wildfly-cluster-domain-mode.html</guid>
+      	<description>
+	&lt;p&gt;Wildfly Application Server предоставляет нам два возможных режима настройки кластерной среды для приложений Java EE.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Автономный режим (Standalone mode)&lt;/strong&gt; - каждый автономный экземпляр имеет свой собственный интерфейс управления и конфигурацию. Вы можете управлять одним экземпляром за раз. Конфигурация помещена в файл &lt;code&gt;standalone.xml&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Доменный режим (Domain mode)&lt;/strong&gt; - все экземпляры Wildfly управляются с помощью специального процесса оркестровки, называемого &lt;code&gt;контроллер домена&lt;/code&gt;. С помощью контроллера домена вы можете управлять группой серверов. Также вы можете управлять группами. Каждая группа серверов может иметь их собственные конфигурации, развертывания и т.д. Конфигурация находится в файлах &lt;code&gt;domain.xml&lt;/code&gt; и &lt;code&gt;host.xml&lt;/code&gt;.&lt;br /&gt;
+Пример группы серверов Wildfly:&lt;br /&gt;
+&lt;img src=&quot;/img/2019-04-wildfly-cluster-domain-mode.png&quot; alt=&quot;wildfly-cluster-domain-mode&quot; /&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;С версии 10 Wildfly добавляет поддержку для использования подсистемы &lt;code&gt;Undertow&lt;/code&gt; в качестве баланса нагрузки. Итак, теперь все, что нам нужно для создания кластерной инфраструктуры Java EE, это только Wildfly. Давай сделаем это.&lt;/p&gt;
+&lt;p&gt;Скачайте последнюю версию сервера приложений с &lt;a href=&quot;https://wildfly.org/downloads/&quot;&gt;https://wildfly.org/downloads/&lt;/a&gt; и после распакуйте дистрибутиву. Чтобы запустить Wildfly в доменном режим, пожалуйста выполните:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;kostenko@kostenko:/opt/wildfly-16.0.0.Final/bin$ ./domain.sh
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Подключитесь к Wildfly CLI консоле&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;kostenko@kostenko:/opt/wildfly-16.0.0.Final/bin$ ./jboss-cli.sh -c
+[domain@localhost:9990 /]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;По умолчанию в Wildfly предварительно настроены группы серверов &lt;code&gt;main-server-group&lt;/code&gt; и&lt;code&gt;other-server-group&lt;/code&gt;, поэтому нам нужно очистить существующие серверы:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;:stop-servers(blocking=true)
+/host=master/server-config=server-one:remove
+/host=master/server-config=server-two:remove
+/host=master/server-config=server-three:remove
+/server-group=main-server-group:remove
+/server-group=other-server-group:remove
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Создайте новую группу серверов и серверов, используя профиль &lt;code&gt;full-ha&lt;/code&gt;, чтобы включить поддержку&lt;code&gt;mod_cluster&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;/server-group=backend-servers:add(profile=full-ha, socket-binding-group=full-ha-sockets)
+/host=master/server-config=backend1:add(group=backend-servers, socket-binding-port-offset=100)
+/host=master/server-config=backend2:add(group=backend-servers, socket-binding-port-offset=200)
+
+#start the backend servers
+/server-group=backend-servers:start-servers(blocking=true)
+
+#add system properties (so we can tell them apart)
+/host=master/server-config=backend1/system-property=server.name:add(boot-time=false, value=backend1)
+/host=master/server-config=backend2/system-property=server.name:add(boot-time=false, value=backend2)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Далее настройте группу серверов для балансировщика нагрузки.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;/server-group=load-balancer:add(profile=load-balancer, socket-binding-group=load-balancer-sockets)
+/host=master/server-config=load-balancer:add(group=load-balancer)
+/socket-binding-group=load-balancer-sockets/socket-binding=modcluster:write-attribute(name=interface, value=public)
+/server-group=load-balancer:start-servers
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Теперь давайте разработаем простую конечную точку JAX-RS, чтобы показать, как она работает:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Path(&amp;quot;/clusterdemo&amp;quot;)
+@Stateless
+public class ClusterDemoEndpoint {
+
+    @GET
+    @Path(&amp;quot;/serverinfo&amp;quot;)
+    public Response getServerInfo() {
+
+        return Response.ok().entity(&amp;quot;Server: &amp;quot; + System.getProperty(&amp;quot;server.name&amp;quot;)).build();
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Создайте проект и задеплойте его в группе &lt;code&gt;backend-servers&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;[domain@localhost:9990 /] deploy ee-jax-rs-examples.war --server-groups=backend-servers
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;И проверьте результат на &lt;code&gt;http://localhost:8080/ee-jax-rs-examples/clusterdemo/serverinfo&lt;/code&gt; :&lt;br /&gt;
+&lt;img src=&quot;/img/2019-04-wildfly-cluster-domain-mode-1-2.gif&quot; alt=&quot;wildfly-cluster-domain-mode-1-2&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;Теперь мы можем легко добавить серверы в группу во время выполнения, и запросы будут автоматически балансироваться:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;[domain@localhost:9990 /] /host=master/server-config=backend3:add(group=backend-servers, socket-binding-port-offset=300)
+[domain@localhost:9990 /] /host=master/server-config=backend3/system-property=server.name:add(boot-time=false, value=backend3)
+[domain@localhost:9990 /] /server-group=backend-servers/:start-servers(blocking=true)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&quot;/img/2019-04-wildfly-cluster-domain-mode-1-2-3.gif&quot; alt=&quot;wildfly-cluster-domain-mode-1-2-3&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;Это всё!&lt;br /&gt;
+Код этого блога доступен на GitHub:  &lt;a href=&quot;https://github.com/kostenkoserg/ee-jax-rs-examples/blob/master/src/main/java/org/kostenko/example/jaxrs/ClusterDemoEndpoint.java&quot;&gt;Demo application&lt;/a&gt;,  &lt;a href=&quot;https://github.com/kostenkoserg/wildfly-configuration-examples/blob/master/wildfly-domain-mode-cluster.cli&quot;&gt;Wildlfly CLI &lt;/a&gt;&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Java EE CDI события. Динамический квалификатор.</title>
       <link>https://kostenko.org/blog/2019/04/java-ee-cdi-events.html</link>

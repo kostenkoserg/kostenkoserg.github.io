@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Первая запись в блоге</title>
+    <title>Взаимная блокировка подсистемы Wildfly ActiveMQ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -92,14 +92,32 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Первая запись в блоге</h1>
+		<h1>Взаимная блокировка подсистемы Wildfly ActiveMQ</h1>
 	</div>
 
-	<p><em>17 января 2019</em></p>
+	<p><em>29 июня 2019</em></p>
 
-	<p><p>Мысли о собственном блоге посещали меня уже давно и достаточно регулярно, но в силу различных причин реализация задуманного откладывалась. Среди причин было и желание реализовать собственный движок для блогов (зачем-то), и поиск подходящих стилей (ведь так важно), и знакомство со специализированными решениями: wordpress, wix, blogger и другими...</p>
-<p>В итоге, в качестве платформы был выбран <a href="https://pages.github.com/">pages.github.io</a> с его генератором статического контента <a href="https://jekyllrb.com/">Jekyll</a>. Последнее показалось мне самым сбалансированным решеним: понятно, бесплантно,  быстро, надежно. Да и найти лучшее место для технического блога сегодня, наверное, трудно. По мере знакомства с  предметной областью, мне попалась java-альтернатиа  Jekyll (рубби) в лице проекта <a href="https://jbake.org/">JBake</a>, что как java-разработчику мне показалось ближе.</p>
-<p>Ну что ж, решение принято, стек выбран, - вперёд!</p>
+	<p><p>В последнее время у меня была необычно высокая загрузка ЦП на случайном экземпляре Wildfly cluster.<br />
+Дамп потока показывает причину проблемы:</p>
+<pre><code class="language-java">Found one Java-level deadlock:
+=============================
+
+&quot;Thread-1 (ActiveMQ-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$2@46fcd20a-1114701218)&quot;:
+  waiting to lock Monitor@0x00007f45f02e20f8 (Object@0x0000000603407950, a org/apache/activemq/artemis/core/server/cluster/impl/ClusterConnectionImpl$MessageFlowRecordImpl),
+  which is held by &quot;Thread-29 (ActiveMQ-client-global-threads-2129186403)&quot;
+&quot;Thread-29 (ActiveMQ-client-global-threads-2129186403)&quot;:
+  waiting to lock Monitor@0x00007f46203b5518 (Object@0x00000004cc79a7b8, a org/apache/activemq/artemis/core/server/impl/QueueImpl),
+  which is held by &quot;Thread-1 (ActiveMQ-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$2@46fcd20a-1114701218)&quot;
+
+Found a total of 1 deadlock.
+</code></pre>
+<p>Ниже приведена часть официальной документации:</p>
+<blockquote>
+<p>&quot;Если для thread-pool-max-size установлено положительное целое число больше, чем 0, пул потоков будет ограничен. Если поступают запросы и в пуле нету свободных потоков, запросы будут блокироваться до тех пор, пока поток не станет доступным. Рекомендуется использовать пул ограниченных потоков с осторожностью, поскольку это может привести к <strong>тупиковым ситуациям</strong>, если верхняя граница настроена слишком низко.&quot;</p>
+</blockquote>
+<p>По-этому решение будет таковым:</p>
+<pre><code class="language-java">/subsystem=messaging-activemq/server=default:write-attribute(name=thread-pool-max-size,value=-1)
+</code></pre>
 </p>
 
 	<hr />
@@ -110,8 +128,8 @@
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/01/start-blogging.html';
-	this.page.identifier = 'blog/2019/01/start-blogging.html';
+	this.page.url = 'https://kostenko.org/blog/2019/06/wildfly-activemq-deadlock.html';
+	this.page.identifier = 'blog/2019/06/wildfly-activemq-deadlock.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE
