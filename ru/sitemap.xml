@@ -21,11 +21,11 @@
         <lastmod>2019-08-07</lastmod>
     </url>
     <url>
-        <loc>https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html</loc>
+        <loc>https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html</loc>
         <lastmod>2019-08-06</lastmod>
     </url>
     <url>
-        <loc>https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html</loc>
+        <loc>https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html</loc>
         <lastmod>2019-08-06</lastmod>
     </url>
     <url>
@@ -51,6 +51,10 @@
     <url>
         <loc>https://kostenko.org/blog/2019/06/runtime-class-loading.html</loc>
         <lastmod>2019-06-28</lastmod>
+    </url>
+    <url>
+        <loc>https://kostenko.org/blog/2019/05/design-dsl-api-java.html</loc>
+        <lastmod>2019-05-27</lastmod>
     </url>
     <url>
         <loc>https://kostenko.org/blog/2019/05/wildfly-domain-mode-cluster-video.html</loc>

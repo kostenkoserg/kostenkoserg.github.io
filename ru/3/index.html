@@ -61,17 +61,18 @@
               <ul class="dropdown-menu">
 										<li><a href="../tags/Jetty.html">Jetty</a></li>
 										<li><a href="../tags/Gradle.html">Gradle</a></li>
+										<li><a href="../tags/API.html">API</a></li>
 										<li><a href="../tags/JPA.html">JPA</a></li>
-										<li><a href="../tags/Jakarta EE.html">Jakarta EE</a></li>
 										<li><a href="../tags/JMX.html">JMX</a></li>
+										<li><a href="../tags/Jakarta EE.html">Jakarta EE</a></li>
 										<li><a href="../tags/Linux.html">Linux</a></li>
-										<li><a href="../tags/JMS.html">JMS</a></li>
 										<li><a href="../tags/JBake.html">JBake</a></li>
+										<li><a href="../tags/JMS.html">JMS</a></li>
 										<li><a href="../tags/Jenkins.html">Jenkins</a></li>
 										<li><a href="../tags/SQL.html">SQL</a></li>
 										<li><a href="../tags/CDI.html">CDI</a></li>
-										<li><a href="../tags/CI.html">CI</a></li>
 										<li><a href="../tags/GitHub.html">GitHub</a></li>
+										<li><a href="../tags/CI.html">CI</a></li>
 										<li><a href="../tags/Hibernate.html">Hibernate</a></li>
 										<li><a href="../tags/Wildfly.html">Wildfly</a></li>
 										<li><a href="../tags/Java.html">Java</a></li>
@@ -150,6 +151,68 @@ URLClassLoader childClassLoader = new URLClassLoader(urls, ClassLoader.getSystem
 <p>Кроме того, вы можете использовать пользовательские ClassLoaders для загрузки служб с помощью Java Service Provider Interface(SPI)</p>
 <pre><code class="language-java">ServiceLoader&lt;MyProvider&gt; serviceLoader = ServiceLoader.load(MyProvider.class, childClassLoader);
 ...
+</code></pre>
+</p>
+				<hr/>
+				<a href="https://kostenko.org/ru/blog/2019/05/design-dsl-api-java.html"><h1>Разработка DSL API на Java</h1></a>
+				<p>27 мая 2019</p>
+  			<p><p>Хорошо разработанный API - очень важен, так как его будут использовать не только вы, но и кто-то другой, если вы ожидаете. По-этому, что бы построить читаемый и хорошо написанный DLS(domain specific language) на Java, обычно используют паттерн Builder с несколькими простыми правилами:</p>
+<ul>
+<li>Думай дважды про названия для методов;</li>
+<li>Ограничивай доступность значений для каждого шага.</li>
+</ul>
+<p>Окей, давайте посмотрим, как это выглядит с точки зрения исходного кода...</p>
+<p>Точка входа Design API</p>
+<pre><code class="language-java">public class MyAPI {
+    public static UserBuilder.Registration asUser() {
+        return new UserBuilder.User();
+    }
+}
+</code></pre>
+<p>Design builder, использующий интерфейсы для ограничения доступности значений, зависит от текущего шага.</p>
+<pre><code class="language-java">public class UserBuilder {
+    public static class User implements Registration, Login, Password, Apply {
+        private String login;
+        private String password;
+
+        @Override
+        public Login doRegistration() {
+            return this;
+        }
+        @Override
+        public Password withLogin(String login) {
+            this.login = login;
+            return this;
+        }
+        @Override
+        public Apply withPassword(String password) {
+            this.password = password;
+            return this;
+        }
+        @Override
+        public void apply() {
+            // ...
+        }
+    }
+
+    public interface Registration {
+        Login doRegistration();
+    }
+    public interface Login {
+        Password withLogin(String login);
+    }
+    public interface Password {
+        Apply withPassword(String password);
+    }
+    public interface Apply {
+        void apply();
+    }
+}
+</code></pre>
+<p>Тогда использование, без попытки ошибиться, выглядит вот так:</p>
+<pre><code class="language-java">asUser().doRegistration()
+        .withLogin(&quot;login&quot;).withPassword(&quot;password&quot;)
+        .apply();
 </code></pre>
 </p>
 				<hr/>
@@ -233,133 +296,6 @@ public class ClusterDemoEndpoint {
 <p><img src="/img/2019-04-wildfly-cluster-domain-mode-1-2-3.gif" alt="wildfly-cluster-domain-mode-1-2-3" /></p>
 <p>Это всё!<br />
 Код этого блога доступен на GitHub:  <a href="https://github.com/kostenkoserg/ee-jax-rs-examples/blob/master/src/main/java/org/kostenko/example/jaxrs/ClusterDemoEndpoint.java">Demo application</a>,  <a href="https://github.com/kostenkoserg/wildfly-configuration-examples/blob/master/wildfly-domain-mode-cluster.cli">Wildlfly CLI </a></p>
-</p>
-				<hr/>
-				<a href="https://kostenko.org/ru/blog/2019/04/java-ee-cdi-events.html"><h1>Java EE CDI события. Динамический квалификатор.</h1></a>
-				<p>08 апреля 2019</p>
-  			<p><p>Java ЕЕ предоставляет нам  хороший механизм для обработки событий, который является частью CDI для спецификации Java EE. Динамический CDI спецификатор может быть полезен для обработки событий, например, в domain driven архитектуре или при маршрутизации сообщений веб-сокета и т.д.</p>
-<p>Генерация простого события:</p>
-<pre><code class="language-java">@Named
-public class MyEventSource {
-
-    @Inject
-    private Event&lt;String&gt; myEvent;
-
-    public void fireEvent(){
-        myEvent.fire(&quot;Hello World!&quot;);
-    }
-}
-</code></pre>
-<p>Наблюдатель события:</p>
-<pre><code class="language-java">@Named
-public class MyEventObserver {
-    public void observeEvent(@Observes String message){
-        System.out.println(message);
-    }
-}
-</code></pre>
-<p>Используя CDI спецификатор,  можно определить, какой наблюдатель должен обработать событие</p>
-<pre><code class="language-java">@Qualifier
-@Retention(RUNTIME)
-@Target({METHOD, FIELD, PARAMETER, TYPE})
-public @interface Important {
-}
-</code></pre>
-<p>Например:</p>
-<pre><code class="language-java">@Named
-public class MyEventSource {
-
-    @Inject
-    @Important
-    private Event&lt;String&gt; myEvent;
-    ...
-</code></pre>
-<pre><code class="language-java">@Named
-public class MyEventObserver {
-  public void observeEvent(@Observes @Important String message){
-    ...
-</code></pre>
-<p>По-умолчанию, событие будет обработано обсервером в текущей транзакции, но можно изменить это поведение,  используя <code>@Observes</code> атрибут  <code>during</code></p>
-<pre><code class="language-java">@Named
-public class TransactionEventObserver {
-    public void observeImportantMessage(@Observes(during = TransactionPhase.AFTER_SUCCESS) String message){
-        System.out.println(message);
-    }
-}
-</code></pre>
-<p>Доступны следующие значения:</p>
-<ul>
-<li>IN_PROGRESS</li>
-<li>BEFORE_COMPLETION</li>
-<li>AFTER_COMPLETION</li>
-<li>AFTER_FAILURE</li>
-<li>AFTER_SUCCESS</li>
-</ul>
-<p>Теперь давайте посмотрим как можно квалифицировать CDI события динамически. В примере ниже мы создадим обсервер для обработки пользовательских событий (вход в систему, выход, регистрация и т.д.), полученных из некого абстрактного источника.</p>
-<p>Итак, сначала нам нужно создать <code>Qualifier</code> с доступными значениями событий</p>
-<pre><code class="language-java">@Qualifier
-@Target({METHOD, FIELD, PARAMETER, TYPE})
-@Retention(RUNTIME)
-public @interface UserEvent {
-
-    Routes value();
-}
-</code></pre>
-<p>где Routes - это enum с доступными значениями, например:</p>
-<pre><code class="language-java">public enum Routes {
-  LOGIN,
-  LOGOUT,
-  REGISTRATION
-}
-</code></pre>
-<p>Потом нам нужно создать дочерний от <code>javax.enterprise.util.AnnotationLiteral</code> класс  для возможности использования квалификатора динамически.</p>
-<pre><code class="language-java">public class UserEventBinding extends AnnotationLiteral&lt;UserEvent&gt; implements UserEvent {
-
-    Routes routes;
-
-    public UserEventBinding(Routes routes) {
-        this.routes = routes;
-    }
-
-    @Override
-    public Routes value() {
-        return routes;
-    }
-}
-</code></pre>
-<p>Теперь давайте сгенерируем событие, используя динамический выбор наблюдателей</p>
-<pre><code class="language-java">@Named
-public class UserEventSource {
-
-    @Inject
-    private Event&lt;String&gt; userEvent;
-
-    public void fireEvent(Routes route){
-        userEvent.select(new UserEventBinding(route)).fire(&quot;Instead of string you can use your object&quot;);
-    }
-}
-</code></pre>
-<p>Время показать, как выглядит наш Observer.</p>
-<pre><code class="language-java">import static Routes.*;
-...
-
-@Named
-public class UserObserver {
-
-    public void registration(@Observes @UserEvent(REGISTRATION) String eventData) {
-      ....
-    }
-
-    public void login(@Observes @UserEvent(LOGIN) String eventData) {
-      ....
-    }
-
-    public void logout(@Observes @UserEvent(LOGOUT) String eventData) {
-      ....
-    }
-}
-</code></pre>
-<p>P.S. В Java EE 8 с CDI 2.0 вы можете использовать асинхронные события CDI с помощью метода <code>fireAsync</code> и аннотации <code>@ObserveAsync</code></p>
 </p>
 				<hr/>
 

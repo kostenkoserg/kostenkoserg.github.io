@@ -6,8 +6,8 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Пн, 16 сен 2019 17:51:36 +0300</pubDate>
-    <lastBuildDate>Пн, 16 сен 2019 17:51:36 +0300</lastBuildDate>
+    <pubDate>Пн, 16 сен 2019 17:55:58 +0300</pubDate>
+    <lastBuildDate>Пн, 16 сен 2019 17:55:58 +0300</lastBuildDate>
 
     <item>
       <title>Проблемы с подключением JMX Wildfly (очень медленно и прекращается)</title>
@@ -199,20 +199,6 @@ public class TestServiceImpl implements TestService {
 	</description>
     </item>
     <item>
-      <title>Встроенный сервер Jetty урезает ответы</title>
-      <link>https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html</link>
-      <pubDate>Вт, 6 авг 2019 00:00:00 +0300</pubDate>
-      <guid isPermaLink="false">blog/2019/08/embedded-jetty-server-cut-responses.html</guid>
-      	<description>
-	&lt;p&gt;Jetty сервер имеет множество вариантов конфигурации. Один из них, это &lt;code&gt;OutputBufferSize&lt;/code&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;HttpConfiguration httpConfig = new HttpConfiguration();
-httpConfig.setOutputBufferSize(1024);
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Если это свойство будет назначено значение меньше, чем ваш ответ - jetty просто будет обрезать обрезать последний.&lt;/p&gt;
-
-	</description>
-    </item>
-    <item>
       <title>Wildfly. Настройка показателей балансировки нагрузки</title>
       <link>https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html</link>
       <pubDate>Вт, 6 авг 2019 00:00:00 +0300</pubDate>
@@ -240,6 +226,20 @@ httpConfig.setOutputBufferSize(1024);
 &lt;p&gt;Если этих предопределенных типов недостаточно, вы можете обеспечить &lt;code&gt;custom-load-metric&lt;/code&gt;, реализовав &lt;code&gt;org.jboss.modcluster.load.metric.impl.AbstractLoadMetric&lt;/code&gt;. Для возможности использования вашей пользовательской метрики,- вам необходимо скопировать упакованный JAR-файл в модуль &lt;code&gt;modcluster&lt;/code&gt; и обновить&lt;code&gt;module.xml&lt;/code&gt;. Теперь вы можете использовать свою собственную метрику с вашей конфигурацией, как:&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt; &amp;lt;custom-load-metric class=&amp;quot;org.kostenko.examples.wldfly.modcluster.MyBalancingMetric&amp;quot;&amp;gt;  
 &lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>Встроенный сервер Jetty урезает ответы</title>
+      <link>https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html</link>
+      <pubDate>Вт, 6 авг 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/08/embedded-jetty-server-cut-responses.html</guid>
+      	<description>
+	&lt;p&gt;Jetty сервер имеет множество вариантов конфигурации. Один из них, это &lt;code&gt;OutputBufferSize&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;HttpConfiguration httpConfig = new HttpConfiguration();
+httpConfig.setOutputBufferSize(1024);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Если это свойство будет назначено значение меньше, чем ваш ответ - jetty просто будет обрезать обрезать последний.&lt;/p&gt;
 
 	</description>
     </item>
@@ -447,6 +447,73 @@ URLClassLoader childClassLoader = new URLClassLoader(urls, ClassLoader.getSystem
 &lt;p&gt;Кроме того, вы можете использовать пользовательские ClassLoaders для загрузки служб с помощью Java Service Provider Interface(SPI)&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;ServiceLoader&amp;lt;MyProvider&amp;gt; serviceLoader = ServiceLoader.load(MyProvider.class, childClassLoader);
 ...
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>Разработка DSL API на Java</title>
+      <link>https://kostenko.org/blog/2019/05/design-dsl-api-java.html</link>
+      <pubDate>Пн, 27 мая 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/05/design-dsl-api-java.html</guid>
+      	<description>
+	&lt;p&gt;Хорошо разработанный API - очень важен, так как его будут использовать не только вы, но и кто-то другой, если вы ожидаете. По-этому, что бы построить читаемый и хорошо написанный DLS(domain specific language) на Java, обычно используют паттерн Builder с несколькими простыми правилами:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Думай дважды про названия для методов;&lt;/li&gt;
+&lt;li&gt;Ограничивай доступность значений для каждого шага.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Окей, давайте посмотрим, как это выглядит с точки зрения исходного кода...&lt;/p&gt;
+&lt;p&gt;Точка входа Design API&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public class MyAPI {
+    public static UserBuilder.Registration asUser() {
+        return new UserBuilder.User();
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Design builder, использующий интерфейсы для ограничения доступности значений, зависит от текущего шага.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public class UserBuilder {
+    public static class User implements Registration, Login, Password, Apply {
+        private String login;
+        private String password;
+
+        @Override
+        public Login doRegistration() {
+            return this;
+        }
+        @Override
+        public Password withLogin(String login) {
+            this.login = login;
+            return this;
+        }
+        @Override
+        public Apply withPassword(String password) {
+            this.password = password;
+            return this;
+        }
+        @Override
+        public void apply() {
+            // ...
+        }
+    }
+
+    public interface Registration {
+        Login doRegistration();
+    }
+    public interface Login {
+        Password withLogin(String login);
+    }
+    public interface Password {
+        Apply withPassword(String password);
+    }
+    public interface Apply {
+        void apply();
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Тогда использование, без попытки ошибиться, выглядит вот так:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;asUser().doRegistration()
+        .withLogin(&amp;quot;login&amp;quot;).withPassword(&amp;quot;password&amp;quot;)
+        .apply();
 &lt;/code&gt;&lt;/pre&gt;
 
 	</description>
