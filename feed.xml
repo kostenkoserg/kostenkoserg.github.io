@@ -6,11 +6,11 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Fri, 4 Oct 2019 18:58:32 +0300</pubDate>
-    <lastBuildDate>Fri, 4 Oct 2019 18:58:32 +0300</lastBuildDate>
+    <pubDate>Fri, 4 Oct 2019 19:59:18 +0300</pubDate>
+    <lastBuildDate>Fri, 4 Oct 2019 19:59:18 +0300</lastBuildDate>
 
     <item>
-      <title>RestEasy javax.ws.rs.client.Client ThreadPool leak</title>
+      <title>JAX-RS Client ThreadPool leak</title>
       <link>https://kostenko.org/blog/2019/10/jax-rs-jersey-thread-leak.html</link>
       <pubDate>Fri, 4 Oct 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/10/jax-rs-jersey-thread-leak.html</guid>
@@ -32,8 +32,8 @@ class CustomThreadFactory implements ThreadFactory {
     }
 }
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;So, after many time of investigation and &amp;quot;heap walking&amp;quot;(paths to GC root) i found few &lt;code&gt;Executors$DefaultThreadFactory&lt;/code&gt; like&lt;br /&gt;
-&lt;img src=&quot;/img/2019-10-thraed-leak-1.png&quot; alt=&quot;jax-rs thread leak&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;So, after many times of investigation and &amp;quot;heap walking&amp;quot;(paths to GC root) i found few &lt;code&gt;Executors$DefaultThreadFactory&lt;/code&gt; like&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/img/2019-10-thraed-leak-1.png&quot; alt=&quot;jax-rs thread leak&quot; /&gt;&lt;/p&gt;
 &lt;p&gt;what made me see the code with REST services invocations. Something like&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public void doCall() {
     Client client = ClientBuilder.newClient();

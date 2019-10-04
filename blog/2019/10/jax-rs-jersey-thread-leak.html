@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>RestEasy javax.ws.rs.client.Client ThreadPool leak</title>
+    <title>JAX-RS Client ThreadPool leak</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -97,7 +97,7 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>RestEasy javax.ws.rs.client.Client ThreadPool leak</h1>
+		<h1>JAX-RS Client ThreadPool leak</h1>
 	</div>
 
 	<p><em>04 October 2019</em></p>
@@ -119,8 +119,8 @@ class CustomThreadFactory implements ThreadFactory {
     }
 }
 </code></pre>
-<p>So, after many time of investigation and &quot;heap walking&quot;(paths to GC root) i found few <code>Executors$DefaultThreadFactory</code> like<br />
-<img src="/img/2019-10-thraed-leak-1.png" alt="jax-rs thread leak" /></p>
+<p>So, after many times of investigation and &quot;heap walking&quot;(paths to GC root) i found few <code>Executors$DefaultThreadFactory</code> like</p>
+<p><img src="/img/2019-10-thraed-leak-1.png" alt="jax-rs thread leak" /></p>
 <p>what made me see the code with REST services invocations. Something like</p>
 <pre><code class="language-java">public void doCall() {
     Client client = ClientBuilder.newClient();

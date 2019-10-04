@@ -96,7 +96,7 @@
     <div class="container">
 
 
-				<a href="https://kostenko.org/blog/2019/10/jax-rs-jersey-thread-leak.html"><h1>RestEasy javax.ws.rs.client.Client ThreadPool leak</h1></a>
+				<a href="https://kostenko.org/blog/2019/10/jax-rs-jersey-thread-leak.html"><h1>JAX-RS Client ThreadPool leak</h1></a>
 				<p>04 October 2019</p>
   			<p><p>Recently got resource(ThreadPool\Thread) leak with JAX-RS Client implementation on WF10.0.1 (RestEasy).<br />
 <img src="/img/2019-10-thraed-leak.png" alt="jax-rs thread leak" /></p>
@@ -115,8 +115,8 @@ class CustomThreadFactory implements ThreadFactory {
     }
 }
 </code></pre>
-<p>So, after many time of investigation and &quot;heap walking&quot;(paths to GC root) i found few <code>Executors$DefaultThreadFactory</code> like<br />
-<img src="/img/2019-10-thraed-leak-1.png" alt="jax-rs thread leak" /></p>
+<p>So, after many times of investigation and &quot;heap walking&quot;(paths to GC root) i found few <code>Executors$DefaultThreadFactory</code> like</p>
+<p><img src="/img/2019-10-thraed-leak-1.png" alt="jax-rs thread leak" /></p>
 <p>what made me see the code with REST services invocations. Something like</p>
 <pre><code class="language-java">public void doCall() {
     Client client = ClientBuilder.newClient();
