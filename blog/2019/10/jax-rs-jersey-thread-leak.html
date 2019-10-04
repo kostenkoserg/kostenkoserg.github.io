@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Improve performance of random number generation</title>
+    <title>RestEasy javax.ws.rs.client.Client ThreadPool leak</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -97,64 +97,42 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Improve performance of random number generation</h1>
+		<h1>RestEasy javax.ws.rs.client.Client ThreadPool leak</h1>
 	</div>
 
-	<p><em>18 April 2019</em></p>
+	<p><em>04 October 2019</em></p>
 
-	<p><p>Directly or indirectly every developer uses random number generation during application development by different reasons:</p>
-<ul>
-<li>cryptography</li>
-<li>simulations</li>
-<li>game engines</li>
-<li>UUID generation</li>
-</ul>
-<p>and many more...</p>
-<p>In Java we have <strong>insecure</strong>: <code>java.util.Random</code> and <strong>secure</strong>: <code>java.security.SecureRandom</code> random generators. Main differences between is</p>
-<ul>
-<li><strong>Size</strong> - 48(Random) vs 128(SecureRandom) bits, so the chances of repeating for last one are smaller.</li>
-<li><strong>Seed Generation</strong> - Random uses the system clock and, so can be reproduced. SecureRandom takes random data from your OS (hardware)</li>
-<li><strong>Security</strong> - Consequently, the java.util.Random class must not be used either for security-critical applications or for protecting sensitive data.</li>
-</ul>
-<p>As result of above, for described reasons using of SecureRandom much preferable. You may never get performance issues with it until you need for number of random numbers which can be generated per time unit. Especially on cloud environment because of poor entropy.</p>
-<p>Simple ussage and speed comparison example:</p>
-<pre><code class="language-java">public class RandomGenerationTest {
+	<p><p>Recently got resource(ThreadPool\Thread) leak with JAX-RS Client implementation on WF10.0.1 (RestEasy).<br />
+<img src="/img/2019-10-thraed-leak.png" alt="jax-rs thread leak" /></p>
+<p>From the dump above we can see, that pool number is extremely height, the same time thread number is always 1. That means that some code uses <code>Executors.new*</code>, which returns <code>java.util.concurrent.ThreadPoolExecutor</code> using the DefaultThreadFactory.</p>
+<p>Actually in this situation, it is <strong>ALL</strong> than we can see from thread and heap dumps when debugging leak like above. Because in case classes containing these executors was garbage collected, the executors get orphaned (but are still alive and uncollectable), making it difficult/impossible to detect from a heap dump where the executors came from.</p>
+<p><strong>Lesson #1</strong> is: Doing <code>Executors.new*</code>, would be nice to little bit think about guys who will support your code and provide non default thread names with custom ThreadFactory like :)</p>
+<pre><code class="language-java">ExecutorService es = Executors.newCachedThreadPool(new CustomThreadFactory());
 
-    private static int count = 100_000_000;
+...
 
-    public static void main(String... s) throws Exception {
-        System.out.println(&quot;Start...&quot;);
-        doGeneration(new Random());
-        doGeneration(new SecureRandom());
-    }
+class CustomThreadFactory implements ThreadFactory {
 
-    private static void doGeneration(Random random) {
-        long time = System.currentTimeMillis();
-        for (int i = 0; i &lt; count; i++) {
-            random.nextInt();
-        }
-        time = System.currentTimeMillis() - time;
-        System.out.println(String.format(&quot;Generation of %s random numbers with %s time %s ms.&quot;, count, random.getClass().getName() ,time));
+    @Override
+    public Thread newThread(final Runnable r) {
+        return new Thread(r, &quot;nice_place_for_helpful_name&quot;);
     }
 }
 </code></pre>
-<pre><code class="language-java">Generation of 100000000 random numbers with java.util.Random time 930 ms.
-Generation of 100000000 random numbers with java.security.SecureRandom time 22036 ms.
+<p>So, after many time of investigation and &quot;heap walking&quot;(paths to GC root) i found few <code>Executors$DefaultThreadFactory</code> like<br />
+<img src="/img/2019-10-thraed-leak-1.png" alt="jax-rs thread leak" /></p>
+<p>what made me see the code with REST services invocations. Something like</p>
+<pre><code class="language-java">public void doCall() {
+    Client client = ClientBuilder.newClient();
+    Future&lt;Response&gt; future = client.target(&quot;http://...&quot;)
+                                 .request()
+                                 .async().get();
+}
 </code></pre>
-<p>By default SecureRandom will use random data from Linux kernel entropy pool <code>/dev/random</code>. So in case pool went empty -  next generation can be delayed for <strong>several minutes</strong>. You also can switch to the pseudo random number generator <code>/dev/urandom</code> which is can be must faster (non blocking) but little bit less secure.</p>
-<p>To make Java use <code>/dev/urandom</code> you need to change <code>securerandom.source</code> property in the file <code>jre/lib/security/java.security</code></p>
-<pre><code class="language-java">securerandom.source=file:/dev/urandom
-</code></pre>
-<p>The entropy gathering device can also be specified with the System property <code>java.security.egd</code>. For example:</p>
-<pre><code class="language-java">java -Djava.security.egd=file:/dev/urandom MainClass
-</code></pre>
-<p>To check how much random data is currently available in the entropy pool, use next command:</p>
-<pre><code class="language-java">cat /proc/sys/kernel/random/entropy_avail
-</code></pre>
-<p>Every number lower than 1.000 can be considered too low for normal operation; if you request more data than available the requesting process will block. To increase entropy of Linux environment you can use <strong>HA</strong>rdware <strong>V</strong>olatile <strong>E</strong>ntropy <strong>G</strong>athering and <strong>E</strong>xpansion with <code>haveged</code> open source implementation</p>
-<pre><code class="language-java">apt-get install haveged
-</code></pre>
-<p>It will use additional hardware(CPU) statistic to increase entropy and as result speedup your application.</p>
+<p>According to WF10 JAX-RS implementation each <code>newClient()</code> will build ResteasyClient that uses <code>ExecutorService asyncInvocationExecutor</code> to do requests and potentially it is can be the reason of the leak.</p>
+<p><strong>Lesson #2</strong> is: Always! do <code>close()</code> client after usage. Check that implementation closes connection and shutdowns ThreadPool in case errors (timeouts, socket resets, etc).</p>
+<p><strong>Lesson #3</strong> is: Try to construct only a small number of Client instances in the application. Last one is still bit unclear from the pure JakartaEE application point of view, as it not works as well in  multi-threaded environment. (<code>Invalid use of BasicClientConnManager: connection still allocated. Make sure to release the connection before allocating another one.</code>)</p>
+<p>P.S. Many thanks for JProfiler tool trial version to make me happy with ThreadDump walking.</p>
 </p>
 
 	<hr />
@@ -165,8 +143,8 @@ Generation of 100000000 random numbers with java.security.SecureRandom time 2203
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/04/java-spedup-random-generation.html';
-	this.page.identifier = 'blog/2019/04/java-spedup-random-generation.html';
+	this.page.url = 'https://kostenko.org/blog/2019/10/jax-rs-jersey-thread-leak.html';
+	this.page.identifier = 'blog/2019/10/jax-rs-jersey-thread-leak.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE

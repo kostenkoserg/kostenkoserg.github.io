@@ -6,9 +6,49 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Mon, 30 Sep 2019 15:13:48 +0300</pubDate>
-    <lastBuildDate>Mon, 30 Sep 2019 15:13:48 +0300</lastBuildDate>
+    <pubDate>Fri, 4 Oct 2019 18:58:32 +0300</pubDate>
+    <lastBuildDate>Fri, 4 Oct 2019 18:58:32 +0300</lastBuildDate>
 
+    <item>
+      <title>RestEasy javax.ws.rs.client.Client ThreadPool leak</title>
+      <link>https://kostenko.org/blog/2019/10/jax-rs-jersey-thread-leak.html</link>
+      <pubDate>Fri, 4 Oct 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/10/jax-rs-jersey-thread-leak.html</guid>
+      	<description>
+	&lt;p&gt;Recently got resource(ThreadPool\Thread) leak with JAX-RS Client implementation on WF10.0.1 (RestEasy).&lt;br /&gt;
+&lt;img src=&quot;/img/2019-10-thraed-leak.png&quot; alt=&quot;jax-rs thread leak&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;From the dump above we can see, that pool number is extremely height, the same time thread number is always 1. That means that some code uses &lt;code&gt;Executors.new*&lt;/code&gt;, which returns &lt;code&gt;java.util.concurrent.ThreadPoolExecutor&lt;/code&gt; using the DefaultThreadFactory.&lt;/p&gt;
+&lt;p&gt;Actually in this situation, it is &lt;strong&gt;ALL&lt;/strong&gt; than we can see from thread and heap dumps when debugging leak like above. Because in case classes containing these executors was garbage collected, the executors get orphaned (but are still alive and uncollectable), making it difficult/impossible to detect from a heap dump where the executors came from.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Lesson #1&lt;/strong&gt; is: Doing &lt;code&gt;Executors.new*&lt;/code&gt;, would be nice to little bit think about guys who will support your code and provide non default thread names with custom ThreadFactory like :)&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;ExecutorService es = Executors.newCachedThreadPool(new CustomThreadFactory());
+
+...
+
+class CustomThreadFactory implements ThreadFactory {
+
+    @Override
+    public Thread newThread(final Runnable r) {
+        return new Thread(r, &amp;quot;nice_place_for_helpful_name&amp;quot;);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;So, after many time of investigation and &amp;quot;heap walking&amp;quot;(paths to GC root) i found few &lt;code&gt;Executors$DefaultThreadFactory&lt;/code&gt; like&lt;br /&gt;
+&lt;img src=&quot;/img/2019-10-thraed-leak-1.png&quot; alt=&quot;jax-rs thread leak&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;what made me see the code with REST services invocations. Something like&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public void doCall() {
+    Client client = ClientBuilder.newClient();
+    Future&amp;lt;Response&amp;gt; future = client.target(&amp;quot;http://...&amp;quot;)
+                                 .request()
+                                 .async().get();
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;According to WF10 JAX-RS implementation each &lt;code&gt;newClient()&lt;/code&gt; will build ResteasyClient that uses &lt;code&gt;ExecutorService asyncInvocationExecutor&lt;/code&gt; to do requests and potentially it is can be the reason of the leak.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Lesson #2&lt;/strong&gt; is: Always! do &lt;code&gt;close()&lt;/code&gt; client after usage. Check that implementation closes connection and shutdowns ThreadPool in case errors (timeouts, socket resets, etc).&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Lesson #3&lt;/strong&gt; is: Try to construct only a small number of Client instances in the application. Last one is still bit unclear from the pure JakartaEE application point of view, as it not works as well in  multi-threaded environment. (&lt;code&gt;Invalid use of BasicClientConnManager: connection still allocated. Make sure to release the connection before allocating another one.&lt;/code&gt;)&lt;/p&gt;
+&lt;p&gt;P.S. Many thanks for JProfiler tool trial version to make me happy with ThreadDump walking.&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Migration from JEE to JakartaEE</title>
       <link>https://kostenko.org/blog/2019/09/jee-to-jakartaee-migration.html</link>

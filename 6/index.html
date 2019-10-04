@@ -71,12 +71,13 @@
 										<li><a href="../tags/JMS.html">JMS</a></li>
 										<li><a href="../tags/Jenkins.html">Jenkins</a></li>
 										<li><a href="../tags/SQL.html">SQL</a></li>
+										<li><a href="../tags/JAX-RS.html">JAX-RS</a></li>
 										<li><a href="../tags/CDI.html">CDI</a></li>
 										<li><a href="../tags/GitHub.html">GitHub</a></li>
 										<li><a href="../tags/CI.html">CI</a></li>
 										<li><a href="../tags/JakartaEE.html">JakartaEE</a></li>
-										<li><a href="../tags/WildFly.html">WildFly</a></li>
 										<li><a href="../tags/Hibernate.html">Hibernate</a></li>
+										<li><a href="../tags/WildFly.html">WildFly</a></li>
 										<li><a href="../tags/Wildfly.html">Wildfly</a></li>
 										<li><a href="../tags/Java.html">Java</a></li>
 										<li><a href="../tags/Java EE.html">Java EE</a></li>
@@ -95,6 +96,32 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2019/02/linux-generate-private-shh-key.html"><h1>How to generate ssh keys on Linux</h1></a>
+				<p>20 February 2019</p>
+  			<p><p>Sometimes, by security or usability reasons authentication with SSH keys looks much better than passwords. To generate personal keys, please, do next:</p>
+<ul>
+<li>Login your remote instance</li>
+<li>Generate ssh keys by</li>
+</ul>
+<pre><code class="language-bash">ssh-keygen -t rsa -f ~/.ssh/[KEY_FILENAME] -C [USERNAME]
+cat [KEY_FILENAME].pub &gt;&gt; ~/.ssh/authorized_keys
+</code></pre>
+<ul>
+<li>Download private key ([KEY_FILENAME]) to your local PC</li>
+<li>Try to connect from your local with key:</li>
+</ul>
+<pre><code class="language-bash">chmod 400 [KEY_FILENAME]
+ssh -i [KEY_FILENAME] [USERNAME]@yourhost.com
+</code></pre>
+<p>To disable root login and password based login refer to  <code>/etc/ssh/sshd_config</code> and edid next sections:</p>
+<pre><code class="language-bash">PasswordAuthentication no
+PermitRootLogin no
+</code></pre>
+<p>Then reload ssh server</p>
+<pre><code class="language-bash">sudo service ssh restart
+</code></pre>
+</p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/02/github-jbake-blog-video.html"><h1>My first video</h1></a>
 				<p>16 February 2019</p>
   			<p>
