@@ -6,9 +6,79 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Fri, 4 Oct 2019 19:59:18 +0300</pubDate>
-    <lastBuildDate>Fri, 4 Oct 2019 19:59:18 +0300</lastBuildDate>
+    <pubDate>Tue, 22 Oct 2019 12:25:26 +0300</pubDate>
+    <lastBuildDate>Tue, 22 Oct 2019 12:25:26 +0300</lastBuildDate>
 
+    <item>
+      <title>Migration from Wildfly 10 to Wildfly 18</title>
+      <link>https://kostenko.org/blog/2019/10/migration-wildfly-10-to-18.html</link>
+      <pubDate>Fri, 18 Oct 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/10/migration-wildfly-10-to-18.html</guid>
+      	<description>
+	&lt;p&gt;Usually vendors declares easy migration, provides how-to documentation and even migration tools. But depends on complexity of your application you can stuck with some compatibility issues. Below i will explain my Wildfliy 10 to Wildfliy 18 migration steps.&lt;/p&gt;
+&lt;p&gt;First of all you can use provided by WF &lt;a href=&quot;https://github.com/wildfly/wildfly-server-migration&quot;&gt;migration tool&lt;/a&gt; to migrate configuration files and compatible modules to the needed release:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;git clone https://github.com/wildfly/wildfly-server-migration.git
+cd ./wildfly-server-migration/
+mvn clean install
+cd ./dist/standalone/target/
+unzip jboss-server-migration-1.8.0.Final-SNAPSHOT.zip
+cd ./jboss-server-migration
+
+./jboss-server-migration.sh -s /opt/wildfly-10.1.0.Final -t /opt/wildfly-18.0.0.Final/
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now let&apos;s see application level migration issues:&lt;/p&gt;
+&lt;p&gt;Issue #1:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;Caused by: java.lang.IllegalArgumentException: org.hibernate.hql.internal.ast.QuerySyntaxException: Invalid path: &apos;org.kostenko.STATUS.ACTIVE&apos;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Error above related to the Hibernate 5.2 &lt;a href=&quot;https://vladmihalcea.com/the-performance-penalty-of-class-forname-when-parsing-jpql-and-criteria-queries/&quot;&gt;performance improvement&lt;/a&gt; that avoids unnecessary calls to Class.forName(). Solution here is &lt;strong&gt;using Java Naming conventions for a constant.&lt;/strong&gt; (for example rename STATUS to Status) or in case  using non-conventional Java constants set the&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;&amp;lt;property name=&amp;quot;hibernate.query.conventional_java_constants&amp;quot; value=&amp;quot;false&amp;quot;/&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;in your &lt;strong&gt;persistence.xml&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Issue #2:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;java.lang.IllegalArgumentException: ArquillianServletRunner not found. Could not determine ContextRoot from ProtocolMetadata, please contact DeployableContainer developer.
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In case using Arquillian you need just update version &lt;code&gt;org.wildfly.arquillian:wildfly-arquillian-container-managed&lt;/code&gt; to version &lt;code&gt;2.2.0.Final&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;Issue #3:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;org.jboss.weld.exceptions.UnsupportedOperationException:
+  at org.jboss.weld.bean.proxy.CombinedInterceptorAndDecoratorStackMethodHandler.invoke(CombinedInterceptorAndDecoratorStackMethodHandler.java:49)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Seems to old &lt;a href=&quot;https://issues.jboss.org/browse/WELD-2407&quot;&gt;BUG&lt;/a&gt; happened and Weld does not support Java 8 default methods completely. So, pity but same refactoring here is needed.&lt;/p&gt;
+&lt;p&gt;Issue #4:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;WFLYRS0018: Explicit usage of Jackson annotation in a JAX-RS deployment; the system will disable JSON-B processing for the current deployment. Consider setting the &apos;resteasy.preferJacksonOverJsonB&apos; property to &apos;false&apos; to restore JSON-B.
+...
+javax.ws.rs.client.ResponseProcessingException: javax.ws.rs.ProcessingException: RESTEASY008200: JSON Binding deserialization error  
+  at org.jboss.resteasy.client.jaxrs.internal.ClientInvocation.extractResult(ClientInvocation.java:156)  
+  at org.jboss.resteasy.client.jaxrs.internal.ClientInvocation.invoke(ClientInvocation.java:473)  
+  at org.jboss.resteasy.client.jaxrs.internal.ClientInvocationBuilder.get(ClientInvocationBuilder.java:195)  
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Since latest versions, WF uses &lt;code&gt;org.eclipse.yasson&lt;/code&gt; as &lt;strong&gt;JSON-B&lt;/strong&gt; provider. It can provoke some compatibility problems in case using different  implementations. Solution here is refactoring according to the JSON-B specification or excluding &lt;code&gt;resteasy-json-binding-provider&lt;/code&gt; from application class loader by providing &lt;code&gt;WEB-INF/jboss-deployment-structure.xml&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;
+&amp;lt;jboss-deployment-structure&amp;gt;
+    &amp;lt;deployment&amp;gt;
+        &amp;lt;exclusions&amp;gt;
+            &amp;lt;module name=&amp;quot;org.jboss.resteasy.resteasy-json-binding-provider&amp;quot;/&amp;gt;
+        &amp;lt;/exclusions&amp;gt;
+    &amp;lt;/deployment&amp;gt;
+&amp;lt;/jboss-deployment-structure&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;or in case using EARs, do exclusion from submodules like&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;
+&amp;lt;jboss-deployment-structure&amp;gt;
+    &amp;lt;deployment&amp;gt;
+        &amp;lt;exclusions&amp;gt;
+            &amp;lt;module name=&amp;quot;org.jboss.resteasy.resteasy-json-binding-provider&amp;quot;/&amp;gt;
+        &amp;lt;/exclusions&amp;gt;
+    &amp;lt;/deployment&amp;gt;
+    &amp;lt;sub-deployment name=&amp;quot;module-1.jar&amp;quot;&amp;gt;
+        &amp;lt;exclusions&amp;gt;
+            &amp;lt;module name=&amp;quot;org.jboss.resteasy.resteasy-json-binding-provider&amp;quot;/&amp;gt;
+        &amp;lt;/exclusions&amp;gt;
+    &amp;lt;/sub-deployment&amp;gt;    
+&amp;lt;/jboss-deployment-structure&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
     <item>
       <title>JAX-RS Client ThreadPool leak</title>
       <link>https://kostenko.org/blog/2019/10/jax-rs-jersey-thread-leak.html</link>
