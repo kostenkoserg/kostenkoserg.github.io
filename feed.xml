@@ -6,8 +6,8 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Tue, 22 Oct 2019 12:34:03 +0300</pubDate>
-    <lastBuildDate>Tue, 22 Oct 2019 12:34:03 +0300</lastBuildDate>
+    <pubDate>Thu, 24 Oct 2019 10:30:02 +0300</pubDate>
+    <lastBuildDate>Thu, 24 Oct 2019 10:30:02 +0300</lastBuildDate>
 
     <item>
       <title>Migration from Wildfly 10 to Wildfly 18</title>
@@ -76,6 +76,8 @@ javax.ws.rs.client.ResponseProcessingException: javax.ws.rs.ProcessingException:
     &amp;lt;/sub-deployment&amp;gt;    
 &amp;lt;/jboss-deployment-structure&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Issue #5:&lt;br /&gt;
+According to the fixed Hibernate &lt;a href=&quot;https://hibernate.atlassian.net/browse/HHH-11278&quot;&gt;BUG&lt;/a&gt;, for now JPA call &lt;code&gt;setMaxResult(0)&lt;/code&gt; &lt;strong&gt;returns empty List&lt;/strong&gt; instead of &lt;strong&gt;ALL&lt;/strong&gt; elements in previous versions. So, just check it and do some refactoring if needed.&lt;/p&gt;
 
 	</description>
     </item>

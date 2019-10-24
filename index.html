@@ -159,6 +159,8 @@ javax.ws.rs.client.ResponseProcessingException: javax.ws.rs.ProcessingException:
     &lt;/sub-deployment&gt;    
 &lt;/jboss-deployment-structure&gt;
 </code></pre>
+<p>Issue #5:<br />
+According to the fixed Hibernate <a href="https://hibernate.atlassian.net/browse/HHH-11278">BUG</a>, for now JPA call <code>setMaxResult(0)</code> <strong>returns empty List</strong> instead of <strong>ALL</strong> elements in previous versions. So, just check it and do some refactoring if needed.</p>
 </p>
 				<hr/>
 				<a href="https://kostenko.org/blog/2019/10/jax-rs-jersey-thread-leak.html"><h1>JAX-RS Client ThreadPool leak</h1></a>
