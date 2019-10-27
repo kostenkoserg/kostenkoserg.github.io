@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="en">
   <head>
 
@@ -41,6 +41,7 @@
   </head>
   <body onload="prettyPrint()">
     <div id="wrap">
+
 	<!-- Fixed navbar -->
     <div class="navbar navbar-default navbar-fixed-top" role="navigation">
       <div class="container">
@@ -96,265 +97,6 @@
     <div class="container">
 
 
-				<a href="https://kostenko.org/blog/2019/02/wildfly-hibernate-search.html"><h1>Hibernate Search introduction. Deploying on WildFly.</h1></a>
-				<p>21 February 2019</p>
-  			<p><p>Hibernate Search is a powerful solution to implement full text search capabilities (like google or amazon) in your EE application. Under the hood it will use Apache Lucene directly or over Elasticsearch to build the index. Hibernate Search can be easy integrated with JPA, Hibernate ORM, Infinispan and other sources. If you are use Wildfly - you are lucky, - Hibernate Search already integrated with last one.</p>
-<p>So, will see how it works on practice in few simple steps...</p>
-<p><strong>1. Let's start with gradle project using EE and hibernate-search dependencies</strong><br />
-<code>build.gradle:</code></p>
-<pre><code class="language-java">apply plugin: 'java'
-apply plugin: 'war'
-
-sourceCompatibility = '1.8'
-defaultTasks 'clean', 'build'
-ext.libraryVersions = [
-    javaee                  : '8.0',
-    wildfly                 : '15.0.1.Final',
-    hibernatesearch         : '5.11.1.Final',
-    hibernateentitymanager  : '5.4.1.Final',
-    h2                      : '1.4.198',
-    dom4j                   : '2.1.1',
-    junit                   : '4.12'
-]
-configurations {
-    wildfly
-}
-repositories {
-    mavenCentral()
-}
-dependencies {
-    wildfly &quot;org.wildfly:wildfly-dist:${libraryVersions.wildfly}@zip&quot;
-    providedCompile &quot;javax:javaee-api:${libraryVersions.javaee}&quot;
-    providedCompile &quot;org.hibernate:hibernate-search-orm:${libraryVersions.hibernatesearch}&quot;
-    testCompile &quot;junit:junit:${libraryVersions.junit}&quot;
-    testCompile &quot;com.h2database:h2:${libraryVersions.h2}&quot;
-    testCompile &quot;org.hibernate:hibernate-entitymanager:${libraryVersions.hibernateentitymanager}&quot;
-    testCompile &quot;org.hibernate:hibernate-search-orm:${libraryVersions.hibernatesearch}&quot;
-    testCompile &quot;org.dom4j:dom4j:${libraryVersions.dom4j}&quot;
-}
-</code></pre>
-<p><strong>2. Create standart JPA entity with hibernate-search annotations</strong><br />
-<code>src/main/java/org/.../BlogEntity.java:</code></p>
-<pre><code class="language-java">package org.kostenko.example.wildfly.hibernatesearch;
-
-import javax.persistence.*;
-import org.hibernate.search.annotations.*;
-
-@Entity
-@Indexed
-public class BlogEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column
-    @Field(store = Store.YES)
-    private String title;
-
-    @Column
-    @Field(store = Store.YES)
-    private String body;
-
-    // getters, setters
-}
-</code></pre>
-<p>Main Hibernate Search annotations:</p>
-<table>
-<thead>
-<tr><th>Annotation    </th><th> Description</th></tr>
-</thead>
-<tbody>
-<tr><td>@Indexed      </td><td> Marks which entities shall be indexed; Allows override the index name. Only @Indexed entities can be searched.</td></tr>
-<tr><td>@Field        </td><td> Marks an entity property to be indexed. Supports various options to customize the indexing format: <code>store</code> -  enum type indicating whether the value should be stored in the document. Defaults to <code>Store.NO</code> (Field value will not be stored in the index. Storing of values can be helpful to use projections and restore objects directly from index instead of mapped ORM entity), <code>index</code> -  enum defining whether the value should be indexed or not. Defaults to <code>Index.YES</code> </td></tr>
-<tr><td>@DocumentId   </td><td> Override the property being used as primary identifier in the index. Defaults to the property with JPA’s @Id. </td></tr>
-<tr><td>@SortableField</td><td> Marks a property so that it will be indexed in such way to allow efficient sorting on it.</td></tr>
-</tbody>
-</table>
-<p><strong>3. Add hibernate-search properties to persistence.xml</strong><br />
-<code>src/test/resources/META-INF/persistence.xml :</code></p>
-<pre><code class="language-xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-&lt;persistence version=&quot;2.0&quot; xmlns=&quot;http://java.sun.com/xml/ns/persistence&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xsi:schemaLocation=&quot;http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd&quot;&gt;
-    &lt;persistence-unit name=&quot;myDSTest&quot; transaction-type=&quot;RESOURCE_LOCAL&quot;&gt;
-        &lt;provider&gt;org.hibernate.jpa.HibernatePersistenceProvider&lt;/provider&gt;
-        &lt;class&gt;org.kostenko.example.wildfly.hibernatesearch.BlogEntity&lt;/class&gt;
-        &lt;exclude-unlisted-classes&gt;false&lt;/exclude-unlisted-classes&gt;
-        &lt;properties&gt;
-            &lt;property name=&quot;hibernate.dialect&quot; value=&quot;org.hibernate.dialect.HSQLDialect&quot;/&gt;
-            &lt;property name=&quot;hibernate.hbm2ddl.auto&quot; value=&quot;create-drop&quot;/&gt;
-            &lt;property name=&quot;hibernate.connection.driver_class&quot; value=&quot;org.hsqldb.jdbcDriver&quot;/&gt;
-            &lt;property name=&quot;hibernate.connection.username&quot; value=&quot;sa&quot;/&gt;
-            &lt;property name=&quot;hibernate.connection.password&quot; value=&quot;&quot;/&gt;
-            &lt;property name=&quot;hibernate.connection.url&quot; value=&quot;jdbc:hsqldb:mem:testdb&quot;/&gt;
-            &lt;property name=&quot;hibernate.showSql&quot; value=&quot;true&quot;/&gt;
-            &lt;!-- Hibernate Search --&gt;
-            &lt;property name=&quot;hibernate.search.default.directory_provider&quot; value=&quot;filesystem&quot; /&gt;
-            &lt;property name=&quot;hibernate.search.default.indexBase&quot; value=&quot;/tmp/index1&quot; /&gt;
-            &lt;property name=&quot;hibernate.search.default.indexmanager&quot; value=&quot;near-real-time&quot; /&gt;
-        &lt;/properties&gt;
-    &lt;/persistence-unit&gt;
-&lt;/persistence&gt;
-</code></pre>
-<p>As you can see from above, it is easy enough (just with few annotations) add Hibernate Search into your application. Now Hibernate will automatically build index each time the entity persisted, updated or removed through Hibernate ORM. The index can be stored in <code>ram</code> or on  <code>filesystem</code>. Others directory providers also available - refer official documentation for details.</p>
-<p>So, time to do simple test and see how it works with <strong>Lucene queries</strong></p>
-<p><code>src/test/java/org/.../JpaHibernateSearchTest :</code></p>
-<pre><code class="language-java">public class JpaHibernateSearchTest {
-
-    private static EntityManager entityManager;
-    private static FullTextEntityManager fullTextEntityManager;
-    private static QueryBuilder queryBuilder;
-
-    @BeforeClass
-    public static void init() {
-        entityManager = Persistence.createEntityManagerFactory(&quot;myDSTest&quot;).createEntityManager();
-        fullTextEntityManager = Search.getFullTextEntityManager(entityManager);
-        queryBuilder = fullTextEntityManager.getSearchFactory().buildQueryBuilder().forEntity(BlogEntity.class).get();
-        for (int i = 0; i &lt; 1000; i++) {
-            BlogEntity blogEntity = new BlogEntity();
-            blogEntity.setTitle(&quot;Title&quot; + i);
-            blogEntity.setBody(&quot;BodyBody Body&quot; + i + &quot; look at my horse my horse is a amazing &quot; + i);
-            entityManager.getTransaction().begin();
-            entityManager.persist(blogEntity);
-            entityManager.getTransaction().commit();
-        }
-        Assert.assertEquals(1000, entityManager.createQuery(&quot;SELECT COUNT(b) FROM BlogEntity b&quot;, Number.class).getSingleResult().intValue());
-    }
-    /**
-     * Keyword Queries - searching for a specific word.
-     */
-    @Test
-    public void shouldSearchByKeywordQuery() throws Exception {
-        Query query = queryBuilder.keyword().onFields(&quot;title&quot;, &quot;body&quot;).matching(&quot;Body999&quot;).createQuery();
-        javax.persistence.Query persistenceQuery = fullTextEntityManager.createFullTextQuery(query, BlogEntity.class); // wrap Lucene query in a javax.persistence.Query
-        List&lt;BlogEntity&gt; result = persistenceQuery.getResultList();// execute search
-        Assert.assertFalse(result.isEmpty());
-        Assert.assertEquals(&quot;Title999&quot;, result.get(0).getTitle());
-    }
-    /**
-     * Fuzzy Queries - we can define a limit of “fuzziness”
-     */
-    @Test
-    public void shouldSearchByFuzzyQuery() throws Exception {
-        Query query = queryBuilder.keyword().fuzzy().withEditDistanceUpTo(2).withPrefixLength(0).onField(&quot;title&quot;).matching(&quot;TAtle999&quot;).createQuery();
-        javax.persistence.Query persistenceQuery = fullTextEntityManager.createFullTextQuery(query, BlogEntity.class);
-        List&lt;BlogEntity&gt; result = persistenceQuery.getResultList();
-        Assert.assertFalse(result.isEmpty());
-        Assert.assertEquals(&quot;Title999&quot;, result.get(0).getTitle());
-    }
-    /**
-     * Wildcard Queries - queries for which a part of a word is unknown ('?' - single character, '*' - character sequence)
-     */
-    @Test
-    public void shouldSearchByWildcardQuery() throws Exception {
-        Query query = queryBuilder.keyword().wildcard().onField(&quot;title&quot;).matching(&quot;?itle*&quot;).createQuery();
-        javax.persistence.Query persistenceQuery = fullTextEntityManager.createFullTextQuery(query, BlogEntity.class);
-        List&lt;BlogEntity&gt; result = persistenceQuery.getResultList();
-        Assert.assertFalse(result.isEmpty());
-        Assert.assertEquals(1000, result.size());
-    }
-    /**
-     * Phrase Queries - search for exact or for approximate sentences
-     */
-    @Test
-    public void shouldSearchByPhraseQuery() throws Exception {
-        Query query = queryBuilder.phrase().withSlop(10).onField(&quot;body&quot;).sentence(&quot;look amazing horse 999&quot;).createQuery();
-        javax.persistence.Query persistenceQuery = fullTextEntityManager.createFullTextQuery(query, BlogEntity.class);
-        List&lt;BlogEntity&gt; result = persistenceQuery.getResultList();
-        Assert.assertFalse(result.isEmpty());
-        Assert.assertEquals(&quot;Title999&quot;, result.get(0).getTitle());
-    }
-
-}
-</code></pre>
-<p>In the test above I used most basic use-cases. But even it enough to feel how power <code>Apache Lucene search engine</code> is. And how easy it can be integrated with your application.  Please, refer to <a href="https://docs.jboss.org/hibernate/stable/search/reference/en-US/html_single/">official documentation</a> for advanced topics.</p>
-<p><strong>4. Use Hibernate Search as Wildfly module</strong><br />
-As i already noticed - Hibernate Search included in Wildfly since version 10. It means that activation of this functionality is automatic in case you are using at least one entity with <code>org.hibernate.search.annotations.Indexed</code>. So, all we need to show how it works together is just implement simple web service with similar to test logic and run it on the server.</p>
-<pre><code class="language-java">@Path(&quot;/&quot;)
-@Stateless
-public class HibernateSearchDemoEndpoint {
-
-    @PersistenceContext
-    EntityManager entityManager;
-
-    /**
-     * Persist 1000 entities and rebuild index
-     * @return
-     */
-    @GET
-    @Path(&quot;/init&quot;)
-    @Transactional
-    public Response init() {
-        int count = entityManager.createQuery(&quot;SELECT COUNT(b) FROM BlogEntity b&quot;, Number.class).getSingleResult().intValue();
-        long time = System.currentTimeMillis();
-        for (int i = count; i &lt; count + 1000; i++) {
-            BlogEntity blogEntity = new BlogEntity();
-            blogEntity.setTitle(&quot;Title&quot; + i);
-            blogEntity.setBody(&quot;Body Body Body&quot; + i + &quot; look at my horse my horse is a amazing &quot; + i);
-            entityManager.persist(blogEntity);
-        }
-        time = System.currentTimeMillis() - time;
-        return Response.ok().entity(String.format(&quot;1000 records persisted. Current records %s Execution time = %s ms.&quot;, count + 1000, time)).build();
-    }
-
-    /**
-     * Search by index
-     * @param q - query string
-     * @return
-     */
-    @GET
-    @Path(&quot;/search&quot;)
-    public Response search(@QueryParam(&quot;q&quot;) String q) {
-        FullTextEntityManager fullTextEntityManager = Search.getFullTextEntityManager(entityManager);
-        QueryBuilder queryBuilder = fullTextEntityManager.getSearchFactory().buildQueryBuilder().forEntity(BlogEntity.class).get();
-        long time = System.currentTimeMillis();
-        Query query = queryBuilder.keyword().onFields(&quot;title&quot;, &quot;body&quot;).matching(q).createQuery();
-        javax.persistence.Query persistenceQuery = fullTextEntityManager.createFullTextQuery(query, BlogEntity.class);
-        List&lt;BlogEntity&gt; result = persistenceQuery.getResultList();
-        time = System.currentTimeMillis() - time;
-        String resultStr = result.stream().map(Object::toString).collect(Collectors.joining(&quot;,&quot;));
-        return Response.ok().entity( String.format(&quot;Found %s results. [%s] Execution time = %s ms.&quot;,result.size(),resultStr,time)).build();
-    }
-}
-</code></pre>
-<p>Now, let's add task  into our <code>build.gradle</code> to run Wildfly directly from the project</p>
-<pre><code class="language-java">task removeWildfly(type:Delete) {
-    delete &quot;build/wildfly-${libraryVersions.wildfly}&quot;
-}
-task resolveWildfly(type:Copy, dependsOn:removeWildfly) {
-    destinationDir = buildDir
-    from {zipTree(configurations.wildfly.singleFile)}
-}
-task run() {
-    dependsOn 'resolveWildfly'
-    doLast {
-        copy {
-            from projectDir.toString() + &quot;/build/libs/wildfly-hibernate-search-example.war&quot;
-            into projectDir.toString() + &quot;/build/wildfly-${libraryVersions.wildfly}/standalone/deployments&quot;
-        }
-        exec {
-            workingDir = file(projectDir)
-            commandLine &quot;./build/wildfly-${libraryVersions.wildfly}/bin/standalone.sh&quot;, &quot;--debug&quot;, &quot;5005&quot;
-            ext.output = {
-                return standardOutput.toString()
-            }
-        }
-    }
-}
-</code></pre>
-<p><code>run</code> task above will unzip wildfly into project build directory, deploy application and start the server. So, to start - please do</p>
-<pre><code class="language-bash">gradle &amp;&amp; gradle run
-</code></pre>
-<p>check output to be sure that Hiberate created Index directory by provided in <code>persistence.xml</code> path</p>
-<pre><code class="language-bash">...
-15:15:37,386 INFO  [org.hibernate.search.store.impl.DirectoryProviderHelper] (MSC service thread 1-3) HSEARCH000041: Index directory not found, creating: '/tmp/index2/org.kostenko.example.wildfly.hibernatesearch.BlogEntity'                                  
-...
-</code></pre>
-<p>and see result in the browser<br />
-<img src="/img/2019-02-hibernate-search-1.png" alt="create_index" /><br />
-<img src="/img/2019-02-hibernate-search-2.png" alt="serach_by_index" /></p>
-<p>Example project source code available on <a href="https://github.com/kostenkoserg/wildfly-hibernate-search-example">GitHub</a></p>
-</p>
-				<hr/>
 				<a href="https://kostenko.org/blog/2019/02/linux-generate-private-shh-key.html"><h1>How to generate ssh keys on Linux</h1></a>
 				<p>20 February 2019</p>
   			<p><p>Sometimes, by security or usability reasons authentication with SSH keys looks much better than passwords. To generate personal keys, please, do next:</p>
@@ -541,6 +283,14 @@ To check the result you can start embedded server and open  <a href="http://loca
 <p><img src="/ru/img/jbake_default_site.png" alt="jbake_default_site" /></p>
 <p>Well done! Our static site ready for blogging. You just need edit content of  <code>content</code> directory, regenerate site and push   <code>output</code>  to GitHub repository.</p>
 <p>Jbake supports few types of content: HTML, Markdown, AsciiDoc, - that is greate and allow you blogging with your favorite text editor. For this blog I am using <a href="https://atom.io/">Atom</a> и <a href="https://www.markdownguide.org/basic-syntax/">Markdown</a>.</p>
+</p>
+				<hr/>
+				<a href="https://kostenko.org/blog/2019/01/start-blogging.html"><h1>My first blog post</h1></a>
+				<p>17 January 2019</p>
+  			<p><p>I wanted to start a my own tech blog long ago. But by different reasons have started only now. First i wanted to do own blog engine, after spent lot of time to searching for nice look and feel  and  then sorting out popular solutions like wordpres, wix, blogger etc...</p>
+<p>After all i found <a href="https://pages.github.com/">pages.github.io</a> with their static site generator <a href="https://jekyllrb.com/">Jekyll</a>. Last one looks good from different points of view. It is simple, it is for free, it is quick enough, it is stable.  Finally if GitHub it is a pretty nice place for work with source code why it can't be the same for a blog source ?</p>
+<p>While investigating Jekyll (written on Rubby), i found  JVM based Jekyll analog - project <a href="https://jbake.org/">JBake</a>. Оf course last one seemed to me most closer.</p>
+<p>So, decision is made. Let's go!</p>
 </p>
 				<hr/>
 

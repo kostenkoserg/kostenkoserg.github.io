@@ -6,8 +6,8 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Thu, 24 Oct 2019 10:30:02 +0300</pubDate>
-    <lastBuildDate>Thu, 24 Oct 2019 10:30:02 +0300</lastBuildDate>
+    <pubDate>Sun, 27 Oct 2019 21:59:55 +0200</pubDate>
+    <lastBuildDate>Sun, 27 Oct 2019 21:59:55 +0200</lastBuildDate>
 
     <item>
       <title>Migration from Wildfly 10 to Wildfly 18</title>
@@ -328,6 +328,20 @@ public class TestServiceImpl implements TestService {
 	</description>
     </item>
     <item>
+      <title>Embedded Jetty server truncates responses</title>
+      <link>https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html</link>
+      <pubDate>Tue, 6 Aug 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/08/embedded-jetty-server-cut-responses.html</guid>
+      	<description>
+	&lt;p&gt;Jetty server has lot of configuration options. One of them is &lt;code&gt;OutputBufferSize&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;HttpConfiguration httpConfig = new HttpConfiguration();
+httpConfig.setOutputBufferSize(1024);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;If this property set to value less than your respopnse - jetty just will truncate last one.&lt;/p&gt;
+
+	</description>
+    </item>
+    <item>
       <title>Wildfly. Configure load balancing metrics</title>
       <link>https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html</link>
       <pubDate>Tue, 6 Aug 2019 00:00:00 +0300</pubDate>
@@ -355,20 +369,6 @@ Below is example, how to change default based on CPU balancing to balancing base
 &lt;p&gt;If predefined types is not enough, - you can provide &lt;code&gt;custom-load-metric&lt;/code&gt; by implementing &lt;code&gt;org.jboss.modcluster.load.metric.impl.AbstractLoadMetric&lt;/code&gt;. To possibility of using your custom metric,- you need to copy packaged JAR to &lt;code&gt;modcluster&lt;/code&gt; module and update &lt;code&gt;module.xml&lt;/code&gt;. Now you can use your custom metric with your configuration like&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt; &amp;lt;custom-load-metric class=&amp;quot;org.kostenko.examples.wldfly.modcluster.MyBalancingMetric&amp;quot;&amp;gt;  
 &lt;/code&gt;&lt;/pre&gt;
-
-	</description>
-    </item>
-    <item>
-      <title>Embedded Jetty server truncates responses</title>
-      <link>https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html</link>
-      <pubDate>Tue, 6 Aug 2019 00:00:00 +0300</pubDate>
-      <guid isPermaLink="false">blog/2019/08/embedded-jetty-server-cut-responses.html</guid>
-      	<description>
-	&lt;p&gt;Jetty server has lot of configuration options. One of them is &lt;code&gt;OutputBufferSize&lt;/code&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;HttpConfiguration httpConfig = new HttpConfiguration();
-httpConfig.setOutputBufferSize(1024);
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;If this property set to value less than your respopnse - jetty just will truncate last one.&lt;/p&gt;
 
 	</description>
     </item>
