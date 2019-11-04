@@ -65,22 +65,25 @@
 										<li><a href="../tags/Gradle.html">Gradle</a></li>
 										<li><a href="../tags/API.html">API</a></li>
 										<li><a href="../tags/JPA.html">JPA</a></li>
+										<li><a href="../tags/Jakarta.html">Jakarta</a></li>
 										<li><a href="../tags/JMX.html">JMX</a></li>
 										<li><a href="../tags/Jakarta EE.html">Jakarta EE</a></li>
 										<li><a href="../tags/Linux.html">Linux</a></li>
 										<li><a href="../tags/JBake.html">JBake</a></li>
 										<li><a href="../tags/JMS.html">JMS</a></li>
 										<li><a href="../tags/Jenkins.html">Jenkins</a></li>
+										<li><a href="../tags/Jberet.html">Jberet</a></li>
 										<li><a href="../tags/SQL.html">SQL</a></li>
-										<li><a href="../tags/JAX-RS.html">JAX-RS</a></li>
-										<li><a href="../tags/CDI.html">CDI</a></li>
-										<li><a href="../tags/GitHub.html">GitHub</a></li>
 										<li><a href="../tags/CI.html">CI</a></li>
 										<li><a href="../tags/JakartaEE.html">JakartaEE</a></li>
 										<li><a href="../tags/Hibernate.html">Hibernate</a></li>
 										<li><a href="../tags/WildFly.html">WildFly</a></li>
-										<li><a href="../tags/Wildfly.html">Wildfly</a></li>
 										<li><a href="../tags/Java.html">Java</a></li>
+										<li><a href="../tags/Batch.html">Batch</a></li>
+										<li><a href="../tags/JAX-RS.html">JAX-RS</a></li>
+										<li><a href="../tags/CDI.html">CDI</a></li>
+										<li><a href="../tags/GitHub.html">GitHub</a></li>
+										<li><a href="../tags/Wildfly.html">Wildfly</a></li>
 										<li><a href="../tags/Java EE.html">Java EE</a></li>
 								</ul>
 						</li>
@@ -97,6 +100,17 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2019/07/sql-trick-insert-if-noe-exists.html"><h1>SQL trick. Insert if not exists</h1></a>
+				<p>24 July 2019</p>
+  			<p><p>Next SQL trick allows you perform conditional <code>INSERT</code> with your query.</p>
+<p>For example, lets do insert if record not exists yet:</p>
+<p>SQL:</p>
+<pre><code class="language-sql">INSERT INTO my_table (id, name)  
+    SELECT 1, 'name' FROM dual  WHERE NOT EXISTS (SELECT 1 FROM my_table WHERE ID = 1);
+</code></pre>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2019/07/sql-trick-insert-if-noe-exists.html#disqus_thread" data-disqus-identifier="blog/2019/07/sql-trick-insert-if-noe-exists.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/07/wildfly-jms-duplicate-detection.html"><h1>JMS Duplicate Message Detection with Wildfly</h1></a>
 				<p>19 July 2019</p>
   			<p><p>To support JMS specification Wildfly uses Apache ActiveMQ Artemis over active-mq subsystem. Last one provides mechanism to filtering out duplicate messages without application code changes.</p>
@@ -257,73 +271,10 @@ URLClassLoader childClassLoader = new URLClassLoader(urls, ClassLoader.getSystem
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2019/06/runtime-class-loading.html#disqus_thread" data-disqus-identifier="blog/2019/06/runtime-class-loading.html">Comments</a></p>
 				<hr/>
-				<a href="https://kostenko.org/blog/2019/05/design-dsl-api-java.html"><h1>Design DSL API in Java</h1></a>
-				<p>27 May 2019</p>
-  			<p><p>Well designed API is very important in case you expect your API will use someone else instead of just you. To build readable and writable DSL(domain specific language) in Java usually uses Builder pattern with few simple rules:</p>
-<ul>
-<li>Think twice about names for methods</li>
-<li>Restrict available values for each step</li>
-</ul>
-<p>So, lets see how it looks from source code perspective...</p>
-<p>Design API entry point</p>
-<pre><code class="language-java">public class MyAPI {
-    public static UserBuilder.Registration asUser() {
-        return new UserBuilder.User();
-    }
-}
-</code></pre>
-<p>Design builder using interfaces to restrict available values depends on current step</p>
-<pre><code class="language-java">public class UserBuilder {
-    public static class User implements Registration, Login, Password, Apply {
-        private String login;
-        private String password;
-
-        @Override
-        public Login doRegistration() {
-            return this;
-        }
-        @Override
-        public Password withLogin(String login) {
-            this.login = login;
-            return this;
-        }
-        @Override
-        public Apply withPassword(String password) {
-            this.password = password;
-            return this;
-        }
-        @Override
-        public void apply() {
-            // ...
-        }
-    }
-
-    public interface Registration {
-        Login doRegistration();
-    }
-    public interface Login {
-        Password withLogin(String login);
-    }
-    public interface Password {
-        Apply withPassword(String password);
-    }
-    public interface Apply {
-        void apply();
-    }
-}
-</code></pre>
-<p>Then usage, with no chance to mistake, looks like</p>
-<pre><code class="language-java">asUser().doRegistration()
-        .withLogin(&quot;login&quot;).withPassword(&quot;password&quot;)
-        .apply();
-</code></pre>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2019/05/design-dsl-api-java.html#disqus_thread" data-disqus-identifier="blog/2019/05/design-dsl-api-java.html">Comments</a></p>
-				<hr/>
 
 		<ul class="pager">
 				<li class="previous"><a href="https://kostenko.org/2">Previous</a></li>
-			<li">Page: 3/6 (<a href="../archive.html">archive</a>)</li>
+			<li">Page: 3/7 (<a href="../archive.html">archive</a>)</li>
 				<li class="next"><a href="https://kostenko.org/4">Next</a></li>
 		</ul>
 		</div>

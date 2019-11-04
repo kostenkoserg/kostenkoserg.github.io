@@ -6,9 +6,41 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Sun, 27 Oct 2019 23:05:04 +0200</pubDate>
-    <lastBuildDate>Sun, 27 Oct 2019 23:05:04 +0200</lastBuildDate>
+    <pubDate>Mon, 4 Nov 2019 18:40:09 +0200</pubDate>
+    <lastBuildDate>Mon, 4 Nov 2019 18:40:09 +0200</lastBuildDate>
 
+    <item>
+      <title>Jakarta Batch garbage collection with Jberet</title>
+      <link>https://kostenko.org/blog/2019/11/jakarta-batch-garbage-collection-jberet.html</link>
+      <pubDate>Mon, 4 Nov 2019 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2019/11/jakarta-batch-garbage-collection-jberet.html</guid>
+      	<description>
+	&lt;p&gt;To implement Jakarta Batch Specification Wildfly uses JBeret as implementation of JSR 352 (Batch Applications for the Java Platform). During processing, last one persists some working data to the memory, JDBC or another repository depends on configuration.&lt;/p&gt;
+&lt;p&gt;In case intensive usage it can collect lot of data and as result provoke some application server performance issues. To cleanup  &lt;strong&gt;unwanted job data&lt;/strong&gt; you can design your own solution or use provided by Jberet &lt;a href=&quot;https://docs.jboss.org/jberet/1.3.0.Final/javadoc/jberet-core/org/jberet/repository/PurgeBatchlet.html&quot;&gt;org.jberet.repository.PurgeBatchlet&lt;/a&gt; in standard way:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;&amp;lt;job id=&amp;quot;batchGarbageCollector&amp;quot; xmlns=&amp;quot;http://xmlns.jcp.org/xml/ns/javaee&amp;quot;
+     xmlns:xsi=&amp;quot;http://www.w3.org/2001/XMLSchema-instance&amp;quot;
+     xsi:schemaLocation=&amp;quot;http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/jobXML_1_0.xsd&amp;quot;
+     version=&amp;quot;1.0&amp;quot;&amp;gt;
+    &amp;lt;step id=&amp;quot;batchGarbageCollector.step1&amp;quot;&amp;gt;
+        &amp;lt;batchlet ref=&amp;quot;org.jberet.repository.PurgeBatchlet&amp;quot;&amp;gt;
+            &amp;lt;properties&amp;gt;
+                &amp;lt;property name=&amp;quot;sqlFile&amp;quot; value=&amp;quot;#{jobParameters[&apos;sqlFile&apos;]}&amp;quot;/&amp;gt;
+            &amp;lt;/properties&amp;gt;
+        &amp;lt;/batchlet&amp;gt;
+    &amp;lt;/step&amp;gt;
+&amp;lt;/job&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;From the documentation &lt;code&gt;PurgeBatchlet&lt;/code&gt; supports rich set of properties and looks pretty good, &lt;strong&gt;BUT&lt;/strong&gt; on practice lot of them does not work as expected. I tried &lt;code&gt;numberOfRecentJobExecutionsToKeep&lt;/code&gt; and &lt;code&gt;batchStatuses&lt;/code&gt; on both WF repositories (inMemory and JDBC) and on both of them &lt;strong&gt;does not work&lt;/strong&gt; for me.&lt;/p&gt;
+&lt;p&gt;I am getting output like below, but garbage still was with me :(&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;...
+INFO  [org.jberet] (Batch Thread - 8) [] JBERET000023: Removing javax.batch.runtime.JobExecution 35256804
+INFO  [org.jberet] (Batch Thread - 8) [] JBERET000023: Removing javax.batch.runtime.JobExecution 35256806
+...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Good news is, that in case using JDBC repository job parameter &lt;code&gt;sqlFile&lt;/code&gt; works as expected executes provided SQL... without any log outputs.&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Migration from Wildfly 10 to Wildfly 18</title>
       <link>https://kostenko.org/blog/2019/10/migration-wildfly-10-to-18.html</link>
