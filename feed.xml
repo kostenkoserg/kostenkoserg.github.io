@@ -6,8 +6,8 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Mon, 4 Nov 2019 18:40:09 +0200</pubDate>
-    <lastBuildDate>Mon, 4 Nov 2019 18:40:09 +0200</lastBuildDate>
+    <pubDate>Mon, 4 Nov 2019 18:42:52 +0200</pubDate>
+    <lastBuildDate>Mon, 4 Nov 2019 18:42:52 +0200</lastBuildDate>
 
     <item>
       <title>Jakarta Batch garbage collection with Jberet</title>
@@ -38,6 +38,7 @@ INFO  [org.jberet] (Batch Thread - 8) [] JBERET000023: Removing javax.batch.runt
 ...
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Good news is, that in case using JDBC repository job parameter &lt;code&gt;sqlFile&lt;/code&gt; works as expected executes provided SQL... without any log outputs.&lt;/p&gt;
+&lt;p&gt;Source code of test application available on &lt;a href=&quot;https://github.com/kostenkoserg/ee-batch-processing-examples&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
 
 	</description>
     </item>
