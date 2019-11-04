@@ -117,7 +117,7 @@
     &lt;/step&gt;
 &lt;/job&gt;
 </code></pre>
-<p>From the documentation <code>PurgeBatchlet</code> supports rich set of properties and looks pretty good, <strong>BUT</strong> on practice lot of them does not work as expected. I tried <code>numberOfRecentJobExecutionsToKeep</code> and <code>batchStatuses</code> on both WF repositories (inMemory and JDBC) and on both of them <strong>does not work</strong> for me.</p>
+<p>From the documentation <code>PurgeBatchlet</code> supports rich set of properties and looks pretty good, <strong>BUT</strong> on practice lot of them does not work as expected. I tried <code>numberOfRecentJobExecutionsToKeep</code> and <code>batchStatuses</code> on both WF repositories (inMemory and JDBC) and on both of them <strong>it does not work</strong> for me.</p>
 <p>I am getting output like below, but garbage still was with me :(</p>
 <pre><code class="language-java">...
 INFO  [org.jberet] (Batch Thread - 8) [] JBERET000023: Removing javax.batch.runtime.JobExecution 35256804
