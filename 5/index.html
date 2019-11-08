@@ -100,6 +100,35 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2019/04/jbake-blog-pagination.html"><h1>JBake blog pagination</h1></a>
+				<p>10 April 2019</p>
+  			<p><p>To enable pagintation support on your JBake based blog you need to provide next properties in your <code>jbake.properties</code> file:</p>
+<pre><code class="language-java">index.paginate=true
+index.posts_per_page=5
+</code></pre>
+<p>After that JBake will generate subdirectories <code>2,3,4...</code> for your <code>index.html</code>. Next, you need to update <code>index</code> template to generate necessary count of posts per each index page and provide &quot;previous&quot;,&quot;next&quot; navigation buttons.</p>
+<p>Below, I will show you freemarker template with pagination support, that I am using for this blog</p>
+<pre><code class="language-java">&lt;#include &quot;header.ftl&quot;&gt;
+	&lt;#include &quot;menu.ftl&quot;&gt;
+	&lt;#list posts as post&gt;
+  		&lt;#if (post.status == &quot;published&quot;  &amp;&amp; post?index &gt;= (currentPageNumber-1) * config.index_posts_per_page?eval &amp;&amp; post?index &lt; currentPageNumber * config.index_posts_per_page?eval)&gt;
+				&lt;a href=&quot;${post.uri}&quot;&gt;&lt;h1&gt;&lt;#escape x as x?xml&gt;${post.title}&lt;/#escape&gt;&lt;/h1&gt;&lt;/a&gt;
+				&lt;p&gt;${post.date?string(&quot;dd MMMM yyyy&quot;)}&lt;/p&gt;
+  			&lt;p&gt;${post.body}&lt;/p&gt;
+				&lt;hr/&gt;
+  		&lt;/#if&gt;
+  	&lt;/#list&gt;
+		&lt;ul class=&quot;pager&quot;&gt;
+			&lt;#if (currentPageNumber &gt; 1)&gt;&lt;li class=&quot;previous&quot;&gt;&lt;a href=&quot;${config.site_host}/${(currentPageNumber==2)?then('', currentPageNumber-1)}&quot;&gt;Previous&lt;/a&gt;&lt;/li&gt;&lt;/#if&gt;
+			&lt;li&gt;Page: ${currentPageNumber}/${numberOfPages} (&lt;a href=&quot;${content.rootpath}${config.archive_file}&quot;&gt;archive&lt;/a&gt;)&lt;/li&gt;
+			&lt;#if (currentPageNumber &lt; numberOfPages)&gt;&lt;li class=&quot;next&quot;&gt;&lt;a href=&quot;${config.site_host}/${currentPageNumber + 1}&quot;&gt;Next&lt;/a&gt;&lt;/li&gt;&lt;/#if&gt;
+		&lt;/ul&gt;
+&lt;#include &quot;footer.ftl&quot;&gt;
+</code></pre>
+<p>Blog sources available on <a href="https://github.com/kostenkoserg/kostenko.blog.src">GitHub</a></p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2019/04/jbake-blog-pagination.html#disqus_thread" data-disqus-identifier="blog/2019/04/jbake-blog-pagination.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/04/java-ee-cdi-events.html"><h1>Java EE CDI events. Dynamic qualifier.</h1></a>
 				<p>08 April 2019</p>
   			<p><p>Java EE provides us really nice mechanism for event processing. Which is part of the CDI for Java specification. Dynamic qualifier for CDI Events can be very useful, for example, in domain driven design, web socket messages routing or any other stuff depends on needs.</p>
@@ -291,19 +320,6 @@ Number result = em.createQuery(query).getSingleResult();
 <p>Test cases source code available on  <a href="https://github.com/kostenkoserg/jpa-examples/blob/master/src/test/java/org/kostenko/example/jpa/JpaConditionalCountTest.java">GitHub</a></p>
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2019/03/sql-trick-conditional-count.html#disqus_thread" data-disqus-identifier="blog/2019/03/sql-trick-conditional-count.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2019/03/linux-build-ssh-tunnel.html"><h1>How to build ssh tunnel on Linux</h1></a>
-				<p>15 March 2019</p>
-  			<p><p>SSH tunneling is routing local network traffic through SSH to remote hosts. Can be used, for example, to  connect to the remote application that was bound on remote local port.</p>
-<p>For example, to connect to mysql instance that was bound on remote local port <code>3306</code> you can use:</p>
-<pre><code class="language-bash">ssh -L 3366:localhost:3306 [USERNAME]@remotehost.com
-</code></pre>
-<p>or if you would like to connect with <a href="https://kostenko.org/blog/2019/02/linux-generate-private-shh-key.html">SSH keys</a> :</p>
-<pre><code class="language-bash">ssh -i [KEY_FILENAME] -L 3366:localhost:3306 [USERNAME]@remotehost.com
-</code></pre>
-<p>After you can connect to the database, using your favorite tool on localhost:3366</p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2019/03/linux-build-ssh-tunnel.html#disqus_thread" data-disqus-identifier="blog/2019/03/linux-build-ssh-tunnel.html">Comments</a></p>
 				<hr/>
 
 		<ul class="pager">
