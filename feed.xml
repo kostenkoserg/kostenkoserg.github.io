@@ -6,8 +6,8 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Fri, 8 Nov 2019 17:51:45 +0200</pubDate>
-    <lastBuildDate>Fri, 8 Nov 2019 17:51:45 +0200</lastBuildDate>
+    <pubDate>Fri, 8 Nov 2019 17:55:25 +0200</pubDate>
+    <lastBuildDate>Fri, 8 Nov 2019 17:55:25 +0200</lastBuildDate>
 
     <item>
       <title>Never use Java primitives for math calculation</title>
@@ -15,7 +15,7 @@
       <pubDate>Fri, 8 Nov 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/11/java-primitive-types-calculation.html</guid>
       	<description>
-	&lt;p&gt;This is well knowing stuff about representation of (floating point types in java)[https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html], but time from time each developer can forget about&lt;/p&gt;
+	&lt;p&gt;This is well knowing stuff about representation of &lt;a href=&quot;https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html&quot;&gt;Floating point types in java&lt;/a&gt;, but time from time each developer can forget about&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Test
 public void primitiveTest() {
 
