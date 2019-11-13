@@ -100,6 +100,21 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2019/09/jee-to-jakartaee-migration.html"><h1>Migration from JEE to JakartaEE</h1></a>
+				<p>30 September 2019</p>
+  			<p><p>As you probably know Java EE was moved from Oracle to the Eclipse Foundation where will evolve under the <strong>Jakarta EE</strong> brand.  Sept. 10, 2019 Jakarta EE Full Platform and Web Profile specifications was released by Eclipse Foundation during <a href="https://jakartaone.org/">JakartaOne Livestream</a>. Few days later Wildfly declared that <strong>WildFly 17.0.1</strong> has passed the Jakarta EE 8 TCK and certification request has been approved by the Jakarta EE Spec Committee. So, now WildFly is a Jakarta EE Full platform compatible implementation.</p>
+<p>Let's do migration of typical <a href="https://kostenko.org/blog/2019/08/ee-application-multi-module-template.html">gradle EE project</a> to the Jakarta EE and look how hard is it. Current JakartaEE version <code>8.0.0</code> is fully compatible with JavaEE version <code>8.0</code>, that means no need to change project sources, just update dependency from <code>javax:javaee-api:8.0</code> to <code>jakarta.platform:jakarta.jakartaee-api:8.0.0</code></p>
+<p><code>updated build.gradle:</code></p>
+<pre><code class="language-java">apply plugin: 'war'
+dependencies {
+    providedCompile &quot;jakarta.platform:jakarta.jakartaee-api:8.0.0&quot;
+}
+</code></pre>
+<p>That is it! Application builds and works well under WF17.0.1</p>
+<p>Source code of demo application available on <a href="https://github.com/kostenkoserg/ee-application-multi-module-gradle-template">GitHub</a></p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2019/09/jee-to-jakartaee-migration.html#disqus_thread" data-disqus-identifier="blog/2019/09/jee-to-jakartaee-migration.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/08/wildfly-jconsole-mbeans-list-problem.html"><h1>Wildfly JMX connection problems (so slow and terminates)</h1></a>
 				<p>19 August 2019</p>
   			<p><p>JMX (Java Management Extensions ) - is a technology that provide us possibility to monitoring applications (application servers) by <strong>MBeans (Managed Bean)</strong> objects.<br />
@@ -301,16 +316,6 @@ Below is example, how to change default based on CPU balancing to balancing base
 </code></pre>
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html#disqus_thread" data-disqus-identifier="blog/2019/08/wildfly-load-balancing-metrics.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html"><h1>Embedded Jetty server truncates responses</h1></a>
-				<p>06 August 2019</p>
-  			<p><p>Jetty server has lot of configuration options. One of them is <code>OutputBufferSize</code></p>
-<pre><code class="language-java">HttpConfiguration httpConfig = new HttpConfiguration();
-httpConfig.setOutputBufferSize(1024);
-</code></pre>
-<p>If this property set to value less than your respopnse - jetty just will truncate last one.</p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html#disqus_thread" data-disqus-identifier="blog/2019/08/embedded-jetty-server-cut-responses.html">Comments</a></p>
 				<hr/>
 
 		<ul class="pager">

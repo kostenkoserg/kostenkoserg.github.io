@@ -105,7 +105,7 @@
 
 	<p><em>08 November 2019</em></p>
 
-	<p><p>This is well knowing stuff about representation of <a href="https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html">Floating point types in java</a>, but time from time each developer can forget about</p>
+	<p><p>This is well known stuff about representation of <a href="https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html">Floating point types in java</a>, but time from time each developer can forget about</p>
 <pre><code class="language-java">@Test
 public void primitiveTest() {
 
@@ -118,18 +118,18 @@ public void primitiveTest() {
     float flt2 = 0.04f * 15.0f;
 
     System.out.println(&quot;BigDecimal (correct): &quot; + bgDcml);
-    System.out.println(String.format(&quot;Float (incorrcect): %s (%s)&quot;, flt, new BigDecimal(flt)));
+    System.out.println(String.format(&quot;Float (incorrect): %s (%s)&quot;, flt, new BigDecimal(flt)));
     System.out.println(&quot;BigDecimal (correct): &quot; + bgDcml2);
-    System.out.println(String.format(&quot;Float (incorrcect): %s&quot;, flt2));
+    System.out.println(String.format(&quot;Float (incorrect): %s&quot;, flt2));
 }
 </code></pre>
 <pre><code class="language-java">-------------------------------------------------------
  T E S T S
 -------------------------------------------------------
 BigDecimal (correct): 1125000000
-Float (incorrcect): 1.12499994E9 (1124999936)
+Float (incorrect): 1.12499994E9 (1124999936)
 BigDecimal (correct): 0.600
-Float (incorrcect): 0.59999996
+Float (incorrect): 0.59999996
 </code></pre>
 </p>
 

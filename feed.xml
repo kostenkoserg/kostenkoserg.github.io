@@ -6,16 +6,129 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Fri, 8 Nov 2019 17:55:25 +0200</pubDate>
-    <lastBuildDate>Fri, 8 Nov 2019 17:55:25 +0200</lastBuildDate>
+    <pubDate>Thu, 14 Nov 2019 00:23:39 +0200</pubDate>
+    <lastBuildDate>Thu, 14 Nov 2019 00:23:39 +0200</lastBuildDate>
 
+    <item>
+      <title>Understanding JMS(MDB) transaction scopes in JakartaEE application</title>
+      <link>https://kostenko.org/blog/2019/11/jakartaee-understanding-jms-transactions.html</link>
+      <pubDate>Mon, 11 Nov 2019 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2019/11/jakartaee-understanding-jms-transactions.html</guid>
+      	<description>
+	&lt;p&gt;Most useful way to deal with JMS in JakartaEE application is MDB(&lt;strong&gt;M&lt;/strong&gt;essage &lt;strong&gt;D&lt;/strong&gt;riven &lt;strong&gt;B&lt;/strong&gt;eans). This type of bean acts as a JMS message listener to which messages can be delivered from either a queue or a topic.&lt;/p&gt;
+&lt;p&gt;Message Driven Bean supports only &lt;code&gt;Required&lt;/code&gt; and &lt;code&gt;NotSupported&lt;/code&gt; scopes as there is no incoming transaction context.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;@Required:&lt;/strong&gt; Transaction starts before read from queue (before onMessage). All next resource calls will use this transaction context. In case transaction rollback or some RuntimeException, - message will be roll back to destination. Container acknowledges delivery after TX commit;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;@NotSupported:&lt;/strong&gt; No transaction started. Application server acknowledges delivery on successful onMessage(). In case RuntimeException, - message will be returned to destination;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;In both cases above, when message was returned to the destination, container will do redelivery according to application server configuration. For example on Wildfly it is: &lt;code&gt;max-delivery-attempts&lt;/code&gt; and &lt;code&gt;redelivery-delay&lt;/code&gt;.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;/subsystem=messaging-activemq/server=default/address-setting=#:read-attribute(name=max-delivery-attempts)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Be careful with redelivery configuration as in case &lt;strong&gt;&amp;quot;poisen message&amp;quot;&lt;/strong&gt; it can negative affect performance of your application or even server.&lt;/p&gt;
+&lt;p&gt;When you use container-managed transactions, you can invoke next &lt;code&gt;MessageDrivenContext&lt;/code&gt; methods:&lt;br /&gt;
+* setRollbackOnly: marks the current transaction to rollback.&lt;br /&gt;
+* getRollbackOnly: check current transaction has been marked for rollback or not.&lt;/p&gt;
+&lt;p&gt;In case bean-managed transactions you need to manually control transaction by &lt;code&gt;UserTransaction&lt;/code&gt; methods and you also can set the activation configuration property acknowledgeMode to &lt;code&gt;Auto-acknowledge&lt;/code&gt; or &lt;code&gt;Dups-ok-acknowledge&lt;/code&gt; to specify how the message received by the message-driven bean to be acknowledged.&lt;/p&gt;
+&lt;p&gt;Ok. Let&apos;s pay attention on typical use cases and potentially issues with default configurations. Often enough MDB uses to do relatively long tasks that should be executed asynchronously. So typical message bean in this case will looks like:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@JMSDestinationDefinition(
+        name = TxRequiredMessagerDrivenBean.TX_REQUIRED_QUEUE,
+        interfaceName = &amp;quot;javax.jms.Queue&amp;quot;
+)
+@MessageDriven(activationConfig = {
+    @ActivationConfigProperty(propertyName = &amp;quot;destinationLookup&amp;quot;, propertyValue = TxRequiredMessagerDrivenBean.TX_REQUIRED_QUEUE),
+    @ActivationConfigProperty(propertyName = &amp;quot;destinationType&amp;quot;, propertyValue = &amp;quot;javax.jms.Queue&amp;quot;)
+})
+//@TransactionAttribute(TransactionAttributeType.REQUIRED)
+public class TxRequiredMessagerDrivenBean implements MessageListener {
+
+    public final static String TX_REQUIRED_QUEUE = &amp;quot;java:global/jms/txRequiredQueue&amp;quot;;
+
+    @Resource
+    MessageDrivenContext messageDrivenContext;
+
+    @Override
+    public void onMessage(Message msg) {
+        System.out.println(&amp;quot;Got new message.&amp;quot;);
+        try {
+            System.out.println(&amp;quot;Hello TxRequiredMessagerDrivenBean!&amp;quot;);
+            for (int x = 1; x &amp;lt; 40; x++) {
+                Thread.sleep(10_000l);
+                System.out.println(&amp;quot;Long transaction: &amp;quot; + (10 * x) + &amp;quot; sec.&amp;quot;);
+            }
+        } catch (Exception ex) {
+            System.err.println(ex);
+            messageDrivenContext.setRollbackOnly();
+        }
+        System.out.println(&amp;quot;Message  successfully processed&amp;quot;);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now take a look to result of our bean invocation:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;INFO  (Thread-1 (ActiveMQ-client-global-threads)) Got new message.
+INFO  (Thread-1 (ActiveMQ-client-global-threads)) Hello TxRequiredMessagerDrivenBean!
+INFO  (Thread-1 (ActiveMQ-client-global-threads)) Long transaction: 10 sec.
+...
+INFO  (Thread-1 (ActiveMQ-client-global-threads)) Long transaction: 290 sec.
+...
+WARN  [com.arjuna.ats.arjuna] (Transaction Reaper) ARJUNA012117: TransactionReaper::check timeout for TX 0:ffff7f000101:3b3ecbca:5dcc2894:13 in state  RUN
+WARN  [com.arjuna.ats.arjuna] (Transaction Reaper Worker 0) ARJUNA012095: Abort of action id 0:ffff7f000101:3b3ecbca:5dcc2894:13 invoked while multiple threads active within it.
+WARN  [com.arjuna.ats.arjuna] (Transaction Reaper Worker 0) ARJUNA012381: Action id 0:ffff7f000101:3b3ecbca:5dcc2894:13 completed with multiple threads - thread Thread-1 (ActiveMQ-client-global-threads) was in progress with java.lang.Thread.sleep(Native Method) org.kostenko.example.jms.transaction.TxRequiredMessagerDrivenBean.onMessage(TxRequiredMessagerDrivenBean.java:40)
+...
+WARN  [com.arjuna.ats.arjuna] (Transaction Reaper Worker 0) ARJUNA012108: CheckedAction::check - atomic action 0:ffff7f000101:3b3ecbca:5dcc2894:13 aborting with 1 threads active!
+...
+WARN  [com.arjuna.ats.arjuna] (Transaction Reaper Worker 0) ARJUNA012121: TransactionReaper::doCancellations worker Thread[Transaction Reaper Worker 0,5,main] successfully canceled TX 0:ffff7f000101:3b3ecbca:5dcc2894:13
+...
+INFO  (Thread-3 (ActiveMQ-client-global-threads)) Got new message.
+INFO  (Thread-3 (ActiveMQ-client-global-threads)) Hello TxRequiredMessagerDrivenBean!
+INFO  (Thread-1 (ActiveMQ-client-global-threads)) Long transaction: 300 sec.
+INFO  (Thread-3 (ActiveMQ-client-global-threads)) Long transaction: 10 sec.
+INFO  (Thread-1 (ActiveMQ-client-global-threads)) Long transaction: 310 sec.
+INFO  (Thread-3 (ActiveMQ-client-global-threads)) Long transaction: 20 sec.
+INFO  (Thread-1 (ActiveMQ-client-global-threads)) Long transaction: 320 sec.
+...
+INFO  (Thread-3 (ActiveMQ-client-global-threads)) [] Long transaction: 90 sec.
+INFO  (Thread-1 (ActiveMQ-client-global-threads)) [] Long transaction: 390 sec.
+INFO  (Thread-1 (ActiveMQ-client-global-threads)) [] Message  successfully processed
+WARN  [com.arjuna.ats.arjuna] (Thread-1 (ActiveMQ-client-global-threads)) [] ARJUNA012077: Abort called on already aborted atomic action 0:ffff7f000101:3b3ecbca:5dcc2894:13
+WARN  [org.apache.activemq.artemis.ra] (Thread-1 (ActiveMQ-client-global-threads)) [] AMQ152006: Unable to call after delivery: javax.resource.spi.LocalTransactionException: javax.transaction.RollbackException: ARJUNA016102: The transaction is not active! Uid is 0:ffff7f000101:3b3ecbca:5dcc2894:13
+  Caused by: javax.transaction.RollbackException: ARJUNA016102: The transaction is not active! Uid is 0:ffff7f000101:3b3ecbca:5dcc2894:13
+...
+WARN  [org.apache.activemq.artemis.core.client] (Thread-1 (ActiveMQ-client-global-threads)) [] AMQ212009: resetting session after failure
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;From log above we can see that:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;TransactionAttributeType.REQUIRED&lt;/code&gt; was used by default;&lt;/li&gt;
+&lt;li&gt;Started transaction was canceled by default timeout in &lt;code&gt;300 sec&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;Container detected TX cancellation - did message redelivery and MDB starts new transaction;&lt;/li&gt;
+&lt;li&gt;Old thread continue work with first message processing, but the transaction already is not active;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;So, keep this behavior in mind if you planning to play with long tasks and Message Driven Beans. Depends on requirements few &lt;strong&gt;solutions&lt;/strong&gt; is possible here:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Avoid long transaction usage. If last one is not necessary  always use &lt;code&gt;TransactionAttributeType.NOT_SUPPORTED&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Increase default transaction timeout&lt;/li&gt;
+&lt;li&gt;Use an annotation @ActivationConfigProperty(propertyName=&amp;quot;transactionTimeout&amp;quot;, propertyValue=&amp;quot;xxx&amp;quot;) to specify custom transaction timeout for MDB like:&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@MessageDriven(activationConfig = {
+    @ActivationConfigProperty(propertyName = &amp;quot;destinationLookup&amp;quot;, propertyValue = TxRequiredMessagerDrivenBean.TX_REQUIRED_QUEUE),
+    @ActivationConfigProperty(propertyName = &amp;quot;destinationType&amp;quot;, propertyValue = &amp;quot;javax.jms.Queue&amp;quot;)
+    @ActivationConfigProperty(propertyName = &amp;quot;transactionTimeout&amp;quot;, propertyValue=&amp;quot;500&amp;quot;)
+})
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Source code of test application available on &lt;a href=&quot;https://github.com/kostenkoserg/ee-jms-examples&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Never use Java primitives for math calculation</title>
       <link>https://kostenko.org/blog/2019/11/java-primitive-types-calculation.html</link>
       <pubDate>Fri, 8 Nov 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/11/java-primitive-types-calculation.html</guid>
       	<description>
-	&lt;p&gt;This is well knowing stuff about representation of &lt;a href=&quot;https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html&quot;&gt;Floating point types in java&lt;/a&gt;, but time from time each developer can forget about&lt;/p&gt;
+	&lt;p&gt;This is well known stuff about representation of &lt;a href=&quot;https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html&quot;&gt;Floating point types in java&lt;/a&gt;, but time from time each developer can forget about&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Test
 public void primitiveTest() {
 
@@ -28,18 +141,18 @@ public void primitiveTest() {
     float flt2 = 0.04f * 15.0f;
 
     System.out.println(&amp;quot;BigDecimal (correct): &amp;quot; + bgDcml);
-    System.out.println(String.format(&amp;quot;Float (incorrcect): %s (%s)&amp;quot;, flt, new BigDecimal(flt)));
+    System.out.println(String.format(&amp;quot;Float (incorrect): %s (%s)&amp;quot;, flt, new BigDecimal(flt)));
     System.out.println(&amp;quot;BigDecimal (correct): &amp;quot; + bgDcml2);
-    System.out.println(String.format(&amp;quot;Float (incorrcect): %s&amp;quot;, flt2));
+    System.out.println(String.format(&amp;quot;Float (incorrect): %s&amp;quot;, flt2));
 }
 &lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;-------------------------------------------------------
  T E S T S
 -------------------------------------------------------
 BigDecimal (correct): 1125000000
-Float (incorrcect): 1.12499994E9 (1124999936)
+Float (incorrect): 1.12499994E9 (1124999936)
 BigDecimal (correct): 0.600
-Float (incorrcect): 0.59999996
+Float (incorrect): 0.59999996
 &lt;/code&gt;&lt;/pre&gt;
 
 	</description>
