@@ -125,7 +125,7 @@
 <li>getRollbackOnly: check current transaction has been marked for rollback or not.</li>
 </ul>
 <p>In case bean-managed transactions you need to manually control transaction by <code>UserTransaction</code> methods and you also can set the activation configuration property acknowledgeMode to <code>Auto-acknowledge</code> or <code>Dups-ok-acknowledge</code> to specify how the message received by the message-driven bean to be acknowledged.</p>
-<p>Ok. Let's pay attention on typical use cases and potentially issues with default configurations. Often enough MDB uses to do relatively long tasks that should be executed asynchronously. So typical message bean in this case will looks like:</p>
+<p>Ok. Let's pay attention on typical use cases and potentially issues with default configurations. Often enough developers use MDB to do relatively long tasks that should be executed asynchronously. So typical message bean in this case will looks like:</p>
 <pre><code class="language-java">@JMSDestinationDefinition(
         name = TxRequiredMessagerDrivenBean.TX_REQUIRED_QUEUE,
         interfaceName = &quot;javax.jms.Queue&quot;
