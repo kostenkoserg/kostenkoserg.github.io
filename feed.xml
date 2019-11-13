@@ -6,8 +6,8 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Thu, 14 Nov 2019 00:33:23 +0200</pubDate>
-    <lastBuildDate>Thu, 14 Nov 2019 00:33:23 +0200</lastBuildDate>
+    <pubDate>Thu, 14 Nov 2019 00:38:02 +0200</pubDate>
+    <lastBuildDate>Thu, 14 Nov 2019 00:38:02 +0200</lastBuildDate>
 
     <item>
       <title>Understanding JMS(MDB) transaction scopes in JakartaEE application</title>
@@ -108,7 +108,7 @@ WARN  [org.apache.activemq.artemis.core.client] (Thread-1 (ActiveMQ-client-globa
 &lt;li&gt;Container detected TX cancellation - did message redelivery and MDB starts new transaction;&lt;/li&gt;
 &lt;li&gt;Old thread continue work with first message processing, but the transaction already is not active;&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;So, keep this behavior in mind if you planning to play with long tasks and Message Driven Beans. Depends on requirements few &lt;strong&gt;solutions&lt;/strong&gt; is possible here:&lt;/p&gt;
+&lt;p&gt;So, keep this behavior in mind if you planning to play with long tasks and Message Driven Beans then depends on requirements few &lt;strong&gt;solutions&lt;/strong&gt; is possible here:&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;Avoid long transaction usage. If last one is not necessary  always use &lt;code&gt;TransactionAttributeType.NOT_SUPPORTED&lt;/code&gt;&lt;/li&gt;
 &lt;li&gt;Increase default transaction timeout&lt;/li&gt;

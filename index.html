@@ -195,7 +195,7 @@ WARN  [org.apache.activemq.artemis.core.client] (Thread-1 (ActiveMQ-client-globa
 <li>Container detected TX cancellation - did message redelivery and MDB starts new transaction;</li>
 <li>Old thread continue work with first message processing, but the transaction already is not active;</li>
 </ul>
-<p>So, keep this behavior in mind if you planning to play with long tasks and Message Driven Beans. Depends on requirements few <strong>solutions</strong> is possible here:</p>
+<p>So, keep this behavior in mind if you planning to play with long tasks and Message Driven Beans then depends on requirements few <strong>solutions</strong> is possible here:</p>
 <ul>
 <li>Avoid long transaction usage. If last one is not necessary  always use <code>TransactionAttributeType.NOT_SUPPORTED</code></li>
 <li>Increase default transaction timeout</li>
