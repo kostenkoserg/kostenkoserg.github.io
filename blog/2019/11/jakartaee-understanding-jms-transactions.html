@@ -200,7 +200,7 @@ WARN  [org.apache.activemq.artemis.core.client] (Thread-1 (ActiveMQ-client-globa
 </ul>
 <p>So, keep this behavior in mind if you planning to play with long tasks and Message Driven Beans then depends on requirements few <strong>solutions</strong> is possible here:</p>
 <ul>
-<li>Avoid long transaction usage. If last one is not necessary  always use <code>TransactionAttributeType.NOT_SUPPORTED</code></li>
+<li>Avoid long transaction usage. If long TX is not necessary - always use <code>TransactionAttributeType.NOT_SUPPORTED</code></li>
 <li>Increase default transaction timeout</li>
 <li>Use an annotation @ActivationConfigProperty(propertyName=&quot;transactionTimeout&quot;, propertyValue=&quot;xxx&quot;) to specify custom transaction timeout for MDB like:</li>
 </ul>
