@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>My first video</title>
+    <title>How to setup Darcula LAF on Netbeans 11</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -102,18 +102,17 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>My first video</h1>
+		<h1>How to setup Darcula LAF on Netbeans 11</h1>
 	</div>
 
-	<p><em>16 February 2019</em></p>
+	<p><em>26 December 2019</em></p>
 
-	<p>
-Have published my first YouTube video (about blogging with jbake)!
-
-<br/><br/>
-<div class="row">
-    <iframe align ="center" class="col-md-offset-3 col-lg-6 col-md-6 col-sm-12 col-xs-12" height="315" src="https://www.youtube.com/embed/_0C2xTa8jsY" frameborder="0" allowfullscreen="true"></iframe>
-</div>
+	<p><p>It is pity, but Apache Netbeans IDE still comes without support default <strong>dark</strong> mode. Enabling <code>Netbeans 8.2 Plugin portal</code> does not have any effect, so to use plugins from previous versions we need to add <code>New Provider</code> (Tools-&gt;Plugins) with next URL:</p>
+<pre><code class="language-java">http://plugins.netbeans.org/nbpluginportal/updates/8.2/catalog.xml.gz
+</code></pre>
+<p><img src="/img/2019-12-new-provider.png" alt="add provider" /></p>
+<p>After that you should be able setup Darcula LAF in standard way</p>
+<p><img src="/img/2019-12-select-laf.png" alt="add provider" /></p>
 </p>
 
 	<hr />
@@ -124,8 +123,8 @@ Have published my first YouTube video (about blogging with jbake)!
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/02/github-jbake-blog-video.html';
-	this.page.identifier = 'blog/2019/02/github-jbake-blog-video.html';
+	this.page.url = 'https://kostenko.org/blog/2019/12/setup-darcula-laf-netbeans-11.html';
+	this.page.identifier = 'blog/2019/12/setup-darcula-laf-netbeans-11.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE

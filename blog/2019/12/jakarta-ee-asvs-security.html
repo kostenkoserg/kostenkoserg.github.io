@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>My first video</title>
+    <title>Why Jakarta EE beats other java solutions from security point of view</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -102,18 +102,23 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>My first video</h1>
+		<h1>Why Jakarta EE beats other java solutions from security point of view</h1>
 	</div>
 
-	<p><em>16 February 2019</em></p>
+	<p><em>27 December 2019</em></p>
 
-	<p>
-Have published my first YouTube video (about blogging with jbake)!
-
-<br/><br/>
-<div class="row">
-    <iframe align ="center" class="col-md-offset-3 col-lg-6 col-md-6 col-sm-12 col-xs-12" height="315" src="https://www.youtube.com/embed/_0C2xTa8jsY" frameborder="0" allowfullscreen="true"></iframe>
-</div>
+	<p><p>A significant part part of the OWASP Application Security Verification Standard (ASVS) reads:</p>
+<blockquote>
+<p><strong>10.2.1</strong> Verify that the application source code and third party libraries do not contain unauthorized phone home or data collection capabilities. Where such functionality exists, obtain the user's permission for it to operate before collecting any data.<br />
+<strong>10.2.3</strong> Verify that the application source code and third party libraries do not contain back doors, such as hard-coded or additional undocumented accounts or keys, code obfuscation, undocumented binary blobs, rootkits, or anti-debugging, insecure debugging features, or otherwise out of date, insecure, or hidden functionality that could be used maliciously if discovered.<br />
+<strong>10.2.4</strong> Verify that the application source code and third party libraries does not contain time bombs by searching for date and time related functions.<br />
+<strong>10.2.5</strong> Verify that the application source code and third party libraries does not contain malicious code, such as salami attacks, logic bypasses, or logic bombs.<br />
+<strong>10.2.6</strong> Verify that the application source code and third party libraries do not contain Easter eggs or any other potentially unwanted functionality.<br />
+<strong>10.3.2</strong> Verify that the application employs integrity protections, such as code signing or sub-resource integrity. The application must not load or execute code from untrusted sources, such as loading includes, modules, plugins, code, or libraries from untrusted sources or the Internet.<br />
+<strong>14.2.4</strong> Verify that third party components come from pre-defined, trusted and continually maintained repositories.</p>
+</blockquote>
+<p>In other words that meaning you should: <strong>&quot;Verify all code including third-party binaries, libraries, frameworks are reviewed for hardcoded credentials (backdoors).&quot;</strong></p>
+<p>In case development according to Jakarte EE specification you shouldn't be able to use poor controlled  third party libraries, as all you need already came with Application Server. In turn, last one is responsible for in time security  updates, ussage of verified libraries and many more...</p>
 </p>
 
 	<hr />
@@ -124,8 +129,8 @@ Have published my first YouTube video (about blogging with jbake)!
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/02/github-jbake-blog-video.html';
-	this.page.identifier = 'blog/2019/02/github-jbake-blog-video.html';
+	this.page.url = 'https://kostenko.org/blog/2019/12/jakarta-ee-asvs-security.html';
+	this.page.identifier = 'blog/2019/12/jakarta-ee-asvs-security.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE

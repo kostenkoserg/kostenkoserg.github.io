@@ -6,9 +6,45 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Thu, 14 Nov 2019 00:57:46 +0200</pubDate>
-    <lastBuildDate>Thu, 14 Nov 2019 00:57:46 +0200</lastBuildDate>
+    <pubDate>Fri, 27 Dec 2019 10:41:56 +0200</pubDate>
+    <lastBuildDate>Fri, 27 Dec 2019 10:41:56 +0200</lastBuildDate>
 
+    <item>
+      <title>Why Jakarta EE beats other java solutions from security point of view</title>
+      <link>https://kostenko.org/blog/2019/12/jakarta-ee-asvs-security.html</link>
+      <pubDate>Fri, 27 Dec 2019 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2019/12/jakarta-ee-asvs-security.html</guid>
+      	<description>
+	&lt;p&gt;A significant part part of the OWASP Application Security Verification Standard (ASVS) reads:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;10.2.1&lt;/strong&gt; Verify that the application source code and third party libraries do not contain unauthorized phone home or data collection capabilities. Where such functionality exists, obtain the user&apos;s permission for it to operate before collecting any data.&lt;br /&gt;
+&lt;strong&gt;10.2.3&lt;/strong&gt; Verify that the application source code and third party libraries do not contain back doors, such as hard-coded or additional undocumented accounts or keys, code obfuscation, undocumented binary blobs, rootkits, or anti-debugging, insecure debugging features, or otherwise out of date, insecure, or hidden functionality that could be used maliciously if discovered.&lt;br /&gt;
+&lt;strong&gt;10.2.4&lt;/strong&gt; Verify that the application source code and third party libraries does not contain time bombs by searching for date and time related functions.&lt;br /&gt;
+&lt;strong&gt;10.2.5&lt;/strong&gt; Verify that the application source code and third party libraries does not contain malicious code, such as salami attacks, logic bypasses, or logic bombs.&lt;br /&gt;
+&lt;strong&gt;10.2.6&lt;/strong&gt; Verify that the application source code and third party libraries do not contain Easter eggs or any other potentially unwanted functionality.&lt;br /&gt;
+&lt;strong&gt;10.3.2&lt;/strong&gt; Verify that the application employs integrity protections, such as code signing or sub-resource integrity. The application must not load or execute code from untrusted sources, such as loading includes, modules, plugins, code, or libraries from untrusted sources or the Internet.&lt;br /&gt;
+&lt;strong&gt;14.2.4&lt;/strong&gt; Verify that third party components come from pre-defined, trusted and continually maintained repositories.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;In other words that meaning you should: &lt;strong&gt;&amp;quot;Verify all code including third-party binaries, libraries, frameworks are reviewed for hardcoded credentials (backdoors).&amp;quot;&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;In case development according to Jakarte EE specification you shouldn&apos;t be able to use poor controlled  third party libraries, as all you need already came with Application Server. In turn, last one is responsible for in time security  updates, ussage of verified libraries and many more...&lt;/p&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>How to setup Darcula LAF on Netbeans 11</title>
+      <link>https://kostenko.org/blog/2019/12/setup-darcula-laf-netbeans-11.html</link>
+      <pubDate>Thu, 26 Dec 2019 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2019/12/setup-darcula-laf-netbeans-11.html</guid>
+      	<description>
+	&lt;p&gt;It is pity, but Apache Netbeans IDE still comes without support default &lt;strong&gt;dark&lt;/strong&gt; mode. Enabling &lt;code&gt;Netbeans 8.2 Plugin portal&lt;/code&gt; does not have any effect, so to use plugins from previous versions we need to add &lt;code&gt;New Provider&lt;/code&gt; (Tools-&amp;gt;Plugins) with next URL:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;http://plugins.netbeans.org/nbpluginportal/updates/8.2/catalog.xml.gz
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&quot;/img/2019-12-new-provider.png&quot; alt=&quot;add provider&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;After that you should be able setup Darcula LAF in standard way&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/img/2019-12-select-laf.png&quot; alt=&quot;add provider&quot; /&gt;&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Understanding JMS(MDB) transaction scopes in JakartaEE application</title>
       <link>https://kostenko.org/blog/2019/11/jakartaee-understanding-jms-transactions.html</link>
