@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Migration from JEE to JakartaEE</title>
+    <title>Logging for JPA SQL queries with Wildfly</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -104,21 +104,64 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Migration from JEE to JakartaEE</h1>
+		<h1>Logging for JPA SQL queries with Wildfly</h1>
 	</div>
 
-	<p><em>30 September 2019</em></p>
+	<p><em>10 January 2020</em></p>
 
-	<p><p>As you probably know Java EE was moved from Oracle to the Eclipse Foundation where will evolve under the <strong>Jakarta EE</strong> brand.  Sept. 10, 2019 Jakarta EE Full Platform and Web Profile specifications was released by Eclipse Foundation during <a href="https://jakartaone.org/">JakartaOne Livestream</a>. Few days later Wildfly declared that <strong>WildFly 17.0.1</strong> has passed the Jakarta EE 8 TCK and certification request has been approved by the Jakarta EE Spec Committee. So, now WildFly is a Jakarta EE Full platform compatible implementation.</p>
-<p>Let's do migration of typical <a href="https://kostenko.org/blog/2019/08/ee-application-multi-module-template.html">gradle EE project</a> to the Jakarta EE and look how hard is it. Current JakartaEE version <code>8.0.0</code> is fully compatible with JavaEE version <code>8.0</code>, that means no need to change project sources, just update dependency from <code>javax:javaee-api:8.0</code> to <code>jakarta.platform:jakarta.jakartaee-api:8.0.0</code></p>
-<p><code>updated build.gradle:</code></p>
-<pre><code class="language-java">apply plugin: 'war'
-dependencies {
-    providedCompile &quot;jakarta.platform:jakarta.jakartaee-api:8.0.0&quot;
-}
+	<p><p>Logging for real SQL queries is very important in case using any ORM solution, - as you never can be sure <strong>which</strong> and <strong>how many</strong> requests will send JPA provider to do <code>find</code>, <code>merge</code>, <code>query</code> or some other operation.</p>
+<p>Wildfly uses Hibernate as JPA provider and provides few standard ways to enable SQL logging:</p>
+<p><strong>1.</strong> Add <code>hibernate.show_sql</code> property to your <strong>persistence.xml</strong> :</p>
+<pre><code class="language-java">&lt;properties&gt;
+    ...
+    &lt;property name=&quot;hibernate.show_sql&quot; value=&quot;true&quot; /&gt;
+    ...
+&lt;/properties&gt;
 </code></pre>
-<p>That is it! Application builds and works well under WF17.0.1</p>
-<p>Source code of demo application available on <a href="https://github.com/kostenkoserg/ee-application-multi-module-gradle-template">GitHub</a></p>
+<pre><code class="language-java">INFO  [stdout] (default task-1) Hibernate: insert into blogentity (id, body, title) values (null, ?, ?)
+INFO  [stdout] (default task-1) Hibernate: select blogentity0_.id as id1_0_, blogentity0_.body as body2_0_, blogentity0_.title as title3_0_ from blogentity blogentity0_ where blogentity0_.title=?
+</code></pre>
+<p><strong>2.</strong> Enable <code>ALL</code> log level for <code>org.hibernate</code> category like:</p>
+<pre><code class="language-java">/subsystem=logging/periodic-rotating-file-handler=sql_handler:add(level=ALL, file={&quot;path&quot;=&gt;&quot;sql.log&quot;}, append=true, autoflush=true, suffix=.yyyy-MM-dd,formatter=&quot;%d{yyyy-MM-dd HH:mm:ss,SSS}&quot;)
+/subsystem=logging/logger=org.hibernate.SQL:add(use-parent-handlers=false,handlers=[&quot;sql_handler&quot;])
+/subsystem=logging/logger=org.hibernate.type.descriptor.sql.BasicBinder:add(use-parent-handlers=false,handlers=[&quot;sql_handler&quot;])
+</code></pre>
+<pre><code class="language-java">DEBUG [o.h.SQL] insert into blogentity (id, body, title) values (null, ?, ?)
+TRACE [o.h.t.d.s.BasicBinder] binding parameter [1] as [VARCHAR] - [this is body]
+TRACE [o.h.t.d.s.BasicBinder] binding parameter [2] as [VARCHAR] - [title]
+DEBUG [o.h.SQL] select blogentity0_.id as id1_0_, blogentity0_.body as body2_0_, blogentity0_.title as title3_0_ from blogentity blogentity0_ where blogentity0_.title=?
+TRACE [o.h.t.d.s.BasicBinder] binding parameter [1] as [VARCHAR] - [title]
+</code></pre>
+<p><strong>3.</strong> Enable spying of SQL statements:</p>
+<pre><code class="language-java">/subsystem=datasources/data-source=ExampleDS/:write-attribute(name=spy,value=true)
+/subsystem=logging/logger=jboss.jdbc.spy/:add(level=DEBUG)
+</code></pre>
+<pre><code class="language-java">DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [DataSource] getConnection()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [Connection] prepareStatement(insert into blogentity (id, body, title) values (null, ?, ?), 1)
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [PreparedStatement] setString(1, this is body)
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [PreparedStatement] setString(2, title)
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [PreparedStatement] executeUpdate()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [PreparedStatement] getGeneratedKeys()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] next()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] getMetaData()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] getLong(1)
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] close()
+...
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [DataSource] getConnection()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [Connection] prepareStatement(select blogentity0_.id as id1_0_, blogentity0_.body as body2_0_, blogentity0_.title as title3_0_ from blogentity blogentity0_ where blogentity0_.title=?)
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [PreparedStatement] setString(1, title)
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [PreparedStatement] executeQuery()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] next()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] getLong(id1_0_)
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] wasNull()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] getString(body2_0_)
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] wasNull()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] getString(title3_0_)
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] wasNull()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] next()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] close()
+</code></pre>
+<p>So, from above we can see that variants <strong>2</strong> and <strong>3</strong> is most useful as allows to log queries with parameters. From other point of view - SQL logging can generate lot of unneeded debug information on production. To avoid garbage data in your log files, feel free to use <strong><a href="https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/6.4/html/administration_and_configuration_guide/chap-the_logging_subsystem#Filter_Expressions_for_Logging">Filter Expressions for Logging</a></strong></p>
 </p>
 
 	<hr />
@@ -129,8 +172,8 @@ dependencies {
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/09/jee-to-jakartaee-migration.html';
-	this.page.identifier = 'blog/2019/09/jee-to-jakartaee-migration.html';
+	this.page.url = 'https://kostenko.org/blog/2020/01/sql-spying-with-wildfly.html';
+	this.page.identifier = 'blog/2020/01/sql-spying-with-wildfly.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE
