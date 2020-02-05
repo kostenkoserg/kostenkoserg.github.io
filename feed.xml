@@ -6,9 +6,42 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Fri, 10 Jan 2020 17:17:59 +0200</pubDate>
-    <lastBuildDate>Fri, 10 Jan 2020 17:17:59 +0200</lastBuildDate>
+    <pubDate>Wed, 5 Feb 2020 14:21:46 +0200</pubDate>
+    <lastBuildDate>Wed, 5 Feb 2020 14:21:46 +0200</lastBuildDate>
 
+    <item>
+      <title>ISPN000299: Unable to acquire lock after 15 seconds for key</title>
+      <link>https://kostenko.org/blog/2020/01/infinispan-distributed-cache-issues.html</link>
+      <pubDate>Fri, 10 Jan 2020 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2020/01/infinispan-distributed-cache-issues.html</guid>
+      	<description>
+	&lt;p&gt;Distributed cache is a wide used technology that provides useful possibilities to share state whenever it necessary. Wildfly supports distributed cache through &lt;a href=&quot;https://infinispan.org/&quot;&gt;infinispan&lt;/a&gt; subsystem and actually it works well, but in case height load and concurrent data access you may run into a some issues like:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;ISPN000299: Unable to acquire lock after 15 seconds for key&lt;/li&gt;
+&lt;li&gt;ISPN000924: beforeCompletion() failed for SynchronizationAdapter&lt;/li&gt;
+&lt;li&gt;ISPN000160: Could not complete injected transaction.&lt;/li&gt;
+&lt;li&gt;ISPN000136: Error executing command PrepareCommand on Cache&lt;/li&gt;
+&lt;li&gt;ISPN000476: Timed out waiting for responses for request&lt;/li&gt;
+&lt;li&gt;ISPN000482: Cannot create remote transaction GlobalTx&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;and others.&lt;/p&gt;
+&lt;p&gt;In my case i had two node cluster with next infinispan configuration:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;/profile=full-ha/subsystem=infinispan/cache-container=myCache/distributed-cache=userdata:add()
+/profile=full-ha/subsystem=infinispan/cache-container=myCache/distributed-cache=userdata/component=transaction:add(mode=BATCH)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;distributed&lt;/strong&gt; cache above means that number of copies are maintained, however this is typically less than the number of nodes in the cluster. From other point of view, to provide redundancy and fault tolerance you should configure enough amount of &lt;strong&gt;owners&lt;/strong&gt; and obviously &lt;strong&gt;2&lt;/strong&gt; is the necessary minimum here. So, in case usage small cluster and keep in mind the &lt;a href=&quot;https://issues.redhat.com/browse/JDG-1318&quot;&gt;BUG&lt;/a&gt;, - i recommend use &lt;strong&gt;replicated-cache&lt;/strong&gt; (all nodes in a cluster hold all keys)&lt;/p&gt;
+&lt;p&gt;Please, compare &lt;a href=&quot;https://infinispan.org/docs/dev/titles/clustering/clustering.html#which_cache_mode_should_i_use&quot;&gt;Which cache mode should I use?&lt;/a&gt; with your needs.&lt;/p&gt;
+&lt;p&gt;Solution:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;/profile=full-ha/subsystem=infinispan/cache-container=myCache/distributed-cache=userdata:remove()
+/profile=full-ha/subsystem=infinispan/cache-container=myCache/replicated-cache=userdata:add()
+/profile=full-ha/subsystem=infinispan/cache-container=myCache/replicated-cache=userdata/component=transaction:add(mode=NON_DURABLE_XA, locking=OPTIMISTIC)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Note!, &lt;code&gt;NON_DURABLE_XA&lt;/code&gt; doesn&apos;t keep any transaction recovery information and if you still getting &lt;code&gt;Unable to acquire lock&lt;/code&gt; errors on application critical data - you can try to resolve it by some &lt;strong&gt;retry&lt;/strong&gt; policy and &lt;strong&gt;fail-fast&lt;/strong&gt; transaction:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;/profile=full-ha/subsystem=infinispan/cache-container=myCache/distributed-cache=userdata/component=locking:write-attribute(name=acquire-timeout, value=0)
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
     <item>
       <title>Logging for JPA SQL queries with Wildfly</title>
       <link>https://kostenko.org/blog/2020/01/sql-spying-with-wildfly.html</link>
@@ -639,7 +672,6 @@ httpConfig.setOutputBufferSize(1024);
 &lt;li&gt;&lt;strong&gt;send-traffic&lt;/strong&gt;: based on outgoing requests traffic&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;receive-traffic&lt;/strong&gt;: based on incoming requests POST traffic&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;busyness&lt;/strong&gt;: computes based on amount of Thread from Thread Pool usage that are busy servicing requests&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;connection-pool&lt;/strong&gt;: based on JCA connections&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;As well you also can configure &lt;strong&gt;weight&lt;/strong&gt; (impact of a metric respect to other metrics) and &lt;strong&gt;capacity&lt;/strong&gt; properties;&lt;br /&gt;
 Below is example, how to change default based on CPU balancing to balancing based on busyness + CPU:&lt;/p&gt;

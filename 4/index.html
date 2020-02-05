@@ -60,35 +60,32 @@
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown">Tags <b class="caret"></b></a>
               <ul class="dropdown-menu">
-										<li><a href="../tags/Jetty.html">Jetty</a></li>
-										<li><a href="../tags/Performance.html">Performance</a></li>
-										<li><a href="../tags/Gradle.html">Gradle</a></li>
 										<li><a href="../tags/wildfly.html">wildfly</a></li>
-										<li><a href="../tags/API.html">API</a></li>
-										<li><a href="../tags/JPA.html">JPA</a></li>
 										<li><a href="../tags/logging.html">logging</a></li>
-										<li><a href="../tags/Jakarta.html">Jakarta</a></li>
-										<li><a href="../tags/JMX.html">JMX</a></li>
-										<li><a href="../tags/Jakarta EE.html">Jakarta EE</a></li>
-										<li><a href="../tags/Linux.html">Linux</a></li>
-										<li><a href="../tags/JBake.html">JBake</a></li>
-										<li><a href="../tags/JMS.html">JMS</a></li>
-										<li><a href="../tags/Jenkins.html">Jenkins</a></li>
-										<li><a href="../tags/Jberet.html">Jberet</a></li>
-										<li><a href="../tags/SQL.html">SQL</a></li>
-										<li><a href="../tags/CI.html">CI</a></li>
-										<li><a href="../tags/JakartaEE.html">JakartaEE</a></li>
-										<li><a href="../tags/Hibernate.html">Hibernate</a></li>
-										<li><a href="../tags/WildFly.html">WildFly</a></li>
-										<li><a href="../tags/Java.html">Java</a></li>
-										<li><a href="../tags/Batch.html">Batch</a></li>
-										<li><a href="../tags/JAX-RS.html">JAX-RS</a></li>
-										<li><a href="../tags/Security.html">Security</a></li>
-										<li><a href="../tags/IDE.html">IDE</a></li>
-										<li><a href="../tags/CDI.html">CDI</a></li>
-										<li><a href="../tags/GitHub.html">GitHub</a></li>
-										<li><a href="../tags/Wildfly.html">Wildfly</a></li>
-										<li><a href="../tags/Java EE.html">Java EE</a></li>
+										<li><a href="../tags/jakartaee.html">jakartaee</a></li>
+										<li><a href="../tags/performance.html">performance</a></li>
+										<li><a href="../tags/infinispan.html">infinispan</a></li>
+										<li><a href="../tags/gradle.html">gradle</a></li>
+										<li><a href="../tags/ide.html">ide</a></li>
+										<li><a href="../tags/cdi.html">cdi</a></li>
+										<li><a href="../tags/batch.html">batch</a></li>
+										<li><a href="../tags/ci.html">ci</a></li>
+										<li><a href="../tags/github.html">github</a></li>
+										<li><a href="../tags/jberet.html">jberet</a></li>
+										<li><a href="../tags/activemq.html">activemq</a></li>
+										<li><a href="../tags/jetty.html">jetty</a></li>
+										<li><a href="../tags/api.html">api</a></li>
+										<li><a href="../tags/jpa.html">jpa</a></li>
+										<li><a href="../tags/jenkins.html">jenkins</a></li>
+										<li><a href="../tags/linux.html">linux</a></li>
+										<li><a href="../tags/jmx.html">jmx</a></li>
+										<li><a href="../tags/java.html">java</a></li>
+										<li><a href="../tags/security.html">security</a></li>
+										<li><a href="../tags/jms.html">jms</a></li>
+										<li><a href="../tags/sql.html">sql</a></li>
+										<li><a href="../tags/hibernate.html">hibernate</a></li>
+										<li><a href="../tags/jax-rs.html">jax-rs</a></li>
+										<li><a href="../tags/jbake.html">jbake</a></li>
 								</ul>
 						</li>
           </ul>
@@ -104,6 +101,27 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html"><h1>Embedded Jetty server truncates responses</h1></a>
+				<p>06 August 2019</p>
+  			<p><p>Jetty server has lot of configuration options. One of them is <code>OutputBufferSize</code></p>
+<pre><code class="language-java">HttpConfiguration httpConfig = new HttpConfiguration();
+httpConfig.setOutputBufferSize(1024);
+</code></pre>
+<p>If this property set to value less than your respopnse - jetty just will truncate last one.</p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html#disqus_thread" data-disqus-identifier="blog/2019/08/embedded-jetty-server-cut-responses.html">Comments</a></p>
+				<hr/>
+				<a href="https://kostenko.org/blog/2019/08/WFLYEJB0054.html"><h1>WFLYEJB0054: Failed to marshal EJB parameters</h1></a>
+				<p>05 August 2019</p>
+  			<p><p>Usually error <code>WFLYEJB0054: Failed to marshal EJB parameters</code> can be throw by next reason:</p>
+<ul>
+<li>Your data transfer object does not implement Serializable</li>
+<li>Your transfered object does not exist in destination module classpath (for example, if you are using DTO without strong typing)</li>
+</ul>
+<p>Also, you can catch this error with absolutely unexpected scenario and unclear stacktrace when your EJB throws some unchecked exception with stacktrace that has objects from points above.</p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2019/08/WFLYEJB0054.html#disqus_thread" data-disqus-identifier="blog/2019/08/WFLYEJB0054.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/07/sql-trick-insert-if-noe-exists.html"><h1>SQL trick. Insert if not exists</h1></a>
 				<p>24 July 2019</p>
   			<p><p>Next SQL trick allows you perform conditional <code>INSERT</code> with your query.</p>
@@ -211,69 +229,6 @@ CoreMessage[messageID=1505,durable=true,userID=3d27afde-a9fa-11e9-af5d-0242e352e
 <p><img src="/img/2019-07-jenkins-html-report-plugin.png" alt="Git Parameter Plugin" /></p>
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2019/07/jenkins-nice-to-have-plugins.html#disqus_thread" data-disqus-identifier="blog/2019/07/jenkins-nice-to-have-plugins.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2019/06/wildfly-activemq-deadlock.html"><h1>Wildfly active-mq subsystem deadlock</h1></a>
-				<p>29 June 2019</p>
-  			<p><p>Recently got unusual height CPU utilizaton on random wildly cluster instance. Thread dump shows the reason of a problem:</p>
-<pre><code class="language-java">Found one Java-level deadlock:
-=============================
-
-&quot;Thread-1 (ActiveMQ-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$2@46fcd20a-1114701218)&quot;:
-  waiting to lock Monitor@0x00007f45f02e20f8 (Object@0x0000000603407950, a org/apache/activemq/artemis/core/server/cluster/impl/ClusterConnectionImpl$MessageFlowRecordImpl),
-  which is held by &quot;Thread-29 (ActiveMQ-client-global-threads-2129186403)&quot;
-&quot;Thread-29 (ActiveMQ-client-global-threads-2129186403)&quot;:
-  waiting to lock Monitor@0x00007f46203b5518 (Object@0x00000004cc79a7b8, a org/apache/activemq/artemis/core/server/impl/QueueImpl),
-  which is held by &quot;Thread-1 (ActiveMQ-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$2@46fcd20a-1114701218)&quot;
-
-Found a total of 1 deadlock.
-</code></pre>
-<p>Below is part of official documentation:</p>
-<blockquote>
-<p>&quot;If thread-pool-max-size is set to a positive integer greater than zero, the thread pool is bounded. If requests come in and there are no free threads available in the pool, requests will block until a thread becomes available. It is recommended that a bounded thread pool be used with caution since it can lead to <strong>deadlock situations</strong> if the upper bound is configured too low.&quot;</p>
-</blockquote>
-<p>So, solution is:</p>
-<pre><code class="language-java">/subsystem=messaging-activemq/server=default:write-attribute(name=thread-pool-max-size,value=-1)
-</code></pre>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2019/06/wildfly-activemq-deadlock.html#disqus_thread" data-disqus-identifier="blog/2019/06/wildfly-activemq-deadlock.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2019/06/runtime-class-loading.html"><h1>How to use custom ClassLoader to load jars in runtime</h1></a>
-				<p>28 June 2019</p>
-  			<p><p>To load calsses in runtime java uses ClassLoader mechanism which is based on next core principles:</p>
-<ul>
-<li><strong>delegation</strong> - by default uses <code>parent-first delegation</code>, - child ClassLoader will be used if parent is not able to find or load class. This behavior can be changed to <code>child-first</code> by overwriting <code>ClassLoader.loadClass(...)</code>;</li>
-<li><strong>visibility</strong> - child ClassLoader is able to see all the classes loaded by parent but vice-versa is not true;</li>
-<li><strong>uniqueness</strong> - allows to load a class exactly once, which is basically achieved by delegation and ensures that child ClassLoader doesn't reload the class already loaded by parent;</li>
-</ul>
-<p>The main scenarios to use custom ClassLoader is:</p>
-<ul>
-<li><strong>Class Instrumentation</strong> - modifying classes at runtime. For example, to unit testing, debugging or monitoring;</li>
-<li><strong>Isolation of executions</strong> - isolate several execution environments within a single process by making visible only a subset of classes for a particular thread, like it does in EE environments;</li>
-</ul>
-<p>So, let's see how using of custom ClassLoader looks from source code perspective:</p>
-<pre><code class="language-java">List&lt;File&gt; jars = Arrays.asList(new File(&quot;/tmp/jars&quot;).listFiles());
-URL[] urls = new URL[files.size()];
-for (int i = 0; i &lt; jars.size(); i++) {
-    try {
-        urls[i] = jars.get(i).toURI().toURL();
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-}
-URLClassLoader childClassLoader = new URLClassLoader(urls, ClassLoader.getSystemClassLoader());
-</code></pre>
-<p>Then load class with custom ClassLoader:</p>
-<pre><code class="language-java">Class.forName(&quot;org.kostenko.examples.core.classloader.ClassLoaderTest&quot;, true , childClassLoader);
-</code></pre>
-<p>Note! If your loaded libraries uses some resources like properties or something else, you need to provide context class loader:</p>
-<pre><code class="language-java">Thread.currentThread().setContextClassLoader(childClassLoader);  
-</code></pre>
-<p>Also, you can use custom ClassLoaders to load services with Java Service Provider Interface(SPI)</p>
-<pre><code class="language-java">ServiceLoader&lt;MyProvider&gt; serviceLoader = ServiceLoader.load(MyProvider.class, childClassLoader);
-...
-</code></pre>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2019/06/runtime-class-loading.html#disqus_thread" data-disqus-identifier="blog/2019/06/runtime-class-loading.html">Comments</a></p>
 				<hr/>
 
 		<ul class="pager">
