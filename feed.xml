@@ -6,13 +6,13 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Wed, 5 Feb 2020 14:21:46 +0200</pubDate>
-    <lastBuildDate>Wed, 5 Feb 2020 14:21:46 +0200</lastBuildDate>
+    <pubDate>Wed, 5 Feb 2020 14:24:46 +0200</pubDate>
+    <lastBuildDate>Wed, 5 Feb 2020 14:24:46 +0200</lastBuildDate>
 
     <item>
       <title>ISPN000299: Unable to acquire lock after 15 seconds for key</title>
       <link>https://kostenko.org/blog/2020/01/infinispan-distributed-cache-issues.html</link>
-      <pubDate>Fri, 10 Jan 2020 00:00:00 +0200</pubDate>
+      <pubDate>Wed, 5 Feb 2020 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2020/01/infinispan-distributed-cache-issues.html</guid>
       	<description>
 	&lt;p&gt;Distributed cache is a wide used technology that provides useful possibilities to share state whenever it necessary. Wildfly supports distributed cache through &lt;a href=&quot;https://infinispan.org/&quot;&gt;infinispan&lt;/a&gt; subsystem and actually it works well, but in case height load and concurrent data access you may run into a some issues like:&lt;/p&gt;
