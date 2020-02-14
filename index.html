@@ -126,7 +126,7 @@ public class Book {
 <li>Avoid using of <code>@OneToMany</code> at all</li>
 <li>Use <code>@ManyToOne</code> to build constrains but use <strong>ID</strong> instead of Entity</li>
 </ul>
-<p>Unfortunately, simple snippet below does not work as expected in case <code>persist</code> for child Entity by <code>org.hibernate</code> error <code>Can not set long field Author.id to java.lang.Long</code></p>
+<p>Unfortunately, simple snippet below does not work as expected in case <code>persist</code></p>
 <pre><code class="language-java">@ManyToOne(targetEntity = Author.class)
 private long authorId;
 </code></pre>
@@ -144,6 +144,12 @@ public long getAuthorId() {
 public void setAuthorId(long authorId) {
     this.authorId = authorId;
 }
+</code></pre>
+<p>Agree, last case looks not clear from specification point of view and maybe you would like to use standard <code>@ManyToOne</code> mapping with LAZY load instead of default. In this case use <code>EntityManager.getReference</code> to avoid extra queries for selecting Author to persist child Book entity, like:</p>
+<pre><code class="language-java">Book book = new Book();
+book.setName(&quot;Test&quot;);
+book.setAuthor(entityManager.getReference(Author.class, authorId));
+entityManager.persist(book);
 </code></pre>
 <p>Hope, this two simple rules helps you enjoy all power of JPA with KISS and decreasing count of complexity.</p>
 </p>
