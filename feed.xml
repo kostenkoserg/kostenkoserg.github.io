@@ -6,8 +6,8 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Fri, 14 Feb 2020 16:44:32 +0200</pubDate>
-    <lastBuildDate>Fri, 14 Feb 2020 16:44:32 +0200</lastBuildDate>
+    <pubDate>Fri, 14 Feb 2020 16:49:01 +0200</pubDate>
+    <lastBuildDate>Fri, 14 Feb 2020 16:49:01 +0200</lastBuildDate>
 
     <item>
       <title>Simple note about using JPA relation  mappings</title>
@@ -38,7 +38,7 @@ public class Book {
 &lt;li&gt;Avoid using of &lt;code&gt;@OneToMany&lt;/code&gt; at all&lt;/li&gt;
 &lt;li&gt;Use &lt;code&gt;@ManyToOne&lt;/code&gt; to build constrains but use &lt;strong&gt;ID&lt;/strong&gt; instead of Entity&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;Unfortunately, simple snippet below does not work as expected in case &lt;code&gt;persist&lt;/code&gt; for child Entity by &lt;code&gt;org.hibernate.property.access.spi.PropertyAccessException: Error accessing field [public long Author.id] by reflection for persistent property [Author#id]&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;Unfortunately, simple snippet below does not work as expected in case &lt;code&gt;persist&lt;/code&gt; for child Entity by &lt;code&gt;org.hibernate&lt;/code&gt; error &lt;code&gt;Can not set long field Author.id to java.lang.Long&lt;/code&gt;&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@ManyToOne(targetEntity = Author.class)
 private long authorId;
 &lt;/code&gt;&lt;/pre&gt;
