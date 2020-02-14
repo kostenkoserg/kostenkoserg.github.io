@@ -101,6 +101,38 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2020/02/jpa-relation-mappings.html"><h1>Simple note about using JPA relation  mappings</h1></a>
+				<p>14 February 2020</p>
+  			<p><p>There is a lot of typical examples how to build JPA <code>@OneToMany</code> and <code>@ManyToOne</code> relationships in your Jakarta EE application. And usually it looks like:</p>
+<pre><code class="language-java">@Entity
+@Table(name = &quot;author&quot;)
+public class Author {
+    @OneToMany
+    private List&lt;Book&gt; book;
+    ...
+}
+</code></pre>
+<pre><code class="language-java">@Entity
+@Table(name = &quot;book&quot;)
+public class Book {
+    @ManyToOne
+    private Author author;
+    ...
+}
+</code></pre>
+<p>This code looks pretty clear, but on my opinion <strong>you should NOT USE this style</strong> in your real world application. From years of JPA using experience i definitely can say that sooner or later your project will stuck with known performance issues and holy war questions about: <strong>N+1</strong>, <strong>LazyInitializationException</strong>, <strong>Unidirectional @OneToMany</strong> , <strong>CascadeTypes</strong> ,<strong>LAZY vs EAGER</strong>, <strong>JOIN FETCH</strong>, <strong>Entity Graph</strong>, <strong>Fetching lot of unneeded data</strong>, <strong>Extra queries (for example: select Author by id before persist Book)</strong> etcetera.  Even if you are have answers for each potential issue above, usually proposed solution will add unreasonably complication to the project.</p>
+<p>To avoid potential issues i recommend to follow next rules:</p>
+<ul>
+<li>Avoid using of <code>@OneToMany</code> at all</li>
+<li>Use <code>@ManyToOne</code> by <strong>ID</strong> instead of Entity</li>
+</ul>
+<pre><code class="language-java">@ManyToOne(targetEntity = Author.class)
+private long authorId;
+</code></pre>
+<p>Hope, this two simple rules helps you enjoy all power of JPA with decreasing count of complexity.</p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2020/02/jpa-relation-mappings.html#disqus_thread" data-disqus-identifier="blog/2020/02/jpa-relation-mappings.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2020/01/infinispan-distributed-cache-issues.html"><h1>ISPN000299: Unable to acquire lock after 15 seconds for key</h1></a>
 				<p>05 February 2020</p>
   			<p><p>Distributed cache is a wide used technology that provides useful possibilities to share state whenever it necessary. Wildfly supports distributed cache through <a href="https://infinispan.org/">infinispan</a> subsystem and actually it works well, but in case height load and concurrent data access you may run into a some issues like:</p>
@@ -204,17 +236,6 @@ DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] close()
 <p>In case development according to Jakarta EE specification you shouldn't be able to use poor controlled  third party libraries, as all you need already came with Application Server. In turn, last one is responsible for in time security  updates, ussage of verified libraries and many more...</p>
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2019/12/jakarta-ee-asvs-security.html#disqus_thread" data-disqus-identifier="blog/2019/12/jakarta-ee-asvs-security.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2019/12/setup-darcula-laf-netbeans-11.html"><h1>How to setup Darcula LAF on Netbeans 11</h1></a>
-				<p>26 December 2019</p>
-  			<p><p>It is pity, but Apache Netbeans IDE still comes without support default <strong>dark</strong> mode. Enabling <code>Netbeans 8.2 Plugin portal</code> does not have any effect, so to use plugins from previous versions we need to add <code>New Provider</code> (Tools-&gt;Plugins) with next URL:</p>
-<pre><code class="language-java">http://plugins.netbeans.org/nbpluginportal/updates/8.2/catalog.xml.gz
-</code></pre>
-<p><img src="/img/2019-12-new-provider.png" alt="add provider" /></p>
-<p>After that you should be able setup Darcula LAF in standard way</p>
-<p><img src="/img/2019-12-select-laf.png" alt="add provider" /></p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2019/12/setup-darcula-laf-netbeans-11.html#disqus_thread" data-disqus-identifier="blog/2019/12/setup-darcula-laf-netbeans-11.html">Comments</a></p>
 				<hr/>
 
 		<ul class="pager">

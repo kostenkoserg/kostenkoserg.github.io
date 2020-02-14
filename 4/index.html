@@ -101,6 +101,32 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html"><h1>Wildfly. Configure load balancing metrics</h1></a>
+				<p>06 August 2019</p>
+  			<p><p>Previously i wrote about <a href="https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html">Wildfly domain mode cluster and load balancing from the box</a>. But what if we would like to do balancing depends on specific server behavior ?</p>
+<p>Wildfly subsystem <code>mod_cluster</code> provide us several predefined metric types to determine best request balancing:</p>
+<ul>
+<li><strong>cpu</strong>: based on CPU load</li>
+<li><strong>mem</strong>: based on system memory usage</li>
+<li><strong>heap</strong>: based on heap usage</li>
+<li><strong>sessions</strong>: based on number of web sessions</li>
+<li><strong>requests</strong>: based on amount of requests/sec</li>
+<li><strong>send-traffic</strong>: based on outgoing requests traffic</li>
+<li><strong>receive-traffic</strong>: based on incoming requests POST traffic</li>
+<li><strong>busyness</strong>: computes based on amount of Thread from Thread Pool usage that are busy servicing requests</li>
+</ul>
+<p>As well you also can configure <strong>weight</strong> (impact of a metric respect to other metrics) and <strong>capacity</strong> properties;<br />
+Below is example, how to change default based on CPU balancing to balancing based on busyness + CPU:</p>
+<pre><code class="language-java">/subsystem=modcluster/mod-cluster-config=configuration/dynamic-load-provider=configuration/load-metric=cpu:remove()
+/subsystem=modcluster/mod-cluster-config=configuration:add-metric(type=busyness,weight=2)
+/subsystem=modcluster/mod-cluster-config=configuration:add-metric(type=cpu,weight=1)
+</code></pre>
+<p>If predefined types is not enough, - you can provide <code>custom-load-metric</code> by implementing <code>org.jboss.modcluster.load.metric.impl.AbstractLoadMetric</code>. To possibility of using your custom metric,- you need to copy packaged JAR to <code>modcluster</code> module and update <code>module.xml</code>. Now you can use your custom metric with your configuration like</p>
+<pre><code class="language-java"> &lt;custom-load-metric class=&quot;org.kostenko.examples.wldfly.modcluster.MyBalancingMetric&quot;&gt;  
+</code></pre>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html#disqus_thread" data-disqus-identifier="blog/2019/08/wildfly-load-balancing-metrics.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html"><h1>Embedded Jetty server truncates responses</h1></a>
 				<p>06 August 2019</p>
   			<p><p>Jetty server has lot of configuration options. One of them is <code>OutputBufferSize</code></p>
@@ -211,24 +237,6 @@ CoreMessage[messageID=1505,durable=true,userID=3d27afde-a9fa-11e9-af5d-0242e352e
 <p>Source code available on <a href="https://github.com/kostenkoserg/ee-jms-examples">GitHub</a></p>
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2019/07/wildfly-jms-duplicate-detection.html#disqus_thread" data-disqus-identifier="blog/2019/07/wildfly-jms-duplicate-detection.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2019/07/jenkins-nice-to-have-plugins.html"><h1>Jenkins. Nice to have plugins</h1></a>
-				<p>05 July 2019</p>
-  			<p><p>Jenkins is leading open source automation tool that provides lot of plugins to make your CI better. Below is few of them that, on my opinion, can be helpful for any project.</p>
-<blockquote>
-<p><strong>1. <a href="https://plugins.jenkins.io/build-monitor-plugin">Build Monitor Plugin</a></strong> - provides a highly visible view of the status of selected Jenkins jobs;</p>
-</blockquote>
-<p><img src="/img/2019-07-jenkins-build-monitor-plugin.png" alt="Build Monitor Plugin" /></p>
-<blockquote>
-<p><strong>2. <a href="https://plugins.jenkins.io/git-parameter">Git Parameter Plugin</a></strong> - adds ability to choose branches, tags or revisions from git repository configured in project;</p>
-</blockquote>
-<p><img src="/img/2019-07-jenkins-git-parameter-plugin.png" alt="Git Parameter Plugin" /></p>
-<blockquote>
-<p><strong>3. <a href="https://plugins.jenkins.io/htmlpublisher">HTML Publisher Plugin</a></strong> - publish the html reports that your build generates to the job and build pages;</p>
-</blockquote>
-<p><img src="/img/2019-07-jenkins-html-report-plugin.png" alt="Git Parameter Plugin" /></p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2019/07/jenkins-nice-to-have-plugins.html#disqus_thread" data-disqus-identifier="blog/2019/07/jenkins-nice-to-have-plugins.html">Comments</a></p>
 				<hr/>
 
 		<ul class="pager">
