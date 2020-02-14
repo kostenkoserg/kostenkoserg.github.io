@@ -124,10 +124,26 @@ public class Book {
 <p>To avoid potential issues i recommend to follow next rules:</p>
 <ul>
 <li>Avoid using of <code>@OneToMany</code> at all</li>
-<li>Use <code>@ManyToOne</code> by <strong>ID</strong> instead of Entity</li>
+<li>Use <code>@ManyToOne</code> to build constrains but use <strong>ID</strong> instead of Entity</li>
 </ul>
+<p>Unfortunately, simple snippet below does not work as expected in case <code>persist</code> for child Entity by <code>org.hibernate.property.access.spi.PropertyAccessException: Error accessing field [public long Author.id] by reflection for persistent property [Author#id]</code></p>
 <pre><code class="language-java">@ManyToOne(targetEntity = Author.class)
 private long authorId;
+</code></pre>
+<p>But,we can use next one instead of</p>
+<pre><code class="language-java">@JoinColumn(name = &quot;authorId&quot;, insertable = false, updatable = false)
+@ManyToOne(targetEntity = Author.class)
+private Author author;
+
+private long authorId;
+
+public long getAuthorId() {
+    return authorId;
+}
+
+public void setAuthorId(long authorId) {
+    this.authorId = authorId;
+}
 </code></pre>
 <p>Hope, this two simple rules helps you enjoy all power of JPA with KISS and decreasing count of complexity.</p>
 </p>
