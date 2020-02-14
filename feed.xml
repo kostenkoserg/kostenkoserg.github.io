@@ -6,8 +6,8 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Fri, 14 Feb 2020 12:07:28 +0200</pubDate>
-    <lastBuildDate>Fri, 14 Feb 2020 12:07:28 +0200</lastBuildDate>
+    <pubDate>Fri, 14 Feb 2020 12:17:21 +0200</pubDate>
+    <lastBuildDate>Fri, 14 Feb 2020 12:17:21 +0200</lastBuildDate>
 
     <item>
       <title>Simple note about using JPA relation  mappings</title>
@@ -32,7 +32,7 @@ public class Book {
     ...
 }
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;This code looks pretty clear, but on my opinion &lt;strong&gt;you should NOT USE this style&lt;/strong&gt; in your real world application. From years of JPA using experience i definitely can say that sooner or later your project will stuck with known performance issues and holy war questions about: &lt;strong&gt;N+1&lt;/strong&gt;, &lt;strong&gt;LazyInitializationException&lt;/strong&gt;, &lt;strong&gt;Unidirectional @OneToMany&lt;/strong&gt; , &lt;strong&gt;CascadeTypes&lt;/strong&gt; ,&lt;strong&gt;LAZY vs EAGER&lt;/strong&gt;, &lt;strong&gt;JOIN FETCH&lt;/strong&gt;, &lt;strong&gt;Entity Graph&lt;/strong&gt;, &lt;strong&gt;Fetching lot of unneeded data&lt;/strong&gt;, &lt;strong&gt;Extra queries (for example: select Author by id before persist Book)&lt;/strong&gt; etcetera.  Even if you are have answers for each potential issue above, usually proposed solution will add unreasonably complication to the project.&lt;/p&gt;
+&lt;p&gt;This code looks pretty clear, but on my opinion &lt;strong&gt;you should NOT USE this style&lt;/strong&gt; in your real world application. From years of JPA using experience i definitely can say that sooner or later your project will stuck with known performance issues and holy war questions about: &lt;strong&gt;N+1&lt;/strong&gt;, &lt;strong&gt;LazyInitializationException&lt;/strong&gt;, &lt;strong&gt;Unidirectional @OneToMany&lt;/strong&gt; , &lt;strong&gt;CascadeTypes&lt;/strong&gt; ,&lt;strong&gt;LAZY vs EAGER&lt;/strong&gt;, &lt;strong&gt;JOIN FETCH&lt;/strong&gt;, &lt;strong&gt;Entity Graph&lt;/strong&gt;, &lt;strong&gt;Fetching lot of unneeded data&lt;/strong&gt;, &lt;strong&gt;Extra queries (for example: select Author by id before persist Book)&lt;/strong&gt; etcetera.  Even if you are have answers for each potential issue above, usually proposed solution will add unreasonable complexity to the project.&lt;/p&gt;
 &lt;p&gt;To avoid potential issues i recommend to follow next rules:&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;Avoid using of &lt;code&gt;@OneToMany&lt;/code&gt; at all&lt;/li&gt;
