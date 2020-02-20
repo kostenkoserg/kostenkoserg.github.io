@@ -70,6 +70,8 @@
 										<li><a href="../tags/cdi.html">cdi</a></li>
 										<li><a href="../tags/batch.html">batch</a></li>
 										<li><a href="../tags/ci.html">ci</a></li>
+										<li><a href="../tags/openapi.html">openapi</a></li>
+										<li><a href="../tags/microprofile.html">microprofile</a></li>
 										<li><a href="../tags/github.html">github</a></li>
 										<li><a href="../tags/jberet.html">jberet</a></li>
 										<li><a href="../tags/activemq.html">activemq</a></li>
@@ -83,7 +85,10 @@
 										<li><a href="../tags/security.html">security</a></li>
 										<li><a href="../tags/jms.html">jms</a></li>
 										<li><a href="../tags/sql.html">sql</a></li>
+										<li><a href="../tags/swagger.html">swagger</a></li>
 										<li><a href="../tags/hibernate.html">hibernate</a></li>
+										<li><a href="../tags/quarkus.html">quarkus</a></li>
+										<li><a href="../tags/jwt.html">jwt</a></li>
 										<li><a href="../tags/jax-rs.html">jax-rs</a></li>
 										<li><a href="../tags/jbake.html">jbake</a></li>
 								</ul>
@@ -101,6 +106,23 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2019/12/jakarta-ee-asvs-security.html"><h1>Why Jakarta EE beats other java solutions from security point of view</h1></a>
+				<p>27 December 2019</p>
+  			<p><p>No one care about security until security incident. In case enterprise development last one can costs too much, so any preventive steps can help.  Significant part part of the OWASP Application Security Verification Standard (<strong>ASVS</strong>) reads:</p>
+<blockquote>
+<p><strong>10.2.1</strong> Verify that the application source code and third party libraries do not contain unauthorized phone home or data collection capabilities. Where such functionality exists, obtain the user's permission for it to operate before collecting any data.<br />
+<strong>10.2.3</strong> Verify that the application source code and third party libraries do not contain back doors, such as hard-coded or additional undocumented accounts or keys, code obfuscation, undocumented binary blobs, rootkits, or anti-debugging, insecure debugging features, or otherwise out of date, insecure, or hidden functionality that could be used maliciously if discovered.<br />
+<strong>10.2.4</strong> Verify that the application source code and third party libraries does not contain time bombs by searching for date and time related functions.<br />
+<strong>10.2.5</strong> Verify that the application source code and third party libraries does not contain malicious code, such as salami attacks, logic bypasses, or logic bombs.<br />
+<strong>10.2.6</strong> Verify that the application source code and third party libraries do not contain Easter eggs or any other potentially unwanted functionality.<br />
+<strong>10.3.2</strong> Verify that the application employs integrity protections, such as code signing or sub-resource integrity. The application must not load or execute code from untrusted sources, such as loading includes, modules, plugins, code, or libraries from untrusted sources or the Internet.<br />
+<strong>14.2.4</strong> Verify that third party components come from pre-defined, trusted and continually maintained repositories.</p>
+</blockquote>
+<p>In other words that meaning you should: <strong>&quot;Verify all code including third-party binaries, libraries, frameworks are reviewed for hardcoded credentials (backdoors).&quot;</strong></p>
+<p>In case development according to Jakarta EE specification you shouldn't be able to use poor controlled  third party libraries, as all you need already came with Application Server. In turn, last one is responsible for in time security  updates, ussage of verified libraries and many more...</p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2019/12/jakarta-ee-asvs-security.html#disqus_thread" data-disqus-identifier="blog/2019/12/jakarta-ee-asvs-security.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/12/setup-darcula-laf-netbeans-11.html"><h1>How to setup Darcula LAF on Netbeans 11</h1></a>
 				<p>26 December 2019</p>
   			<p><p>It is pity, but Apache Netbeans IDE still comes without support default <strong>dark</strong> mode. Enabling <code>Netbeans 8.2 Plugin portal</code> does not have any effect, so to use plugins from previous versions we need to add <code>New Provider</code> (Tools-&gt;Plugins) with next URL:</p>
@@ -282,74 +304,6 @@ INFO  [org.jberet] (Batch Thread - 8) [] JBERET000023: Removing javax.batch.runt
 <p>Source code of test application available on <a href="https://github.com/kostenkoserg/ee-batch-processing-examples">GitHub</a></p>
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2019/11/jakarta-batch-garbage-collection-jberet.html#disqus_thread" data-disqus-identifier="blog/2019/11/jakarta-batch-garbage-collection-jberet.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2019/10/migration-wildfly-10-to-18.html"><h1>Migration from Wildfly 10 to Wildfly 18</h1></a>
-				<p>22 October 2019</p>
-  			<p><p>Usually vendors declares easy migration, provides how-to documentation and even migration tools. But depends on complexity of your application you can stuck with some compatibility issues. Below i will explain my Wildfliy 10 to Wildfliy 18 migration steps.</p>
-<p>First of all you can use provided by WF <a href="https://github.com/wildfly/wildfly-server-migration">migration tool</a> to migrate configuration files and compatible modules to the needed release:</p>
-<pre><code class="language-java">git clone https://github.com/wildfly/wildfly-server-migration.git
-cd ./wildfly-server-migration/
-mvn clean install
-cd ./dist/standalone/target/
-unzip jboss-server-migration-1.8.0.Final-SNAPSHOT.zip
-cd ./jboss-server-migration
-
-./jboss-server-migration.sh -s /opt/wildfly-10.1.0.Final -t /opt/wildfly-18.0.0.Final/
-</code></pre>
-<p>Now let's see application level migration issues:</p>
-<p>Issue #1:</p>
-<pre><code class="language-java">Caused by: java.lang.IllegalArgumentException: org.hibernate.hql.internal.ast.QuerySyntaxException: Invalid path: 'org.kostenko.STATUS.ACTIVE'
-</code></pre>
-<p>Error above related to the Hibernate 5.2 <a href="https://vladmihalcea.com/the-performance-penalty-of-class-forname-when-parsing-jpql-and-criteria-queries/">performance improvement</a> that avoids unnecessary calls to Class.forName(). Solution here is <strong>using Java Naming conventions for a constant.</strong> (for example rename STATUS to Status) or in case  using non-conventional Java constants set the</p>
-<pre><code class="language-java">&lt;property name=&quot;hibernate.query.conventional_java_constants&quot; value=&quot;false&quot;/&gt;
-</code></pre>
-<p>in your <strong>persistence.xml</strong></p>
-<p>Issue #2:</p>
-<pre><code class="language-java">java.lang.IllegalArgumentException: ArquillianServletRunner not found. Could not determine ContextRoot from ProtocolMetadata, please contact DeployableContainer developer.
-</code></pre>
-<p>In case using Arquillian you need just update version <code>org.wildfly.arquillian:wildfly-arquillian-container-managed</code> to version <code>2.2.0.Final</code></p>
-<p>Issue #3:</p>
-<pre><code class="language-java">org.jboss.weld.exceptions.UnsupportedOperationException:
-  at org.jboss.weld.bean.proxy.CombinedInterceptorAndDecoratorStackMethodHandler.invoke(CombinedInterceptorAndDecoratorStackMethodHandler.java:49)
-</code></pre>
-<p>Seems to old <a href="https://issues.jboss.org/browse/WELD-2407">BUG</a> happened and Weld does not support Java 8 default methods completely. So, pity but same refactoring here is needed.</p>
-<p>Issue #4:</p>
-<pre><code class="language-java">WFLYRS0018: Explicit usage of Jackson annotation in a JAX-RS deployment; the system will disable JSON-B processing for the current deployment. Consider setting the 'resteasy.preferJacksonOverJsonB' property to 'false' to restore JSON-B.
-...
-javax.ws.rs.client.ResponseProcessingException: javax.ws.rs.ProcessingException: RESTEASY008200: JSON Binding deserialization error  
-  at org.jboss.resteasy.client.jaxrs.internal.ClientInvocation.extractResult(ClientInvocation.java:156)  
-  at org.jboss.resteasy.client.jaxrs.internal.ClientInvocation.invoke(ClientInvocation.java:473)  
-  at org.jboss.resteasy.client.jaxrs.internal.ClientInvocationBuilder.get(ClientInvocationBuilder.java:195)  
-</code></pre>
-<p>Since latest versions, WF uses <code>org.eclipse.yasson</code> as <strong>JSON-B</strong> provider. It can provoke some compatibility problems in case using different  implementations. Solution here is refactoring according to the JSON-B specification or excluding <code>resteasy-json-binding-provider</code> from application class loader by providing <code>WEB-INF/jboss-deployment-structure.xml</code>:</p>
-<pre><code class="language-java">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-&lt;jboss-deployment-structure&gt;
-    &lt;deployment&gt;
-        &lt;exclusions&gt;
-            &lt;module name=&quot;org.jboss.resteasy.resteasy-json-binding-provider&quot;/&gt;
-        &lt;/exclusions&gt;
-    &lt;/deployment&gt;
-&lt;/jboss-deployment-structure&gt;
-</code></pre>
-<p>or in case using EARs, do exclusion from submodules like</p>
-<pre><code class="language-java">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-&lt;jboss-deployment-structure&gt;
-    &lt;deployment&gt;
-        &lt;exclusions&gt;
-            &lt;module name=&quot;org.jboss.resteasy.resteasy-json-binding-provider&quot;/&gt;
-        &lt;/exclusions&gt;
-    &lt;/deployment&gt;
-    &lt;sub-deployment name=&quot;module-1.jar&quot;&gt;
-        &lt;exclusions&gt;
-            &lt;module name=&quot;org.jboss.resteasy.resteasy-json-binding-provider&quot;/&gt;
-        &lt;/exclusions&gt;
-    &lt;/sub-deployment&gt;    
-&lt;/jboss-deployment-structure&gt;
-</code></pre>
-<p>Issue #5:<br />
-According to the fixed Hibernate <a href="https://hibernate.atlassian.net/browse/HHH-11278">BUG</a>, for now JPA call <code>setMaxResult(0)</code> <strong>returns empty List</strong> instead of <strong>ALL</strong> elements in previous versions. So, just check it and do some refactoring if needed.</p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2019/10/migration-wildfly-10-to-18.html#disqus_thread" data-disqus-identifier="blog/2019/10/migration-wildfly-10-to-18.html">Comments</a></p>
 				<hr/>
 
 		<ul class="pager">

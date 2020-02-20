@@ -6,9 +6,151 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Fri, 14 Feb 2020 19:07:33 +0200</pubDate>
-    <lastBuildDate>Fri, 14 Feb 2020 19:07:33 +0200</lastBuildDate>
+    <pubDate>Thu, 20 Feb 2020 13:40:27 +0200</pubDate>
+    <lastBuildDate>Thu, 20 Feb 2020 13:40:27 +0200</lastBuildDate>
 
+    <item>
+      <title>Well secured and documented REST API with Eclipse Microprofile and Quarkus</title>
+      <link>https://kostenko.org/blog/2020/02/jwt-openapi-microprofile-quarkus.html</link>
+      <pubDate>Thu, 20 Feb 2020 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2020/02/jwt-openapi-microprofile-quarkus.html</guid>
+      	<description>
+	&lt;p&gt;Eclipse Microprofile specification provides several many helpful sections about building well designed microservice-oriented applications. &lt;strong&gt;OpenAPI&lt;/strong&gt;, &lt;strong&gt;JWT Propagation&lt;/strong&gt; and &lt;strong&gt;JAX-RS&lt;/strong&gt; - the ones of them.&lt;br /&gt;
+&lt;img src=&quot;/img/2020-02-jwt-openapi-jaxrs-microprofile.png&quot; alt=&quot;microprofile, jwt, openapi, jax-rs&quot; /&gt;&lt;br /&gt;
+To see how it works on practice let&apos;s design two typical REST resources: insecured &lt;strong&gt;token&lt;/strong&gt; to generate JWT and secured  &lt;strong&gt;user&lt;/strong&gt;, based on Quarkus Microprofile implementation.&lt;/p&gt;
+&lt;p&gt;Easiest way to bootstrap Quarkus application from scratch is generation project structure by provided starter page - &lt;strong&gt;&lt;a href=&quot;https://code.quarkus.io/&quot;&gt;code.quarkus.io&lt;/a&gt;&lt;/strong&gt;. Just select build tool you like and extensions you need. In our case it is:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;SmallRye JWT&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;SmallRye OpenAPI&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I prefer &lt;strong&gt;gradle&lt;/strong&gt;, - and my &lt;code&gt;build.gradle&lt;/code&gt; looks pretty simple&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;group &apos;org.kostenko&apos;
+version &apos;1.0.0&apos;
+plugins {
+    id &apos;java&apos;
+    id &apos;io.quarkus&apos;
+}
+repositories {
+     mavenLocal()
+     mavenCentral()
+}
+dependencies {
+    implementation &apos;io.quarkus:quarkus-smallrye-jwt&apos;
+    implementation &apos;io.quarkus:quarkus-smallrye-openapi&apos;
+    implementation &apos;io.quarkus:quarkus-resteasy-jackson&apos;    
+    implementation &apos;io.quarkus:quarkus-resteasy&apos;
+    implementation enforcedPlatform(&amp;quot;${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}&amp;quot;)
+    testImplementation &apos;io.quarkus:quarkus-junit5&apos;
+    testImplementation &apos;io.rest-assured:rest-assured&apos;
+}
+compileJava {
+    options.compilerArgs &amp;lt;&amp;lt; &apos;-parameters&apos;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now we are ready to improve standard &lt;strong&gt;JAX-RS&lt;/strong&gt; service with &lt;strong&gt;OpenAPI&lt;/strong&gt; and &lt;strong&gt;JWT&lt;/strong&gt; stuff:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@RequestScoped
+@Path(&amp;quot;/user&amp;quot;)
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Tags(value = @Tag(name = &amp;quot;user&amp;quot;, description = &amp;quot;All the user methods&amp;quot;))
+@SecurityScheme(securitySchemeName = &amp;quot;jwt&amp;quot;, type = SecuritySchemeType.HTTP, scheme = &amp;quot;bearer&amp;quot;, bearerFormat = &amp;quot;jwt&amp;quot;)
+public class UserResource {
+
+    @Inject
+    @Claim(&amp;quot;user_name&amp;quot;)
+    Optional&amp;lt;JsonString&amp;gt; userName;
+
+    @POST
+    @PermitAll
+    @Path(&amp;quot;/token/{userName}&amp;quot;)
+    @APIResponses(value = {
+        @APIResponse(responseCode = &amp;quot;400&amp;quot;, description = &amp;quot;JWT generation error&amp;quot;),
+        @APIResponse(responseCode = &amp;quot;200&amp;quot;, description = &amp;quot;JWT successfuly created.&amp;quot;, content = @Content(schema = @Schema(implementation = User.class)))})
+    @Operation(summary = &amp;quot;Create JWT token by provided user name&amp;quot;)
+    public User getToken(@PathParam(&amp;quot;userName&amp;quot;) String userName) {
+        User user = new User();
+        user.setJwt(TokenUtils.generateJWT(userName));
+        return user;    
+    }
+
+    @GET
+    @RolesAllowed(&amp;quot;user&amp;quot;)
+    @Path(&amp;quot;/current&amp;quot;)
+    @SecurityRequirement(name = &amp;quot;jwt&amp;quot;, scopes = {})
+    @APIResponses(value = {
+        @APIResponse(responseCode = &amp;quot;401&amp;quot;, description = &amp;quot;Unauthorized Error&amp;quot;),
+        @APIResponse(responseCode = &amp;quot;200&amp;quot;, description = &amp;quot;Return user data&amp;quot;, content = @Content(schema = @Schema(implementation = User.class)))})
+    @Operation(summary = &amp;quot;Return user data by provided JWT token&amp;quot;)
+    public User getUser() {
+        User user = new User();
+        user.setName(userName.get().toString());
+        return user;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;First let&apos;s take a brief review of used &lt;strong&gt;&lt;a href=&quot;https://github.com/eclipse/microprofile-open-api&quot;&gt;Open API&lt;/a&gt;&lt;/strong&gt; annotations:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;@Tags(value = @Tag(name = &amp;quot;user&amp;quot;, description = &amp;quot;All the user methods&amp;quot;))&lt;/code&gt; -  Represents a tag. Tag is a meta-information you can use to help organize your API end-points.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;@SecurityScheme(securitySchemeName = &amp;quot;jwt&amp;quot;, type = SecuritySchemeType.HTTP, scheme = &amp;quot;bearer&amp;quot;, bearerFormat = &amp;quot;jwt&amp;quot;)&lt;/code&gt; - Defines a security scheme that can be used by the operations.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;@APIResponse(responseCode = &amp;quot;401&amp;quot;, description = &amp;quot;Unauthorized Error&amp;quot;)&lt;/code&gt; - Corresponds to the OpenAPI response model object which  describes a single response from an API Operation.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;@Operation(summary = &amp;quot;Return user data by provided JWT token&amp;quot;)&lt;/code&gt; - Describes an operation or typically a HTTP method against a specific path.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;@Schema(implementation = User.class)&lt;/code&gt; - Allows the definition of input and output data types.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;To more details about Open API annotations, please refer to the &lt;strong&gt;&lt;a href=&quot;https://github.com/eclipse/microprofile-open-api/blob/master/spec/src/main/asciidoc/microprofile-openapi-spec.adoc&quot;&gt;MicroProfile OpenAPI Specification&lt;/a&gt;&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;After start the application, you will able to get your Open API description in the  &lt;strong&gt;.yaml&lt;/strong&gt; format by the next URL &lt;a href=&quot;http://0.0.0.0:8080/openapi&quot;&gt;http://0.0.0.0:8080/openapi&lt;/a&gt; or even enjoy &lt;strong&gt;Swagger UI&lt;/strong&gt; as well by &lt;a href=&quot;http://0.0.0.0:8080/swagger-ui/&quot;&gt;http://0.0.0.0:8080/swagger-ui/&lt;/a&gt; :&lt;br /&gt;
+&lt;img src=&quot;/img/2020-02-swagger-ui.png&quot; alt=&quot;microprofile, openapi, swagger-ui&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Note&lt;/strong&gt; By default swagger-ui available in the dev mode only. If you would like to keep swagger on production, - add next property to your &lt;code&gt;application.properties&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;quarkus.swagger-ui.always-include=true
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Second part of this post is a &lt;strong&gt;&lt;a href=&quot;https://github.com/eclipse/microprofile-jwt-auth&quot;&gt;JWT role based access control(RBAC)&lt;/a&gt;&lt;/strong&gt; for microservice endpoints. JSON Web Tokens are an open, industry standard  &lt;a href=&quot;https://tools.ietf.org/html/rfc7519&quot;&gt;RFC 7519&lt;/a&gt; method for representing claims securely between two parties and below we will see how easy it can be integrated in your application with Eclipse Microprofile.&lt;/p&gt;
+&lt;p&gt;As JWT suggests usage of cryptography - we need to generate public\private key pair before start coding:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# Generate a private key
+openssl genpkey -algorithm RSA -out private_key.pem -pkeyopt rsa_keygen_bits:2048
+
+# Derive the public key from the private key
+openssl rsa -pubout -in private_key.pem -out public_key.pem
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now we are able to generate JWT and sign data with our private key in the, for example, next way:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public static String generateJWT(String userName) throws Exception {
+
+    Map&amp;lt;String, Object&amp;gt; claimMap = new HashMap&amp;lt;&amp;gt;();
+    claimMap.put(&amp;quot;iss&amp;quot;, &amp;quot;https://kostenko.org&amp;quot;);
+    claimMap.put(&amp;quot;sub&amp;quot;, &amp;quot;jwt-rbac&amp;quot;);
+    claimMap.put(&amp;quot;exp&amp;quot;, currentTimeInSecs + 300)
+    claimMap.put(&amp;quot;iat&amp;quot;, currentTimeInSecs);
+    claimMap.put(&amp;quot;auth_time&amp;quot;, currentTimeInSecs);
+    claimMap.put(&amp;quot;jti&amp;quot;, UUID.randomUUID().toString());
+    claimMap.put(&amp;quot;upn&amp;quot;, &amp;quot;UPN&amp;quot;);
+    claimMap.put(&amp;quot;groups&amp;quot;, Arrays.asList(&amp;quot;user&amp;quot;));
+    claimMap.put(&amp;quot;raw_token&amp;quot;, UUID.randomUUID().toString());
+    claimMap.put(&amp;quot;user_bane&amp;quot;, userName);
+
+    return Jwt.claims(claimMap).jws().signatureKeyId(&amp;quot;META-INF/private_key.pem&amp;quot;).sign(readPrivateKey(&amp;quot;META-INF/private_key.pem&amp;quot;));
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;For additional information about JWT structure, please refer &lt;strong&gt;&lt;a href=&quot;https://jwt.io/introduction/&quot;&gt;https://jwt.io&lt;/a&gt;&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Time to review our application security stuff:&lt;br /&gt;
+&lt;code&gt;@RequestScoped&lt;/code&gt; -  It is not about security as well. But as JWT is request scoped we need this one to work correctly;&lt;br /&gt;
+&lt;code&gt;@PermitAll&lt;/code&gt; - Specifies that all security roles are allowed to invoke the specified method;&lt;br /&gt;
+&lt;code&gt;@RolesAllowed(&amp;quot;user&amp;quot;)&lt;/code&gt; - Specifies the list of roles permitted to access method;&lt;br /&gt;
+&lt;code&gt;@Claim(&amp;quot;user_name&amp;quot;)&lt;/code&gt; - Allows us inject provided by JWT field;&lt;/p&gt;
+&lt;p&gt;To configure JWT in your &lt;code&gt;application.properties&lt;/code&gt;, please add&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;quarkus.smallrye-jwt.enabled=true
+mp.jwt.verify.publickey.location=META-INF/public_key.pem
+mp.jwt.verify.issuer=https://kostenko.org
+
+# quarkus.log.console.enable=true
+# quarkus.log.category.&amp;quot;io.quarkus.smallrye.jwt&amp;quot;.level=TRACE
+# quarkus.log.category.&amp;quot;io.undertow.request.security&amp;quot;.level=TRACE
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And actually that is it, - if you try to reach &lt;code&gt;/user/current&lt;/code&gt; service without or with bad JWT token in the &lt;code&gt;Authorization&lt;/code&gt; header - you will get  &lt;strong&gt;HTTP 401 Unauthorized&lt;/strong&gt; error.&lt;/p&gt;
+&lt;p&gt;curl example:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;curl -X GET &amp;quot;http://localhost:8080/user/current&amp;quot; -H &amp;quot;accept: application/json&amp;quot; -H &amp;quot;Authorization: Bearer eyJraWQiOiJNRVRBLUlORi9wcml2YXRlX2tleS5wZW0iLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJqd3QtcmJhYyIsInVwbiI6IlVQTiIsInJhd190b2tlbiI6IjQwOWY3MzVkLTQyMmItNDI2NC1iN2UyLTc1YTk0OGFjMTg3MyIsInVzZXJfbmFtZSI6InNlcmdpaSIsImF1dGhfdGltZSI6MTU4MjE5NzM5OSwiaXNzIjoiaHR0cHM6Ly9rb3N0ZW5rby5vcmciLCJncm91cHMiOlsidXNlciJdLCJleHAiOjkyMjMzNzIwMzY4NTQ3NzU4MDcsImlhdCI6MTU4MjE5NzM5OSwianRpIjoiMzNlMGMwZjItMmU0Yi00YTczLWJkNDItNDAzNWQ4NTYzODdlIn0.QteseKKwnYJWyj8ccbI1FuHBgWOk98PJuN0LU1vnYO69SYiuPF0d9VFbBada46N_kXIgzw7btIc4zvHKXVXL5Uh3IO2v1lnw0I_2Seov1hXnzvB89SAcFr61XCtE-w4hYWAOaWlkdTAmpMSUt9wHtjc0MwvI_qSBD3ol_VEoPv5l3_W2NJ2YBnqkY8w68c8txL1TnoJOMtJWB-Rpzy0XrtiO7HltFAz-Gm3spMlB3FEjnmj8-LvMmoZ3CKIybKO0U-bajWLPZ6JMJYtp3HdlpsiXNmv5QdIq1yY7uOPIKDNnPohWCgOhFVW-bVv9m-LErc_s45bIB9djwe13jFTbNg&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Source code of described sample application available on &lt;a href=&quot;https://github.com/kostenkoserg/microprofile-quarkus-example&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Simple note about using JPA relation  mappings</title>
       <link>https://kostenko.org/blog/2020/02/jpa-relation-mappings.html</link>
