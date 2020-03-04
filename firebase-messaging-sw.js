@@ -21,12 +21,15 @@
  // Initialize the Firebase app in the service worker by passing in the
  // messagingSenderId.
  firebase.initializeApp({
-   'messagingSenderId': '1019514751044'
+   'messagingSenderId': '1019514751044',
+   'projectId': 'phonic-vortex-206716',
+   'apiKey': 'AIzaSyBb44LhjzycF3j9BYLmv98ykKsnCAFM9EM',
+   'appId': '1:1019514751044:web:3e8d49fdf1f939cf761411'
  });
 
  // Retrieve an instance of Firebase Messaging so that it can handle background
  // messages.
- //const messaging = firebase.messaging();
+ const messaging = firebase.messaging();
  // [END initialize_firebase_in_sw]
  //**/
 
@@ -37,7 +40,7 @@
 // [START background_handler]
 messaging.setBackgroundMessageHandler(function(payload) {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
- Customize notification here
+  //Customize notification here
   const notificationOptions = {
     body: 'Background Message body.',
   };
