@@ -89,6 +89,7 @@
 										<li><a href="tags/hibernate.html">hibernate</a></li>
 										<li><a href="tags/quarkus.html">quarkus</a></li>
 										<li><a href="tags/jwt.html">jwt</a></li>
+										<li><a href="tags/rest-client.html">rest-client</a></li>
 										<li><a href="tags/jax-rs.html">jax-rs</a></li>
 										<li><a href="tags/jbake.html">jbake</a></li>
 								</ul>
@@ -106,6 +107,69 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2020/03/firebase-push-microprofile-rest-client.html"><h1>Firebase push notifications with Eclipse Microprofile Rest Client</h1></a>
+				<p>05 March 2020</p>
+  			<p><p>Nowadays <strong>Push notifications</strong> is a must have feature for any trend application. Firebase Cloud Messaging (<strong>FCM</strong>) is a free (at least in this moment) cross-platform solution for messages and notifications for <strong>Android</strong>, <strong>iOS</strong> and <strong>Web applications</strong>.</p>
+<p><img src="/img/2020-03-firebase-mp-rest-client.png" alt="firebase, push, microprofile, rest client" /></p>
+<p>To enable push notification on client side you should create Firebase project and follow the <a href="https://firebase.google.com/docs/cloud-messaging">manual</a> or  <a href="https://github.com/firebase/quickstart-js/tree/master/messaging">examples</a>. From the server side perspective all you need to send push notification is:</p>
+<ul>
+<li><strong>Server key</strong> - will be created for your firebase project</li>
+<li><strong>Instance ID token</strong> - id of specific subscribed instance (instance destination id)</li>
+</ul>
+<p>Firebase provides <strong><code>https://fcm.googleapis.com/fcm/send</code></strong> endpoint and very simple <a href="https://firebase.google.com/docs/cloud-messaging/http-server-ref">HTTP API</a> like</p>
+<pre><code class="language-java">{
+    &quot;to&quot;: &quot;&lt;Instance ID token&gt;&quot;,
+    &quot;notification&quot;: {
+      &quot;title&quot;: &quot;THIS IS MP REST CLIENT!&quot;,
+      &quot;body&quot;: &quot;The quick brown fox jumps over the lazy dog.&quot;
+      }
+}
+</code></pre>
+<p>So, let's design simple Microprofile REST client to deal with above:</p>
+<pre><code class="language-java">@Path(&quot;/&quot;)
+@RegisterRestClient(configKey = &quot;push-api&quot;)
+public interface PushClientService {
+
+    @POST
+    @Path(&quot;/fcm/send&quot;)
+    @Produces(&quot;application/json&quot;)
+    @ClientHeaderParam(name = &quot;Authorization&quot;, value = &quot;{generateAuthHeader}&quot;)
+    void send(PushMessage msg);
+
+    default String generateAuthHeader() {
+        return &quot;key=&quot; + ConfigProvider.getConfig().getValue(&quot;firebase.server_key&quot;, String.class);
+    }
+}
+</code></pre>
+<pre><code class="language-java">public class PushMessage {
+
+    public String to;
+    public PushNotification notification;
+
+    public static class PushNotification {
+        public String title;
+        public String body;
+    }
+}
+</code></pre>
+<p>and application.properties</p>
+<pre><code class="language-bash"># firebase server key
+firebase.server_key=&lt;SERVER_KEY&gt;
+# rest client
+push-api/mp-rest/url=https://fcm.googleapis.com/
+</code></pre>
+<p>Actually, this is it! Now you able to <code>@Inject</code>  PushClientService and enjoy push notifications as well.</p>
+<pre><code class="language-java">@Inject
+@RestClient
+PushClientService pushService;
+...
+pushService.send(message);
+</code></pre>
+<p>If you would like to test how it works from client side perspective, - feel free to use <strong><a href="https://kostenko.org/blog/2020/03/firebase-push-microprofile-rest-client/index.htm">Test web application</a></strong> to generate instance ID token and check notifications delivery.</p>
+<p>Described sample application source code with swagger-ui endpoint and firebase.server_key available on <a href="https://github.com/kostenkoserg/microprofile-quarkus-example">GitHub</a></p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2020/03/firebase-push-microprofile-rest-client.html#disqus_thread" data-disqus-identifier="blog/2020/03/firebase-push-microprofile-rest-client.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2020/02/jwt-openapi-microprofile-quarkus.html"><h1>Well secured and documented REST API with Eclipse Microprofile and Quarkus</h1></a>
 				<p>20 February 2020</p>
   			<p><p>Eclipse Microprofile specification provides several many helpful sections about building well designed microservice-oriented applications. <strong>OpenAPI</strong>, <strong>JWT Propagation</strong> and <strong>JAX-RS</strong> - the ones of them.<br />
@@ -332,7 +396,7 @@ public void setAuthorId(long authorId) {
 
     <div id="footer">
       <div class="container">
-        <p class="muted credit">&copy; 2019 | Mixed with <a href="http://getbootstrap.com/">Bootstrap v3.1.1</a> | Baked with <a href="http://jbake.org">JBake v2.6.3</a></p>
+        <p class="muted credit">&copy; 2019 | Mixed with <a href="http://getbootstrap.com/">Bootstrap v3.1.1</a> | Baked with <a href="http://jbake.org">JBake v2.6.4</a></p>
       </div>
     </div>
 

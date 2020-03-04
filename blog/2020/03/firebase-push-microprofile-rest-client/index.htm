@@ -134,6 +134,13 @@ firebase.initializeApp({
     // [START_EXCLUDE]
     // Update the UI to include the received message.
     appendMessage(payload);
+    info.show();
+        info_message
+            .text('')
+            .append('<strong>'+payload.data.title+'</strong>')
+            .append('<em>'+payload.data.body+'</em>')
+        ;
+
     // [END_EXCLUDE]
   });
   // [END receive_message]
