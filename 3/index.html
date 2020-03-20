@@ -72,8 +72,8 @@
 										<li><a href="../tags/ci.html">ci</a></li>
 										<li><a href="../tags/openapi.html">openapi</a></li>
 										<li><a href="../tags/microprofile.html">microprofile</a></li>
-										<li><a href="../tags/github.html">github</a></li>
 										<li><a href="../tags/jberet.html">jberet</a></li>
+										<li><a href="../tags/github.html">github</a></li>
 										<li><a href="../tags/activemq.html">activemq</a></li>
 										<li><a href="../tags/jetty.html">jetty</a></li>
 										<li><a href="../tags/api.html">api</a></li>
@@ -107,6 +107,37 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2019/11/java-primitive-types-calculation.html"><h1>Never use Java primitives for math calculation</h1></a>
+				<p>08 November 2019</p>
+  			<p><p>This is well known stuff about representation of <a href="https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html">Floating point types in java</a>, but time from time each developer can forget about</p>
+<pre><code class="language-java">@Test
+public void primitiveTest() {
+
+    // right way:
+    BigDecimal bgDcml = BigDecimal.valueOf(100000f).multiply(BigDecimal.valueOf(750f)).multiply(BigDecimal.valueOf(15f)).setScale(0);
+    BigDecimal bgDcml2 = BigDecimal.valueOf(0.04d).multiply(BigDecimal.valueOf(15.0d));
+
+    // wrong way:
+    float flt = 100000f * 750f * 15f;
+    float flt2 = 0.04f * 15.0f;
+
+    System.out.println(&quot;BigDecimal (correct): &quot; + bgDcml);
+    System.out.println(String.format(&quot;Float (incorrect): %s (%s)&quot;, flt, new BigDecimal(flt)));
+    System.out.println(&quot;BigDecimal (correct): &quot; + bgDcml2);
+    System.out.println(String.format(&quot;Float (incorrect): %s&quot;, flt2));
+}
+</code></pre>
+<pre><code class="language-java">-------------------------------------------------------
+ T E S T S
+-------------------------------------------------------
+BigDecimal (correct): 1125000000
+Float (incorrect): 1.12499994E9 (1124999936)
+BigDecimal (correct): 0.600
+Float (incorrect): 0.59999996
+</code></pre>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2019/11/java-primitive-types-calculation.html#disqus_thread" data-disqus-identifier="blog/2019/11/java-primitive-types-calculation.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/11/jakarta-batch-garbage-collection-jberet.html"><h1>Jakarta Batch garbage collection with Jberet</h1></a>
 				<p>04 November 2019</p>
   			<p><p>To implement Jakarta Batch Specification Wildfly uses JBeret as implementation of JSR 352 (Batch Applications for the Java Platform). During processing, last one persists some working data to the memory, JDBC or another repository depends on configuration.</p>
@@ -255,36 +286,10 @@ dependencies {
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2019/09/jee-to-jakartaee-migration.html#disqus_thread" data-disqus-identifier="blog/2019/09/jee-to-jakartaee-migration.html">Comments</a></p>
 				<hr/>
-				<a href="https://kostenko.org/blog/2019/08/wildfly-jconsole-mbeans-list-problem.html"><h1>Wildfly JMX connection problems (so slow and terminates)</h1></a>
-				<p>19 August 2019</p>
-  			<p><p>JMX (Java Management Extensions ) - is a technology that provide us possibility to monitoring applications (application servers) by <strong>MBeans (Managed Bean)</strong> objects.<br />
-List of supported MBeans can be obtained by <strong>JConsole</strong> tool that already included to JDK. As JMX does not provide strong defined communication protocol, - implementations can be different depends on vendor.<br />
-For example, to connect to Wildfly Application Server you need to use included in distribution <code>jconsole.sh</code> script:</p>
-<pre><code class="language-java">&lt;WFLY_HOME&gt;/bin/jconsole.sh
-</code></pre>
-<p>or add <code>&lt;WFLY_HOME&gt;/bin/client/jboss-client.jar</code> to classpath:</p>
-<pre><code class="language-java">jconsole J-Djava.class.path=$JAVA_HOME\lib\tools.jar;$JAVA_HOME\lib\jconsole.jar;jboss-client.jar
-</code></pre>
-<p>By default, Wildfly uses <code>timeout = 60s</code> for <strong>remote JMX connections</strong>, after that connection will terminated:<br />
-<img src="/img/2019-08-jmx-jconsole.png" alt="jconsole terminated connection" /><br />
-To change default timeout value, use <code>org.jboss.remoting-jmx.timeout</code> property:</p>
-<pre><code class="language-java">./jconsole.sh -J-Dorg.jboss.remoting-jmx.timeout=300
-</code></pre>
-<p>But increasing timeouts, is not always good solution. So, lets search for the reason of slowness. To construct list of MBeans, jconsole recursively requests ALL MBeans, that can be extremely slow in case many deployments and many loggers. (Reported issue: <a href="https://issues.jboss.org/browse/WFCORE-3186">WFCORE-3186</a>). Partial solution here is reducing count of log files by changing rotating type from <code>periodic-size-rotating-file-handler</code>  to <code>size-rotating-file-handler</code>.</p>
-<p>Other reason of extremely slowness can be <code>Batch subsystem (JBeret)</code>. Last one stores a lot of working information in their tables (in memory or on remote DB, depends on configuration). If this tables big enough - it can negative affect performance of server. So, if you, no need for this data then just cleanup this stuff periodically. (for example, every redeploy in case you do it often enough):</p>
-<pre><code class="language-java">TRUNCATE TABLE PARTITION_EXECUTION CASCADE;
-TRUNCATE TABLE STEP_EXECUTION CASCADE;
-TRUNCATE TABLE JOB_EXECUTION CASCADE;
-TRUNCATE TABLE JOB_INSTANCE CASCADE;  
-</code></pre>
-<p>From other point of view, obtaining ALL MBeans is not good decision as well. So, just use tooling that allows to find MBeans by path.</p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2019/08/wildfly-jconsole-mbeans-list-problem.html#disqus_thread" data-disqus-identifier="blog/2019/08/wildfly-jconsole-mbeans-list-problem.html">Comments</a></p>
-				<hr/>
 
 		<ul class="pager">
 				<li class="previous"><a href="https://kostenko.org/2">Previous</a></li>
-			<li">Page: 3/8 (<a href="../archive.html">archive</a>)</li>
+			<li">Page: 3/9 (<a href="../archive.html">archive</a>)</li>
 				<li class="next"><a href="https://kostenko.org/4">Next</a></li>
 		</ul>
 		</div>
@@ -293,7 +298,7 @@ TRUNCATE TABLE JOB_INSTANCE CASCADE;
 
     <div id="footer">
       <div class="container">
-        <p class="muted credit">&copy; 2019 | Mixed with <a href="http://getbootstrap.com/">Bootstrap v3.1.1</a> | Baked with <a href="http://jbake.org">JBake v2.6.4</a></p>
+        <p class="muted credit">&copy; 2019 | Mixed with <a href="http://getbootstrap.com/">Bootstrap v3.1.1</a> | Baked with <a href="http://jbake.org">JBake v2.6.3</a></p>
       </div>
     </div>
 

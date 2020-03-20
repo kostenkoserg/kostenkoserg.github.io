@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Migration from Wildfly 10 to Wildfly 18</title>
+    <title>Slow SQL logging with JPA and Wildfly</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -107,74 +107,76 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Migration from Wildfly 10 to Wildfly 18</h1>
+		<h1>Slow SQL logging with JPA and Wildfly</h1>
 	</div>
 
-	<p><em>22 October 2019</em></p>
+	<p><em>20 March 2020</em></p>
 
-	<p><p>Usually vendors declares easy migration, provides how-to documentation and even migration tools. But depends on complexity of your application you can stuck with some compatibility issues. Below i will explain my Wildfliy 10 to Wildfliy 18 migration steps.</p>
-<p>First of all you can use provided by WF <a href="https://github.com/wildfly/wildfly-server-migration">migration tool</a> to migrate configuration files and compatible modules to the needed release:</p>
-<pre><code class="language-java">git clone https://github.com/wildfly/wildfly-server-migration.git
-cd ./wildfly-server-migration/
-mvn clean install
-cd ./dist/standalone/target/
-unzip jboss-server-migration-1.8.0.Final-SNAPSHOT.zip
-cd ./jboss-server-migration
+	<p><p>Recently I wrote about <strong><a href="https://kostenko.org/blog/2020/01/sql-spying-with-wildfly.html">Logging for JPA SQL queries with Wildfly</a></strong>. In this post I'll show you how to configure <strong>logging for slow SQL queries</strong>.</p>
+<p>Wildfly uses Hibernate as JPA provider. So, to enable <strong>slow sql feature</strong> you just need to provide <code>hibernate.session.events.log.LOG_QUERIES_SLOWER_THAN_MS</code> property in your <strong>persistence.xml</strong> :</p>
+<pre><code class="language-java">&lt;properties&gt;
+    ...
+    &lt;property name=&quot;hibernate.session.events.log.LOG_QUERIES_SLOWER_THAN_MS&quot; value=&quot;25&quot;/&gt;
+    ...
+&lt;/properties&gt;    
+</code></pre>
+<p>To log slow queries to separate file, please configure logging like:</p>
+<pre><code class="language-bash">/subsystem=logging/periodic-rotating-file-handler=slow_sql_handler:add(level=INFO, file={&quot;path&quot;=&gt;&quot;slowsql.log&quot;}, append=true, autoflush=true, suffix=.yyyy-MM-dd,formatter=&quot;%d{yyyy-MM-dd HH:mm:ss,SSS}&quot;)
+/subsystem=logging/logger=org.hibernate.SQL_SLOW:add(use-parent-handlers=false,handlers=[&quot;slow_sql_handler&quot;])
+</code></pre>
+<p><strong>Note!</strong><br />
+Described above functionality available since Hibernate version <strong>5.4.5</strong>, but latest for today <strong>Wildfly 19</strong> uses Hibernate version <strong>5.3</strong>.  Fortunately, if you can't wait to enjoy the latest version of Hibernate, you can use <strong><a href="https://docs.jboss.org/hibernate/orm/5.4/topical/html_single/wildfly/Wildfly.html">WildFly feature packs</a></strong> to create a <strong>custom server</strong> with a different version of Hibernate ORM in few simple steps:</p>
+<p>Create provisioning configuration file (provision.xml)</p>
+<pre><code class="language-xml">&lt;server-provisioning xmlns=&quot;urn:wildfly:server-provisioning:1.1&quot; copy-module-artifacts=&quot;true&quot;&gt;
+    &lt;feature-packs&gt;
+	&lt;feature-pack
+		groupId=&quot;org.hibernate&quot;
+		artifactId=&quot;hibernate-orm-jbossmodules&quot;
+		version=&quot;${hibernate-orm.version}&quot; /&gt;
+	&lt;feature-pack
+		groupId=&quot;org.wildfly&quot;
+		artifactId=&quot;wildfly-feature-pack&quot;
+		version=&quot;${wildfly.version}&quot; /&gt;
+    &lt;/feature-packs&gt;
+&lt;/server-provisioning&gt;
+</code></pre>
+<p>Create gradle build file (build.gradle)</p>
+<pre><code class="language-java">plugins {
+  id &quot;org.wildfly.build.provision&quot; version '0.0.6'
+}
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {
+        name 'jboss-public'
+        url 'https://repository.jboss.org/nexus/content/groups/public/'
+    }
+}
+provision {
+    //Optional destination directory:
+    destinationDir = file(&quot;wildfly-custom&quot;)
 
-./jboss-server-migration.sh -s /opt/wildfly-10.1.0.Final -t /opt/wildfly-18.0.0.Final/
+    //Update the JPA API:
+    override( 'org.hibernate.javax.persistence:hibernate-jpa-2.1-api' ) {
+        groupId = 'javax.persistence'
+        artifactId = 'javax.persistence-api'
+        version = '2.2'
+    }
+    configuration = file( 'provision.xml' )
+    //Define variables which need replacing in the provisioning configuration!
+    variables['wildfly.version'] = '17.0.0.Final'
+    variables['hibernate-orm.version'] = '5.4.5.Final'
+}
 </code></pre>
-<p>Now let's see application level migration issues:</p>
-<p>Issue #1:</p>
-<pre><code class="language-java">Caused by: java.lang.IllegalArgumentException: org.hibernate.hql.internal.ast.QuerySyntaxException: Invalid path: 'org.kostenko.STATUS.ACTIVE'
+<p>Build custom Wildfly version</p>
+<pre><code class="language-bash">gradle provision
 </code></pre>
-<p>Error above related to the Hibernate 5.2 <a href="https://vladmihalcea.com/the-performance-penalty-of-class-forname-when-parsing-jpql-and-criteria-queries/">performance improvement</a> that avoids unnecessary calls to Class.forName(). Solution here is <strong>using Java Naming conventions for a constant.</strong> (for example rename STATUS to Status) or in case  using non-conventional Java constants set the</p>
-<pre><code class="language-java">&lt;property name=&quot;hibernate.query.conventional_java_constants&quot; value=&quot;false&quot;/&gt;
+<p>Switch to a different Hibernate ORM slot in your persistence.xml</p>
+<pre><code class="language-java">&lt;properties&gt;
+    &lt;property name=&quot;jboss.as.jpa.providerModule&quot; value=&quot;org.hibernate:5.4&quot;/&gt;
+&lt;/properties&gt;
 </code></pre>
-<p>in your <strong>persistence.xml</strong></p>
-<p>Issue #2:</p>
-<pre><code class="language-java">java.lang.IllegalArgumentException: ArquillianServletRunner not found. Could not determine ContextRoot from ProtocolMetadata, please contact DeployableContainer developer.
-</code></pre>
-<p>In case using Arquillian you need just update version <code>org.wildfly.arquillian:wildfly-arquillian-container-managed</code> to version <code>2.2.0.Final</code></p>
-<p>Issue #3:</p>
-<pre><code class="language-java">org.jboss.weld.exceptions.UnsupportedOperationException:
-  at org.jboss.weld.bean.proxy.CombinedInterceptorAndDecoratorStackMethodHandler.invoke(CombinedInterceptorAndDecoratorStackMethodHandler.java:49)
-</code></pre>
-<p>Seems to old <a href="https://issues.jboss.org/browse/WELD-2407">BUG</a> happened and Weld does not support Java 8 default methods completely. So, pity but same refactoring here is needed.</p>
-<p>Issue #4:</p>
-<pre><code class="language-java">WFLYRS0018: Explicit usage of Jackson annotation in a JAX-RS deployment; the system will disable JSON-B processing for the current deployment. Consider setting the 'resteasy.preferJacksonOverJsonB' property to 'false' to restore JSON-B.
-...
-javax.ws.rs.client.ResponseProcessingException: javax.ws.rs.ProcessingException: RESTEASY008200: JSON Binding deserialization error  
-  at org.jboss.resteasy.client.jaxrs.internal.ClientInvocation.extractResult(ClientInvocation.java:156)  
-  at org.jboss.resteasy.client.jaxrs.internal.ClientInvocation.invoke(ClientInvocation.java:473)  
-  at org.jboss.resteasy.client.jaxrs.internal.ClientInvocationBuilder.get(ClientInvocationBuilder.java:195)  
-</code></pre>
-<p>Since latest versions, WF uses <code>org.eclipse.yasson</code> as <strong>JSON-B</strong> provider. It can provoke some compatibility problems in case using different  implementations. Solution here is refactoring according to the JSON-B specification or excluding <code>resteasy-json-binding-provider</code> from application class loader by providing <code>WEB-INF/jboss-deployment-structure.xml</code>:</p>
-<pre><code class="language-java">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-&lt;jboss-deployment-structure&gt;
-    &lt;deployment&gt;
-        &lt;exclusions&gt;
-            &lt;module name=&quot;org.jboss.resteasy.resteasy-json-binding-provider&quot;/&gt;
-        &lt;/exclusions&gt;
-    &lt;/deployment&gt;
-&lt;/jboss-deployment-structure&gt;
-</code></pre>
-<p>or in case using EARs, do exclusion from submodules like</p>
-<pre><code class="language-java">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-&lt;jboss-deployment-structure&gt;
-    &lt;deployment&gt;
-        &lt;exclusions&gt;
-            &lt;module name=&quot;org.jboss.resteasy.resteasy-json-binding-provider&quot;/&gt;
-        &lt;/exclusions&gt;
-    &lt;/deployment&gt;
-    &lt;sub-deployment name=&quot;module-1.jar&quot;&gt;
-        &lt;exclusions&gt;
-            &lt;module name=&quot;org.jboss.resteasy.resteasy-json-binding-provider&quot;/&gt;
-        &lt;/exclusions&gt;
-    &lt;/sub-deployment&gt;    
-&lt;/jboss-deployment-structure&gt;
-</code></pre>
-<p>Issue #5:<br />
-According to the fixed Hibernate <a href="https://hibernate.atlassian.net/browse/HHH-11278">BUG</a>, for now JPA call <code>setMaxResult(0)</code> <strong>returns empty List</strong> instead of <strong>ALL</strong> elements in previous versions. So, just check it and do some refactoring if needed.</p>
+<p>Enjoy!</p>
 </p>
 
 	<hr />
@@ -185,8 +187,8 @@ According to the fixed Hibernate <a href="https://hibernate.atlassian.net/browse
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/10/migration-wildfly-10-to-18.html';
-	this.page.identifier = 'blog/2019/10/migration-wildfly-10-to-18.html';
+	this.page.url = 'https://kostenko.org/blog/2020/03/jpa-wildfly-slow-sql.html';
+	this.page.identifier = 'blog/2020/03/jpa-wildfly-slow-sql.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE

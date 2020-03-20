@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Migration from Wildfly 10 to Wildfly 18</title>
+    <title>Load huge amount of data with Jakarta EE Batch</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -107,74 +107,63 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Migration from Wildfly 10 to Wildfly 18</h1>
+		<h1>Load huge amount of data with Jakarta EE Batch</h1>
 	</div>
 
-	<p><em>22 October 2019</em></p>
+	<p><em>10 February 2020</em></p>
 
-	<p><p>Usually vendors declares easy migration, provides how-to documentation and even migration tools. But depends on complexity of your application you can stuck with some compatibility issues. Below i will explain my Wildfliy 10 to Wildfliy 18 migration steps.</p>
-<p>First of all you can use provided by WF <a href="https://github.com/wildfly/wildfly-server-migration">migration tool</a> to migrate configuration files and compatible modules to the needed release:</p>
-<pre><code class="language-java">git clone https://github.com/wildfly/wildfly-server-migration.git
-cd ./wildfly-server-migration/
-mvn clean install
-cd ./dist/standalone/target/
-unzip jboss-server-migration-1.8.0.Final-SNAPSHOT.zip
-cd ./jboss-server-migration
-
-./jboss-server-migration.sh -s /opt/wildfly-10.1.0.Final -t /opt/wildfly-18.0.0.Final/
-</code></pre>
-<p>Now let's see application level migration issues:</p>
-<p>Issue #1:</p>
-<pre><code class="language-java">Caused by: java.lang.IllegalArgumentException: org.hibernate.hql.internal.ast.QuerySyntaxException: Invalid path: 'org.kostenko.STATUS.ACTIVE'
-</code></pre>
-<p>Error above related to the Hibernate 5.2 <a href="https://vladmihalcea.com/the-performance-penalty-of-class-forname-when-parsing-jpql-and-criteria-queries/">performance improvement</a> that avoids unnecessary calls to Class.forName(). Solution here is <strong>using Java Naming conventions for a constant.</strong> (for example rename STATUS to Status) or in case  using non-conventional Java constants set the</p>
-<pre><code class="language-java">&lt;property name=&quot;hibernate.query.conventional_java_constants&quot; value=&quot;false&quot;/&gt;
-</code></pre>
-<p>in your <strong>persistence.xml</strong></p>
-<p>Issue #2:</p>
-<pre><code class="language-java">java.lang.IllegalArgumentException: ArquillianServletRunner not found. Could not determine ContextRoot from ProtocolMetadata, please contact DeployableContainer developer.
-</code></pre>
-<p>In case using Arquillian you need just update version <code>org.wildfly.arquillian:wildfly-arquillian-container-managed</code> to version <code>2.2.0.Final</code></p>
-<p>Issue #3:</p>
-<pre><code class="language-java">org.jboss.weld.exceptions.UnsupportedOperationException:
-  at org.jboss.weld.bean.proxy.CombinedInterceptorAndDecoratorStackMethodHandler.invoke(CombinedInterceptorAndDecoratorStackMethodHandler.java:49)
-</code></pre>
-<p>Seems to old <a href="https://issues.jboss.org/browse/WELD-2407">BUG</a> happened and Weld does not support Java 8 default methods completely. So, pity but same refactoring here is needed.</p>
-<p>Issue #4:</p>
-<pre><code class="language-java">WFLYRS0018: Explicit usage of Jackson annotation in a JAX-RS deployment; the system will disable JSON-B processing for the current deployment. Consider setting the 'resteasy.preferJacksonOverJsonB' property to 'false' to restore JSON-B.
-...
-javax.ws.rs.client.ResponseProcessingException: javax.ws.rs.ProcessingException: RESTEASY008200: JSON Binding deserialization error  
-  at org.jboss.resteasy.client.jaxrs.internal.ClientInvocation.extractResult(ClientInvocation.java:156)  
-  at org.jboss.resteasy.client.jaxrs.internal.ClientInvocation.invoke(ClientInvocation.java:473)  
-  at org.jboss.resteasy.client.jaxrs.internal.ClientInvocationBuilder.get(ClientInvocationBuilder.java:195)  
-</code></pre>
-<p>Since latest versions, WF uses <code>org.eclipse.yasson</code> as <strong>JSON-B</strong> provider. It can provoke some compatibility problems in case using different  implementations. Solution here is refactoring according to the JSON-B specification or excluding <code>resteasy-json-binding-provider</code> from application class loader by providing <code>WEB-INF/jboss-deployment-structure.xml</code>:</p>
+	<p><p>Processing huge amount of data is a challenge for every enterprise system. Jakarta EE specifications provides useful approach to get it done through <strong>Jakarta Batch</strong> (JSR-352):</p>
+<blockquote>
+<p>Batch processing is a pervasive workload pattern, expressed by a distinct application organization and execution model. It is found across virtually every industry, applied to such tasks as statement generation, bank postings, risk evaluation, credit score calculation, inventory management, portfolio optimization, and on and on. Nearly any bulk processing task from any business sector is a candidate for batch processing.<br />
+Batch processing is typified by bulk-oriented, non-interactive, background execution. Frequently long-running, it may be data or computationally intensive, execute sequentially or in parallel, and may be initiated through various invocation models, including ad hoc, scheduled, and on-demand.<br />
+Batch applications have common requirements, including logging, checkpointing, and parallelization. Batch workloads have common requirements, especially operational control, which allow for initiation of, and interaction with, batch instances; such interactions include stop and restart.</p>
+</blockquote>
+<p>One of the typical use case is a import data from different sources and formats to internal database. Below we will design sample application to import data from  <code>json</code> and <code>xml</code> files to the database and see how well structured it can be.</p>
+<p>So, using Eclipse Red Hat CodeReady Studio plugin, we can easily design our solution diagram:<br />
+<img src="/img/2020-02-jakarta-batch-import.png" alt="import batch diagram" /></p>
+<p>Jakarta Batch descriptor in this case will looks like:<br />
+<code>META-INF/batch-jobs/hugeImport.xml:</code></p>
 <pre><code class="language-java">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-&lt;jboss-deployment-structure&gt;
-    &lt;deployment&gt;
-        &lt;exclusions&gt;
-            &lt;module name=&quot;org.jboss.resteasy.resteasy-json-binding-provider&quot;/&gt;
-        &lt;/exclusions&gt;
-    &lt;/deployment&gt;
-&lt;/jboss-deployment-structure&gt;
+&lt;job id=&quot;hugeImport&quot; xmlns=&quot;http://xmlns.jcp.org/xml/ns/javaee&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xsi:schemaLocation=&quot;http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/jobXML_1_0.xsd&quot; version=&quot;1.0&quot;&gt;
+    &lt;step id=&quot;fileSelector&quot; next=&quot;decider&quot;&gt;
+        &lt;batchlet ref=&quot;fileSelector&quot;&gt;
+            &lt;properties&gt;
+                &lt;property name=&quot;path&quot; value=&quot;/tmp/files2import&quot;/&gt;
+                &lt;property name=&quot;extension&quot; value=&quot;json,xml&quot;/&gt;
+            &lt;/properties&gt;
+        &lt;/batchlet&gt;
+    &lt;/step&gt;
+    &lt;decision id=&quot;decider&quot; ref=&quot;myDecider&quot;&gt;
+        &lt;next on=&quot;xml&quot; to=&quot;xmlParser&quot;/&gt;
+        &lt;next on=&quot;json&quot; to=&quot;jsonParser&quot;/&gt;
+    &lt;/decision&gt;
+    &lt;step id=&quot;xmlParrser&quot; next=&quot;chunkProcessor&quot;&gt;
+        &lt;batchlet ref=&quot;xmlParrser&quot;&gt;
+            &lt;properties&gt;
+                &lt;property name=&quot;itemClass&quot; value=&quot;MyItem&quot;/&gt;
+            &lt;/properties&gt;
+        &lt;/batchlet&gt;
+    &lt;/step&gt;
+    &lt;step id=&quot;jsonParrser&quot; next=&quot;chunkProcessor&quot;&gt;
+        &lt;batchlet ref=&quot;jsonParrser&quot;&gt;
+            &lt;properties&gt;
+                &lt;property name=&quot;itemClass&quot; value=&quot;MyItem&quot;/&gt;
+            &lt;/properties&gt;
+        &lt;/batchlet&gt;
+    &lt;/step&gt;
+    &lt;step id=&quot;chunkProcessor&quot;&gt;
+        &lt;chunk&gt;
+            &lt;reader ref=&quot;itemReader&quot;/&gt;
+            &lt;processor ref=&quot;mockItemProcessor&quot;/&gt;
+            &lt;writer ref=&quot;jpaItemWriter&quot;/&gt;
+        &lt;/chunk&gt;
+        &lt;partition&gt;
+            &lt;plan partitions=&quot;5&quot;&gt;&lt;/plan&gt;
+        &lt;/partition&gt;
+    &lt;/step&gt;
+&lt;/job&gt;
 </code></pre>
-<p>or in case using EARs, do exclusion from submodules like</p>
-<pre><code class="language-java">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-&lt;jboss-deployment-structure&gt;
-    &lt;deployment&gt;
-        &lt;exclusions&gt;
-            &lt;module name=&quot;org.jboss.resteasy.resteasy-json-binding-provider&quot;/&gt;
-        &lt;/exclusions&gt;
-    &lt;/deployment&gt;
-    &lt;sub-deployment name=&quot;module-1.jar&quot;&gt;
-        &lt;exclusions&gt;
-            &lt;module name=&quot;org.jboss.resteasy.resteasy-json-binding-provider&quot;/&gt;
-        &lt;/exclusions&gt;
-    &lt;/sub-deployment&gt;    
-&lt;/jboss-deployment-structure&gt;
-</code></pre>
-<p>Issue #5:<br />
-According to the fixed Hibernate <a href="https://hibernate.atlassian.net/browse/HHH-11278">BUG</a>, for now JPA call <code>setMaxResult(0)</code> <strong>returns empty List</strong> instead of <strong>ALL</strong> elements in previous versions. So, just check it and do some refactoring if needed.</p>
+<p>So, now all we need is implement each brick above and keep batchlets independent as much as possible.</p>
 </p>
 
 	<hr />
@@ -185,8 +174,8 @@ According to the fixed Hibernate <a href="https://hibernate.atlassian.net/browse
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/10/migration-wildfly-10-to-18.html';
-	this.page.identifier = 'blog/2019/10/migration-wildfly-10-to-18.html';
+	this.page.url = 'https://kostenko.org/blog/2020/03/data-processing-with-jakarta-ee-batch-api.html';
+	this.page.identifier = 'blog/2020/03/data-processing-with-jakarta-ee-batch-api.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE

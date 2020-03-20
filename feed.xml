@@ -6,9 +6,83 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Thu, 5 Mar 2020 00:42:20 +0200</pubDate>
-    <lastBuildDate>Thu, 5 Mar 2020 00:42:20 +0200</lastBuildDate>
+    <pubDate>Fri, 20 Mar 2020 16:57:15 +0200</pubDate>
+    <lastBuildDate>Fri, 20 Mar 2020 16:57:15 +0200</lastBuildDate>
 
+    <item>
+      <title>Slow SQL logging with JPA and Wildfly</title>
+      <link>https://kostenko.org/blog/2020/03/jpa-wildfly-slow-sql.html</link>
+      <pubDate>Fri, 20 Mar 2020 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2020/03/jpa-wildfly-slow-sql.html</guid>
+      	<description>
+	&lt;p&gt;Recently I wrote about &lt;strong&gt;&lt;a href=&quot;https://kostenko.org/blog/2020/01/sql-spying-with-wildfly.html&quot;&gt;Logging for JPA SQL queries with Wildfly&lt;/a&gt;&lt;/strong&gt;. In this post I&apos;ll show you how to configure &lt;strong&gt;logging for slow SQL queries&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Wildfly uses Hibernate as JPA provider. So, to enable &lt;strong&gt;slow sql feature&lt;/strong&gt; you just need to provide &lt;code&gt;hibernate.session.events.log.LOG_QUERIES_SLOWER_THAN_MS&lt;/code&gt; property in your &lt;strong&gt;persistence.xml&lt;/strong&gt; :&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;&amp;lt;properties&amp;gt;
+    ...
+    &amp;lt;property name=&amp;quot;hibernate.session.events.log.LOG_QUERIES_SLOWER_THAN_MS&amp;quot; value=&amp;quot;25&amp;quot;/&amp;gt;
+    ...
+&amp;lt;/properties&amp;gt;    
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;To log slow queries to separate file, please configure logging like:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;/subsystem=logging/periodic-rotating-file-handler=slow_sql_handler:add(level=INFO, file={&amp;quot;path&amp;quot;=&amp;gt;&amp;quot;slowsql.log&amp;quot;}, append=true, autoflush=true, suffix=.yyyy-MM-dd,formatter=&amp;quot;%d{yyyy-MM-dd HH:mm:ss,SSS}&amp;quot;)
+/subsystem=logging/logger=org.hibernate.SQL_SLOW:add(use-parent-handlers=false,handlers=[&amp;quot;slow_sql_handler&amp;quot;])
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;Note!&lt;/strong&gt;&lt;br /&gt;
+Described above functionality available since Hibernate version &lt;strong&gt;5.4.5&lt;/strong&gt;, but latest for today &lt;strong&gt;Wildfly 19&lt;/strong&gt; uses Hibernate version &lt;strong&gt;5.3&lt;/strong&gt;.  Fortunately, if you can&apos;t wait to enjoy the latest version of Hibernate, you can use &lt;strong&gt;&lt;a href=&quot;https://docs.jboss.org/hibernate/orm/5.4/topical/html_single/wildfly/Wildfly.html&quot;&gt;WildFly feature packs&lt;/a&gt;&lt;/strong&gt; to create a &lt;strong&gt;custom server&lt;/strong&gt; with a different version of Hibernate ORM in few simple steps:&lt;/p&gt;
+&lt;p&gt;Create provisioning configuration file (provision.xml)&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;server-provisioning xmlns=&amp;quot;urn:wildfly:server-provisioning:1.1&amp;quot; copy-module-artifacts=&amp;quot;true&amp;quot;&amp;gt;
+    &amp;lt;feature-packs&amp;gt;
+	&amp;lt;feature-pack
+		groupId=&amp;quot;org.hibernate&amp;quot;
+		artifactId=&amp;quot;hibernate-orm-jbossmodules&amp;quot;
+		version=&amp;quot;${hibernate-orm.version}&amp;quot; /&amp;gt;
+	&amp;lt;feature-pack
+		groupId=&amp;quot;org.wildfly&amp;quot;
+		artifactId=&amp;quot;wildfly-feature-pack&amp;quot;
+		version=&amp;quot;${wildfly.version}&amp;quot; /&amp;gt;
+    &amp;lt;/feature-packs&amp;gt;
+&amp;lt;/server-provisioning&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Create gradle build file (build.gradle)&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;plugins {
+  id &amp;quot;org.wildfly.build.provision&amp;quot; version &apos;0.0.6&apos;
+}
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {
+        name &apos;jboss-public&apos;
+        url &apos;https://repository.jboss.org/nexus/content/groups/public/&apos;
+    }
+}
+provision {
+    //Optional destination directory:
+    destinationDir = file(&amp;quot;wildfly-custom&amp;quot;)
+
+    //Update the JPA API:
+    override( &apos;org.hibernate.javax.persistence:hibernate-jpa-2.1-api&apos; ) {
+        groupId = &apos;javax.persistence&apos;
+        artifactId = &apos;javax.persistence-api&apos;
+        version = &apos;2.2&apos;
+    }
+    configuration = file( &apos;provision.xml&apos; )
+    //Define variables which need replacing in the provisioning configuration!
+    variables[&apos;wildfly.version&apos;] = &apos;17.0.0.Final&apos;
+    variables[&apos;hibernate-orm.version&apos;] = &apos;5.4.5.Final&apos;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Build custom Wildfly version&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;gradle provision
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Switch to a different Hibernate ORM slot in your persistence.xml&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;&amp;lt;properties&amp;gt;
+    &amp;lt;property name=&amp;quot;jboss.as.jpa.providerModule&amp;quot; value=&amp;quot;org.hibernate:5.4&amp;quot;/&amp;gt;
+&amp;lt;/properties&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Enjoy!&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Firebase push notifications with Eclipse Microprofile Rest Client</title>
       <link>https://kostenko.org/blog/2020/03/firebase-push-microprofile-rest-client.html</link>
@@ -903,20 +977,6 @@ public class TestServiceImpl implements TestService {
 	</description>
     </item>
     <item>
-      <title>Embedded Jetty server truncates responses</title>
-      <link>https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html</link>
-      <pubDate>Tue, 6 Aug 2019 00:00:00 +0300</pubDate>
-      <guid isPermaLink="false">blog/2019/08/embedded-jetty-server-cut-responses.html</guid>
-      	<description>
-	&lt;p&gt;Jetty server has lot of configuration options. One of them is &lt;code&gt;OutputBufferSize&lt;/code&gt;&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;HttpConfiguration httpConfig = new HttpConfiguration();
-httpConfig.setOutputBufferSize(1024);
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;If this property set to value less than your respopnse - jetty just will truncate last one.&lt;/p&gt;
-
-	</description>
-    </item>
-    <item>
       <title>Wildfly. Configure load balancing metrics</title>
       <link>https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html</link>
       <pubDate>Tue, 6 Aug 2019 00:00:00 +0300</pubDate>
@@ -943,6 +1003,20 @@ Below is example, how to change default based on CPU balancing to balancing base
 &lt;p&gt;If predefined types is not enough, - you can provide &lt;code&gt;custom-load-metric&lt;/code&gt; by implementing &lt;code&gt;org.jboss.modcluster.load.metric.impl.AbstractLoadMetric&lt;/code&gt;. To possibility of using your custom metric,- you need to copy packaged JAR to &lt;code&gt;modcluster&lt;/code&gt; module and update &lt;code&gt;module.xml&lt;/code&gt;. Now you can use your custom metric with your configuration like&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt; &amp;lt;custom-load-metric class=&amp;quot;org.kostenko.examples.wldfly.modcluster.MyBalancingMetric&amp;quot;&amp;gt;  
 &lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
+    <item>
+      <title>Embedded Jetty server truncates responses</title>
+      <link>https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html</link>
+      <pubDate>Tue, 6 Aug 2019 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2019/08/embedded-jetty-server-cut-responses.html</guid>
+      	<description>
+	&lt;p&gt;Jetty server has lot of configuration options. One of them is &lt;code&gt;OutputBufferSize&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;HttpConfiguration httpConfig = new HttpConfiguration();
+httpConfig.setOutputBufferSize(1024);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;If this property set to value less than your respopnse - jetty just will truncate last one.&lt;/p&gt;
 
 	</description>
     </item>
