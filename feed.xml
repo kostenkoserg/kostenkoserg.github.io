@@ -6,13 +6,105 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Tue, 24 Mar 2020 21:32:09 +0200</pubDate>
-    <lastBuildDate>Tue, 24 Mar 2020 21:32:09 +0200</lastBuildDate>
+    <pubDate>Wed, 29 Apr 2020 15:23:06 +0300</pubDate>
+    <lastBuildDate>Wed, 29 Apr 2020 15:23:06 +0300</lastBuildDate>
 
+    <item>
+      <title>Rich web application on pure Java with Vaadin and Quarkus</title>
+      <link>https://kostenko.org/blog/2020/04/quarkus-vaadin-8.html</link>
+      <pubDate>Wed, 29 Apr 2020 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2020/04/quarkus-vaadin-8.html</guid>
+      	<description>
+	&lt;p&gt;Recently I wrote about &lt;a href=&quot;https://kostenko.org/blog/2020/02/jwt-openapi-microprofile-quarkus.html&quot;&gt;REST API with Eclipse Microprofile and Quarkus&lt;/a&gt; - and it is very useful for the microservices development, but from time to time every backend Java developer &lt;strong&gt;needs for the UI&lt;/strong&gt;. With &lt;strong&gt;&lt;a href=&quot;https://vaadin.com/&quot;&gt;Vaadin web framework&lt;/a&gt;&lt;/strong&gt; you can write UI 100% in Java without getting bogged down in JS, HTML, and CSS.&lt;/p&gt;
+&lt;p&gt;Quarkus provides &lt;strong&gt;&lt;code&gt;Servlet&lt;/code&gt;&lt;/strong&gt; and  &lt;strong&gt;&lt;code&gt;Websocket&lt;/code&gt;&lt;/strong&gt; support as well, so there is no any blockers to run web application.&lt;br /&gt;
+To bootstrap Quarkus from the scratch you can visit  &lt;strong&gt;&lt;a href=&quot;https://code.quarkus.io/&quot;&gt;code.quarkus.io&lt;/a&gt;&lt;/strong&gt; and select build tool you like and extensions you need. In our case we need for:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Undertow Servlet&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Undertow WebSockets&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;With &lt;strong&gt;Vaadin 8&lt;/strong&gt; dependencies my &lt;strong&gt;&lt;code&gt;build.gradle&lt;/code&gt;&lt;/strong&gt; looks pretty clear:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;plugins {
+    id &apos;java&apos;
+    id &apos;io.quarkus&apos;
+}
+repositories {
+     mavenLocal()
+     mavenCentral()
+}
+dependencies {
+    compile &apos;com.vaadin:vaadin-server:8.10.3&apos;
+    compile &apos;com.vaadin:vaadin-push:8.10.3&apos;
+    compile &apos;com.vaadin:vaadin-client-compiled:8.10.3&apos;
+    compile &apos;com.vaadin:vaadin-themes:8.10.3&apos;
+    implementation &apos;io.quarkus:quarkus-undertow-websockets&apos;
+    implementation &apos;io.quarkus:quarkus-undertow&apos;
+    implementation enforcedPlatform(&amp;quot;${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}&amp;quot;)
+}
+
+group &apos;org.kostenko&apos;
+version &apos;1.0.0-SNAPSHOT&apos;
+
+compileJava {
+    options.encoding = &apos;UTF-8&apos;
+    options.compilerArgs &amp;lt;&amp;lt; &apos;-parameters&apos;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now we able to create &lt;strong&gt;&lt;code&gt;com.vaadin.ui.UI&lt;/code&gt;&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Theme(&amp;quot;dashboard&amp;quot;)
+public class MyUI extends UI {
+
+    @Override
+    protected void init(VaadinRequest vaadinRequest) {
+      ...
+    }
+
+    /**
+     * VaadinServlet configuration
+     */
+    @WebServlet(urlPatterns = &amp;quot;/*&amp;quot;, name = &amp;quot;MyUIServlet&amp;quot;, asyncSupported = true, initParams = {
+        @WebInitParam(name = &amp;quot;org.atmosphere.websocket.suppressJSR356&amp;quot;, value = &amp;quot;true&amp;quot;)}
+    )
+    @VaadinServletConfiguration(ui = MyUI.class, productionMode = false)
+    public static class MyUIServlet extends VaadinServlet {
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Put Vaadin static files to the &lt;code&gt;/src/main/resources/META-INF/resources/VAADIN&lt;/code&gt; and run quarkus in dev mode as usual &lt;strong&gt;./gradlew quarkusDev&lt;/strong&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Listening for transport dt_socket at address: 5005
+__  ____  __  _____   ___  __ ____  ______
+ --/ __ \/ / / / _ | / _ \/ //_/ / / / __/
+ -/ /_/ / /_/ / __ |/ , _/ ,&amp;lt; / /_/ /\ \   
+--\___\_\____/_/ |_/_/|_/_/|_|\____/___/   
+2020-04-29 09:49:37,718 WARN  [io.qua.dep.QuarkusAugmentor] (main) Using Java versions older than 11 to build Quarkus applications is deprecated and will be disallowed in a future release!
+2020-04-29 09:49:38,389 INFO  [io.und.servlet] (Quarkus Main Thread) Initializing AtmosphereFramework
+2020-04-29 09:49:38,579 INFO  [io.quarkus] (Quarkus Main Thread) Quarkus 1.4.1.Final started in 0.995s. Listening on: http://0.0.0.0:8080
+2020-04-29 09:49:38,579 INFO  [io.quarkus] (Quarkus Main Thread) Profile dev activated. Live Coding activated.
+2020-04-29 09:49:38,579 INFO  [io.quarkus] (Quarkus Main Thread) Installed features: [cdi, servlet, undertow-websockets]
+2020-04-29 09:49:46,423 WARNING [com.vaa.ser.DefaultDeploymentConfiguration] (executor-thread-1)                                                                                                                                                             
+=================================================================                                                                                                                                                                                            
+Vaadin is running in DEBUG MODE.
+Add productionMode=true to web.xml to disable debug features.
+To show debug window, add ?debug to your application URL.
+=================================================================
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Example application I did based on &lt;strong&gt;&lt;a href=&quot;https://github.com/vaadin/dashboard-demo&quot;&gt;vaadin/dashboard-demo&lt;/a&gt;&lt;/strong&gt; that uses nicely looking and responsive &lt;strong&gt;&lt;a href=&quot;https://demo.vaadin.com/valo-theme/#!common&quot;&gt;Valo theme&lt;/a&gt;&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/img/2020-04-quarkus-vaadin-sm.gif&quot; alt=&quot;quarkus + vaadin&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Current solution limitations and workaround:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Latest Vaadin version (14+) does not work from the box and needs for custom Quarkus extensions like &lt;a href=&quot;https://github.com/moewes/quarkus-vaadin-lab&quot;&gt;moewes/quarkus-vaadin-lab&lt;/a&gt; and there is still no official one :(&lt;/li&gt;
+&lt;li&gt;Vaadin CDI doesn&apos;t work as expected, so to access your CDI beans from the UI components you should use &lt;strong&gt;&lt;code&gt;CDI.current().select(Bean.class).get();&lt;/code&gt;&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;By default Quarkus removes CDI beans from the runtime if no one @Inject them. Use &lt;strong&gt;&lt;code&gt;io.quarkus.arc.Unremovable&lt;/code&gt;&lt;/strong&gt; annotation for keep beans you need.&lt;/li&gt;
+&lt;li&gt;In case &lt;code&gt;java.lang.IllegalStateException:Unable to configure jsr356 at that stage. ServerContainer is null&lt;/code&gt; - provide &lt;code&gt;org.atmosphere.websocket.suppressJSR356&lt;/code&gt; VaadinServlet parameter as was shown in the code snippet above&lt;/li&gt;
+&lt;li&gt;Quarkus native mode doesn&apos;t work&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Described example application source code available on &lt;a href=&quot;https://github.com/kostenkoserg/quarkus-vaadin8-example&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Load huge amount of data with Jakarta EE Batch</title>
       <link>https://kostenko.org/blog/2020/03/data-processing-with-jakarta-ee-batch-api.html</link>
-      <pubDate>Wed, 25 Mar 2020 00:00:00 +0200</pubDate>
+      <pubDate>Mon, 23 Mar 2020 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2020/03/data-processing-with-jakarta-ee-batch-api.html</guid>
       	<description>
 	&lt;p&gt;Processing huge amount of data is a challenge for every enterprise system. Jakarta EE specifications provides useful approach to get it done through &lt;strong&gt;&lt;a href=&quot;https://projects.eclipse.org/projects/ee4j.batch&quot;&gt;Jakarta Batch&lt;/a&gt;&lt;/strong&gt; (JSR-352):&lt;/p&gt;
@@ -64,7 +156,7 @@ Batch applications have common requirements, including logging, checkpointing, a
 &lt;li&gt;&lt;strong&gt;xml\jsonParser&lt;/strong&gt; - parser batchlets, responsible for file parsing to a list of items&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;chunkProcessor&lt;/strong&gt; - items processing chunk(&lt;strong&gt;reader&lt;/strong&gt;, optional &lt;strong&gt;processor&lt;/strong&gt; and &lt;strong&gt;writer&lt;/strong&gt;) with partitioning to boost performance&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;Before start with implementation, let&apos;s design useful solution to &lt;strong&gt;share state between steps&lt;/strong&gt;. Unfortunately, Jakarta Batch Specification does not provide job scoped CDI beans yet (JBeret implementation does, specification doesn&apos;t). But we able to use &lt;strong&gt;&lt;code&gt;JobContext.set\getTransientUserData()&lt;/code&gt;&lt;/strong&gt; to deal with the current batch context. In our case we want to share &lt;code&gt;File&lt;/code&gt; and &lt;code&gt;Queue&lt;/code&gt; with  items for processing:&lt;/p&gt;
+&lt;p&gt;First, let&apos;s design useful solution to &lt;strong&gt;share state between steps&lt;/strong&gt;. Unfortunately, Jakarta Batch Specification does not provide job scoped CDI beans yet (JBeret implementation does, specification doesn&apos;t). But we able to use &lt;strong&gt;&lt;code&gt;JobContext.set\getTransientUserData()&lt;/code&gt;&lt;/strong&gt; to deal with the current batch context. In our case we want to share &lt;code&gt;File&lt;/code&gt; and &lt;code&gt;Queue&lt;/code&gt; with  items for processing:&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
 public class ImportJobContext {
     @Inject
@@ -91,7 +183,7 @@ public class ImportJobContext {
     }
 }
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Now we can inject our custom &lt;strong&gt;&lt;code&gt;ImportJobContext&lt;/code&gt;&lt;/strong&gt; to share type-safe state between batchlets. First step is search file for processing by provided in step properties path:&lt;/p&gt;
+&lt;p&gt;Now we can inject &lt;strong&gt;&lt;code&gt;ImportJobContext&lt;/code&gt;&lt;/strong&gt; to share type-safe state between batchlets&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
 public class FileSelectorBatchlet extends AbstractBatchlet {
 
@@ -112,7 +204,6 @@ public class FileSelectorBatchlet extends AbstractBatchlet {
     }
 }
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;After we need to make decision about parser, for example, based on extension. Decider just returns file extension as string and then  &lt;strong&gt;batch runtime&lt;/strong&gt;  should give control to the corresponding parser batchlet. Please, check &lt;code&gt;&amp;lt;decision id=&amp;quot;decider&amp;quot; ref=&amp;quot;myDecider&amp;quot;&amp;gt;&lt;/code&gt; section in the XML batch descriptor above.&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
 public class MyDecider implements Decider {
 
@@ -130,7 +221,6 @@ public class MyDecider implements Decider {
     }
 }
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;ParserBatchlet in turn should parse file using &lt;strong&gt;JSON-B&lt;/strong&gt; or &lt;strong&gt;JAXB&lt;/strong&gt; depends on type and fill Queue with &lt;strong&gt;&lt;code&gt;ImportItem&lt;/code&gt;&lt;/strong&gt; objects. I would like to use &lt;strong&gt;&lt;code&gt;ConcurrentLinkedQueue&lt;/code&gt;&lt;/strong&gt; to share items between partitions, but if you need for some other behavior here, you can provide &lt;strong&gt;&lt;code&gt;javax.batch.api.partition.PartitionMapper&lt;/code&gt;&lt;/strong&gt; with your own implementation&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
 public class JsonParserBatchlet  extends AbstractBatchlet {
 
@@ -149,7 +239,6 @@ public class JsonParserBatchlet  extends AbstractBatchlet {
     }
 }
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;ItemReader then will looks as simple as possible, just pool item from the Queue:&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
 public class ItemReader  extends AbstractItemReader {
 
@@ -159,11 +248,11 @@ public class ItemReader  extends AbstractItemReader {
     @Override
     public ImportItem readItem() throws Exception {
 
-        return importJobContext.getItems().poll();
+        ImportItem importItem = importJobContext.getItems().poll();
+        return importItem;
     }
 }
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;And persist time...&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
 public class ItemJpaWriter  extends AbstractItemWriter  {
 
@@ -179,21 +268,6 @@ public class ItemJpaWriter  extends AbstractItemWriter  {
     }
 }
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Actually, this is it! Now we able to easily extend our application with new parsers, processors and writers without any existing code changes,  - just describe new (update existing) flows over Jakarta Batch descriptor.&lt;br /&gt;
-Of course, &lt;strong&gt;Jakarta Batch specification&lt;/strong&gt; provides much more helpful functionality than i have covered in this post (&lt;strong&gt;Checkpoints&lt;/strong&gt;, &lt;strong&gt;Exception Handling&lt;/strong&gt;, &lt;strong&gt;Listeners&lt;/strong&gt;, &lt;strong&gt;Flow Control&lt;/strong&gt;, &lt;strong&gt;Failed job restarting&lt;/strong&gt; etc.), but even it enough to see how simple, power and well structured it can be.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Note!&lt;/strong&gt; &lt;strong&gt;Wildfly Application Server&lt;/strong&gt; implements Jakarta Batch specification through the &lt;strong&gt;batch-jberet subsystem&lt;/strong&gt;. By default last one configured to use only &lt;strong&gt;10&lt;/strong&gt; threads.&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;subsystem xmlns=&amp;quot;urn:jboss:domain:batch-jberet:2.0&amp;quot;&amp;gt;
-    ...
-    &amp;lt;thread-pool name=&amp;quot;batch&amp;quot;&amp;gt;
-        &amp;lt;max-threads count=&amp;quot;10&amp;quot;/&amp;gt;
-        &amp;lt;keepalive-time time=&amp;quot;30&amp;quot; unit=&amp;quot;seconds&amp;quot;/&amp;gt;
-    &amp;lt;/thread-pool&amp;gt;
-&amp;lt;/subsystem&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;So, if you are planing intensive usage of &lt;strong&gt;Batch runtime&lt;/strong&gt; - feel free to increase this parameter:&lt;/p&gt;
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;/subsystem=batch-jberet/thread-pool=batch/:write-attribute(name=max-threads, value=100)
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Described sample application source code available on &lt;a href=&quot;https://github.com/kostenkoserg/ee-batch-processing-examples&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
 
 	</description>
     </item>

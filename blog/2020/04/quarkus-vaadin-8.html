@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Wildfly domain mode cluster and load balancing from the box</title>
+    <title>Rich web application on pure Java with Vaadin and Quarkus</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -109,82 +109,94 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Wildfly domain mode cluster and load balancing from the box</h1>
+		<h1>Rich web application on pure Java with Vaadin and Quarkus</h1>
 	</div>
 
-	<p><em>15 April 2019</em></p>
+	<p><em>29 April 2020</em></p>
 
-	<p><p>Wildfly Application Server provide us two possible modes to setup cluster environment for the Java EE applications.</p>
-<ol>
-<li>
-<p><strong>Standalone mode</strong> - every standalone instance has its own management interface and configuration. You can manage one instance at a time. Configuration placed in <code>standalone.xml</code> file.</p>
-</li>
-<li>
-<p><strong>Domain mode</strong> - all Wildfly instances manage by special orchestration process called <code>domain controller</code>. Using domain controller you can manage group of servers. Also you can mange groups as well. Each servers group can has its own configuration, deployments etc. Configuration placed in <code>domain.xml</code> and <code>host.xml</code> files.<br />
-Example of a Wildfly server groups:<br />
-<img src="/img/2019-04-wildfly-cluster-domain-mode.png" alt="wildfly-cluster-domain-mode" /></p>
-</li>
-</ol>
-<p>From the version 10 Wildfly adds support for using the <code>Undertow</code> subsystem as a load balancer. So, now all we need to build Java EE clustered infrastructure is Wildfly only. Let's do it.</p>
-<p>Download latest version of application server from the <a href="https://wildfly.org/downloads/">https://wildfly.org/downloads/</a> and unzip distributive after. To run Wildfly in domain mode, please execute:</p>
-<pre><code class="language-java">kostenko@kostenko:/opt/wildfly-16.0.0.Final/bin$ ./domain.sh
-</code></pre>
-<p>Connect to the Wildfly CLI concole</p>
-<pre><code class="language-java">kostenko@kostenko:/opt/wildfly-16.0.0.Final/bin$ ./jboss-cli.sh -c
-[domain@localhost:9990 /]
-</code></pre>
-<p>By default Wildfly has preconfigured server groups <code>main-server-group</code> and <code>other-server-group</code>, so we need cleanup existing servers:</p>
-<pre><code class="language-java">:stop-servers(blocking=true)
-/host=master/server-config=server-one:remove
-/host=master/server-config=server-two:remove
-/host=master/server-config=server-three:remove
-/server-group=main-server-group:remove
-/server-group=other-server-group:remove
-</code></pre>
-<p>Create new server group and servers, using the <code>full-ha</code> profile so <code>mod_cluster</code> support is included:</p>
-<pre><code class="language-java">/server-group=backend-servers:add(profile=full-ha, socket-binding-group=full-ha-sockets)
-/host=master/server-config=backend1:add(group=backend-servers, socket-binding-port-offset=100)
-/host=master/server-config=backend2:add(group=backend-servers, socket-binding-port-offset=200)
+	<p><p>Recently I wrote about <a href="https://kostenko.org/blog/2020/02/jwt-openapi-microprofile-quarkus.html">REST API with Eclipse Microprofile and Quarkus</a> - and it is very useful for the microservices development, but from time to time every backend Java developer <strong>needs for the UI</strong>. With <strong><a href="https://vaadin.com/">Vaadin web framework</a></strong> you can write UI 100% in Java without getting bogged down in JS, HTML, and CSS.</p>
+<p>Quarkus provides <strong><code>Servlet</code></strong> and  <strong><code>Websocket</code></strong> support as well, so there is no any blockers to run web application.<br />
+To bootstrap Quarkus from the scratch you can visit  <strong><a href="https://code.quarkus.io/">code.quarkus.io</a></strong> and select build tool you like and extensions you need. In our case we need for:</p>
+<ul>
+<li><strong>Undertow Servlet</strong></li>
+<li><strong>Undertow WebSockets</strong></li>
+</ul>
+<p>With <strong>Vaadin 8</strong> dependencies my <strong><code>build.gradle</code></strong> looks pretty clear:</p>
+<pre><code class="language-java">plugins {
+    id 'java'
+    id 'io.quarkus'
+}
+repositories {
+     mavenLocal()
+     mavenCentral()
+}
+dependencies {
+    compile 'com.vaadin:vaadin-server:8.10.3'
+    compile 'com.vaadin:vaadin-push:8.10.3'
+    compile 'com.vaadin:vaadin-client-compiled:8.10.3'
+    compile 'com.vaadin:vaadin-themes:8.10.3'
+    implementation 'io.quarkus:quarkus-undertow-websockets'
+    implementation 'io.quarkus:quarkus-undertow'
+    implementation enforcedPlatform(&quot;${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}&quot;)
+}
 
-#start the backend servers
-/server-group=backend-servers:start-servers(blocking=true)
+group 'org.kostenko'
+version '1.0.0-SNAPSHOT'
 
-#add system properties (so we can tell them apart)
-/host=master/server-config=backend1/system-property=server.name:add(boot-time=false, value=backend1)
-/host=master/server-config=backend2/system-property=server.name:add(boot-time=false, value=backend2)
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs &lt;&lt; '-parameters'
+}
 </code></pre>
-<p>Then  set up the server group for load balancer</p>
-<pre><code class="language-java">/server-group=load-balancer:add(profile=load-balancer, socket-binding-group=load-balancer-sockets)
-/host=master/server-config=load-balancer:add(group=load-balancer)
-/socket-binding-group=load-balancer-sockets/socket-binding=modcluster:write-attribute(name=interface, value=public)
-/server-group=load-balancer:start-servers
-</code></pre>
-<p>Now let's develop simple JAX-RS endpoint to show how it works:</p>
-<pre><code class="language-java">@Path(&quot;/clusterdemo&quot;)
-@Stateless
-public class ClusterDemoEndpoint {
+<p>Now we able to create <strong><code>com.vaadin.ui.UI</code></strong></p>
+<pre><code class="language-java">@Theme(&quot;dashboard&quot;)
+public class MyUI extends UI {
 
-    @GET
-    @Path(&quot;/serverinfo&quot;)
-    public Response getServerInfo() {
+    @Override
+    protected void init(VaadinRequest vaadinRequest) {
+      ...
+    }
 
-        return Response.ok().entity(&quot;Server: &quot; + System.getProperty(&quot;server.name&quot;)).build();
+    /**
+     * VaadinServlet configuration
+     */
+    @WebServlet(urlPatterns = &quot;/*&quot;, name = &quot;MyUIServlet&quot;, asyncSupported = true, initParams = {
+        @WebInitParam(name = &quot;org.atmosphere.websocket.suppressJSR356&quot;, value = &quot;true&quot;)}
+    )
+    @VaadinServletConfiguration(ui = MyUI.class, productionMode = false)
+    public static class MyUIServlet extends VaadinServlet {
     }
 }
 </code></pre>
-<p>Build project and deploy it to the <code>backend-servers</code> group:</p>
-<pre><code class="language-java">[domain@localhost:9990 /] deploy ee-jax-rs-examples.war --server-groups=backend-servers
+<p>Put Vaadin static files to the <code>/src/main/resources/META-INF/resources/VAADIN</code> and run quarkus in dev mode as usual <strong>./gradlew quarkusDev</strong>:</p>
+<pre><code class="language-bash">Listening for transport dt_socket at address: 5005
+__  ____  __  _____   ___  __ ____  ______
+ --/ __ \/ / / / _ | / _ \/ //_/ / / / __/
+ -/ /_/ / /_/ / __ |/ , _/ ,&lt; / /_/ /\ \   
+--\___\_\____/_/ |_/_/|_/_/|_|\____/___/   
+2020-04-29 09:49:37,718 WARN  [io.qua.dep.QuarkusAugmentor] (main) Using Java versions older than 11 to build Quarkus applications is deprecated and will be disallowed in a future release!
+2020-04-29 09:49:38,389 INFO  [io.und.servlet] (Quarkus Main Thread) Initializing AtmosphereFramework
+2020-04-29 09:49:38,579 INFO  [io.quarkus] (Quarkus Main Thread) Quarkus 1.4.1.Final started in 0.995s. Listening on: http://0.0.0.0:8080
+2020-04-29 09:49:38,579 INFO  [io.quarkus] (Quarkus Main Thread) Profile dev activated. Live Coding activated.
+2020-04-29 09:49:38,579 INFO  [io.quarkus] (Quarkus Main Thread) Installed features: [cdi, servlet, undertow-websockets]
+2020-04-29 09:49:46,423 WARNING [com.vaa.ser.DefaultDeploymentConfiguration] (executor-thread-1)                                                                                                                                                             
+=================================================================                                                                                                                                                                                            
+Vaadin is running in DEBUG MODE.
+Add productionMode=true to web.xml to disable debug features.
+To show debug window, add ?debug to your application URL.
+=================================================================
 </code></pre>
-<p>And check the result by <code>http://localhost:8080/ee-jax-rs-examples/clusterdemo/serverinfo</code> :<br />
-<img src="/img/2019-04-wildfly-cluster-domain-mode-1-2.gif" alt="wildfly-cluster-domain-mode-1-2" /></p>
-<p>Now we can easily add  servers to the group at runtime and requests will balancing automatically:</p>
-<pre><code class="language-java">[domain@localhost:9990 /] /host=master/server-config=backend3:add(group=backend-servers, socket-binding-port-offset=300)
-[domain@localhost:9990 /] /host=master/server-config=backend3/system-property=server.name:add(boot-time=false, value=backend3)
-[domain@localhost:9990 /] /server-group=backend-servers/:start-servers(blocking=true)
-</code></pre>
-<p><img src="/img/2019-04-wildfly-cluster-domain-mode-1-2-3.gif" alt="wildfly-cluster-domain-mode-1-2-3" /></p>
-<p>That is it!<br />
-Source code available on GitHub:  <a href="https://github.com/kostenkoserg/ee-jax-rs-examples/blob/master/src/main/java/org/kostenko/example/jaxrs/ClusterDemoEndpoint.java">Demo application</a>,  <a href="https://github.com/kostenkoserg/wildfly-configuration-examples/blob/master/wildfly-domain-mode-cluster.cli">Wildlfly CLI </a></p>
+<p>Example application I did based on <strong><a href="https://github.com/vaadin/dashboard-demo">vaadin/dashboard-demo</a></strong> that uses nicely looking and responsive <strong><a href="https://demo.vaadin.com/valo-theme/#!common">Valo theme</a></strong></p>
+<p><img src="/img/2020-04-quarkus-vaadin-sm.gif" alt="quarkus + vaadin" /></p>
+<p><strong>Current solution limitations and workaround:</strong></p>
+<ul>
+<li>Latest Vaadin version (14+) does not work from the box and needs for custom Quarkus extensions like <a href="https://github.com/moewes/quarkus-vaadin-lab">moewes/quarkus-vaadin-lab</a> and there is still no official one :(</li>
+<li>Vaadin CDI doesn't work as expected, so to access your CDI beans from the UI components you should use <strong><code>CDI.current().select(Bean.class).get();</code></strong></li>
+<li>By default Quarkus removes CDI beans from the runtime if no one @Inject them. Use <strong><code>io.quarkus.arc.Unremovable</code></strong> annotation for keep beans you need.</li>
+<li>In case <code>java.lang.IllegalStateException:Unable to configure jsr356 at that stage. ServerContainer is null</code> - provide <code>org.atmosphere.websocket.suppressJSR356</code> VaadinServlet parameter as was shown in the code snippet above</li>
+<li>Quarkus native mode doesn't work</li>
+</ul>
+<p>Described example application source code available on <a href="https://github.com/kostenkoserg/quarkus-vaadin8-example">GitHub</a></p>
 </p>
 
 	<hr />
@@ -195,8 +207,8 @@ Source code available on GitHub:  <a href="https://github.com/kostenkoserg/ee-ja
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html';
-	this.page.identifier = 'blog/2019/04/wildfly-cluster-domain-mode.html';
+	this.page.url = 'https://kostenko.org/blog/2020/04/quarkus-vaadin-8.html';
+	this.page.identifier = 'blog/2020/04/quarkus-vaadin-8.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE

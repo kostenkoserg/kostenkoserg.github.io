@@ -79,13 +79,12 @@
 										<li><a href="../../../tags/api.html">api</a></li>
 										<li><a href="../../../tags/jpa.html">jpa</a></li>
 										<li><a href="../../../tags/jenkins.html">jenkins</a></li>
-										<li><a href="../../../tags/json-b.html">json-b</a></li>
 										<li><a href="../../../tags/linux.html">linux</a></li>
 										<li><a href="../../../tags/jmx.html">jmx</a></li>
+										<li><a href="../../../tags/vaadin.html">vaadin</a></li>
 										<li><a href="../../../tags/java.html">java</a></li>
 										<li><a href="../../../tags/security.html">security</a></li>
 										<li><a href="../../../tags/jms.html">jms</a></li>
-										<li><a href="../../../tags/jaxb.html">jaxb</a></li>
 										<li><a href="../../../tags/sql.html">sql</a></li>
 										<li><a href="../../../tags/swagger.html">swagger</a></li>
 										<li><a href="../../../tags/hibernate.html">hibernate</a></li>
@@ -113,7 +112,7 @@
 		<h1>Load huge amount of data with Jakarta EE Batch</h1>
 	</div>
 
-	<p><em>25 March 2020</em></p>
+	<p><em>23 March 2020</em></p>
 
 	<p><p>Processing huge amount of data is a challenge for every enterprise system. Jakarta EE specifications provides useful approach to get it done through <strong><a href="https://projects.eclipse.org/projects/ee4j.batch">Jakarta Batch</a></strong> (JSR-352):</p>
 <blockquote>
@@ -164,7 +163,7 @@ Batch applications have common requirements, including logging, checkpointing, a
 <li><strong>xml\jsonParser</strong> - parser batchlets, responsible for file parsing to a list of items</li>
 <li><strong>chunkProcessor</strong> - items processing chunk(<strong>reader</strong>, optional <strong>processor</strong> and <strong>writer</strong>) with partitioning to boost performance</li>
 </ul>
-<p>Before start with implementation, let's design useful solution to <strong>share state between steps</strong>. Unfortunately, Jakarta Batch Specification does not provide job scoped CDI beans yet (JBeret implementation does, specification doesn't). But we able to use <strong><code>JobContext.set\getTransientUserData()</code></strong> to deal with the current batch context. In our case we want to share <code>File</code> and <code>Queue</code> with  items for processing:</p>
+<p>First, let's design useful solution to <strong>share state between steps</strong>. Unfortunately, Jakarta Batch Specification does not provide job scoped CDI beans yet (JBeret implementation does, specification doesn't). But we able to use <strong><code>JobContext.set\getTransientUserData()</code></strong> to deal with the current batch context. In our case we want to share <code>File</code> and <code>Queue</code> with  items for processing:</p>
 <pre><code class="language-java">@Named
 public class ImportJobContext {
     @Inject
@@ -191,7 +190,7 @@ public class ImportJobContext {
     }
 }
 </code></pre>
-<p>Now we can inject our custom <strong><code>ImportJobContext</code></strong> to share type-safe state between batchlets. First step is search file for processing by provided in step properties path:</p>
+<p>Now we can inject <strong><code>ImportJobContext</code></strong> to share type-safe state between batchlets</p>
 <pre><code class="language-java">@Named
 public class FileSelectorBatchlet extends AbstractBatchlet {
 
@@ -212,7 +211,6 @@ public class FileSelectorBatchlet extends AbstractBatchlet {
     }
 }
 </code></pre>
-<p>After we need to make decision about parser, for example, based on extension. Decider just returns file extension as string and then  <strong>batch runtime</strong>  should give control to the corresponding parser batchlet. Please, check <code>&lt;decision id=&quot;decider&quot; ref=&quot;myDecider&quot;&gt;</code> section in the XML batch descriptor above.</p>
 <pre><code class="language-java">@Named
 public class MyDecider implements Decider {
 
@@ -230,7 +228,6 @@ public class MyDecider implements Decider {
     }
 }
 </code></pre>
-<p>ParserBatchlet in turn should parse file using <strong>JSON-B</strong> or <strong>JAXB</strong> depends on type and fill Queue with <strong><code>ImportItem</code></strong> objects. I would like to use <strong><code>ConcurrentLinkedQueue</code></strong> to share items between partitions, but if you need for some other behavior here, you can provide <strong><code>javax.batch.api.partition.PartitionMapper</code></strong> with your own implementation</p>
 <pre><code class="language-java">@Named
 public class JsonParserBatchlet  extends AbstractBatchlet {
 
@@ -249,7 +246,6 @@ public class JsonParserBatchlet  extends AbstractBatchlet {
     }
 }
 </code></pre>
-<p>ItemReader then will looks as simple as possible, just pool item from the Queue:</p>
 <pre><code class="language-java">@Named
 public class ItemReader  extends AbstractItemReader {
 
@@ -259,11 +255,11 @@ public class ItemReader  extends AbstractItemReader {
     @Override
     public ImportItem readItem() throws Exception {
 
-        return importJobContext.getItems().poll();
+        ImportItem importItem = importJobContext.getItems().poll();
+        return importItem;
     }
 }
 </code></pre>
-<p>And persist time...</p>
 <pre><code class="language-java">@Named
 public class ItemJpaWriter  extends AbstractItemWriter  {
 
@@ -279,21 +275,6 @@ public class ItemJpaWriter  extends AbstractItemWriter  {
     }
 }
 </code></pre>
-<p>Actually, this is it! Now we able to easily extend our application with new parsers, processors and writers without any existing code changes,  - just describe new (update existing) flows over Jakarta Batch descriptor.<br />
-Of course, <strong>Jakarta Batch specification</strong> provides much more helpful functionality than i have covered in this post (<strong>Checkpoints</strong>, <strong>Exception Handling</strong>, <strong>Listeners</strong>, <strong>Flow Control</strong>, <strong>Failed job restarting</strong> etc.), but even it enough to see how simple, power and well structured it can be.</p>
-<p><strong>Note!</strong> <strong>Wildfly Application Server</strong> implements Jakarta Batch specification through the <strong>batch-jberet subsystem</strong>. By default last one configured to use only <strong>10</strong> threads.</p>
-<pre><code class="language-xml">&lt;subsystem xmlns=&quot;urn:jboss:domain:batch-jberet:2.0&quot;&gt;
-    ...
-    &lt;thread-pool name=&quot;batch&quot;&gt;
-        &lt;max-threads count=&quot;10&quot;/&gt;
-        &lt;keepalive-time time=&quot;30&quot; unit=&quot;seconds&quot;/&gt;
-    &lt;/thread-pool&gt;
-&lt;/subsystem&gt;
-</code></pre>
-<p>So, if you are planing intensive usage of <strong>Batch runtime</strong> - feel free to increase this parameter:</p>
-<pre><code class="language-bash">/subsystem=batch-jberet/thread-pool=batch/:write-attribute(name=max-threads, value=100)
-</code></pre>
-<p>Described sample application source code available on <a href="https://github.com/kostenkoserg/ee-batch-processing-examples">GitHub</a></p>
 </p>
 
 	<hr />
@@ -326,7 +307,7 @@ Of course, <strong>Jakarta Batch specification</strong> provides much more helpf
 
     <div id="footer">
       <div class="container">
-        <p class="muted credit">&copy; 2019 | Mixed with <a href="http://getbootstrap.com/">Bootstrap v3.1.1</a> | Baked with <a href="http://jbake.org">JBake v2.6.4</a></p>
+        <p class="muted credit">&copy; 2019 | Mixed with <a href="http://getbootstrap.com/">Bootstrap v3.1.1</a> | Baked with <a href="http://jbake.org">JBake v2.6.3</a></p>
       </div>
     </div>
 

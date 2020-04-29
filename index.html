@@ -79,13 +79,12 @@
 										<li><a href="tags/api.html">api</a></li>
 										<li><a href="tags/jpa.html">jpa</a></li>
 										<li><a href="tags/jenkins.html">jenkins</a></li>
-										<li><a href="tags/json-b.html">json-b</a></li>
 										<li><a href="tags/linux.html">linux</a></li>
 										<li><a href="tags/jmx.html">jmx</a></li>
+										<li><a href="tags/vaadin.html">vaadin</a></li>
 										<li><a href="tags/java.html">java</a></li>
 										<li><a href="tags/security.html">security</a></li>
 										<li><a href="tags/jms.html">jms</a></li>
-										<li><a href="tags/jaxb.html">jaxb</a></li>
 										<li><a href="tags/sql.html">sql</a></li>
 										<li><a href="tags/swagger.html">swagger</a></li>
 										<li><a href="tags/hibernate.html">hibernate</a></li>
@@ -110,8 +109,96 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2020/04/quarkus-vaadin-8.html"><h1>Rich web application on pure Java with Vaadin and Quarkus</h1></a>
+				<p>29 April 2020</p>
+  			<p><p>Recently I wrote about <a href="https://kostenko.org/blog/2020/02/jwt-openapi-microprofile-quarkus.html">REST API with Eclipse Microprofile and Quarkus</a> - and it is very useful for the microservices development, but from time to time every backend Java developer <strong>needs for the UI</strong>. With <strong><a href="https://vaadin.com/">Vaadin web framework</a></strong> you can write UI 100% in Java without getting bogged down in JS, HTML, and CSS.</p>
+<p>Quarkus provides <strong><code>Servlet</code></strong> and  <strong><code>Websocket</code></strong> support as well, so there is no any blockers to run web application.<br />
+To bootstrap Quarkus from the scratch you can visit  <strong><a href="https://code.quarkus.io/">code.quarkus.io</a></strong> and select build tool you like and extensions you need. In our case we need for:</p>
+<ul>
+<li><strong>Undertow Servlet</strong></li>
+<li><strong>Undertow WebSockets</strong></li>
+</ul>
+<p>With <strong>Vaadin 8</strong> dependencies my <strong><code>build.gradle</code></strong> looks pretty clear:</p>
+<pre><code class="language-java">plugins {
+    id 'java'
+    id 'io.quarkus'
+}
+repositories {
+     mavenLocal()
+     mavenCentral()
+}
+dependencies {
+    compile 'com.vaadin:vaadin-server:8.10.3'
+    compile 'com.vaadin:vaadin-push:8.10.3'
+    compile 'com.vaadin:vaadin-client-compiled:8.10.3'
+    compile 'com.vaadin:vaadin-themes:8.10.3'
+    implementation 'io.quarkus:quarkus-undertow-websockets'
+    implementation 'io.quarkus:quarkus-undertow'
+    implementation enforcedPlatform(&quot;${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}&quot;)
+}
+
+group 'org.kostenko'
+version '1.0.0-SNAPSHOT'
+
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs &lt;&lt; '-parameters'
+}
+</code></pre>
+<p>Now we able to create <strong><code>com.vaadin.ui.UI</code></strong></p>
+<pre><code class="language-java">@Theme(&quot;dashboard&quot;)
+public class MyUI extends UI {
+
+    @Override
+    protected void init(VaadinRequest vaadinRequest) {
+      ...
+    }
+
+    /**
+     * VaadinServlet configuration
+     */
+    @WebServlet(urlPatterns = &quot;/*&quot;, name = &quot;MyUIServlet&quot;, asyncSupported = true, initParams = {
+        @WebInitParam(name = &quot;org.atmosphere.websocket.suppressJSR356&quot;, value = &quot;true&quot;)}
+    )
+    @VaadinServletConfiguration(ui = MyUI.class, productionMode = false)
+    public static class MyUIServlet extends VaadinServlet {
+    }
+}
+</code></pre>
+<p>Put Vaadin static files to the <code>/src/main/resources/META-INF/resources/VAADIN</code> and run quarkus in dev mode as usual <strong>./gradlew quarkusDev</strong>:</p>
+<pre><code class="language-bash">Listening for transport dt_socket at address: 5005
+__  ____  __  _____   ___  __ ____  ______
+ --/ __ \/ / / / _ | / _ \/ //_/ / / / __/
+ -/ /_/ / /_/ / __ |/ , _/ ,&lt; / /_/ /\ \   
+--\___\_\____/_/ |_/_/|_/_/|_|\____/___/   
+2020-04-29 09:49:37,718 WARN  [io.qua.dep.QuarkusAugmentor] (main) Using Java versions older than 11 to build Quarkus applications is deprecated and will be disallowed in a future release!
+2020-04-29 09:49:38,389 INFO  [io.und.servlet] (Quarkus Main Thread) Initializing AtmosphereFramework
+2020-04-29 09:49:38,579 INFO  [io.quarkus] (Quarkus Main Thread) Quarkus 1.4.1.Final started in 0.995s. Listening on: http://0.0.0.0:8080
+2020-04-29 09:49:38,579 INFO  [io.quarkus] (Quarkus Main Thread) Profile dev activated. Live Coding activated.
+2020-04-29 09:49:38,579 INFO  [io.quarkus] (Quarkus Main Thread) Installed features: [cdi, servlet, undertow-websockets]
+2020-04-29 09:49:46,423 WARNING [com.vaa.ser.DefaultDeploymentConfiguration] (executor-thread-1)                                                                                                                                                             
+=================================================================                                                                                                                                                                                            
+Vaadin is running in DEBUG MODE.
+Add productionMode=true to web.xml to disable debug features.
+To show debug window, add ?debug to your application URL.
+=================================================================
+</code></pre>
+<p>Example application I did based on <strong><a href="https://github.com/vaadin/dashboard-demo">vaadin/dashboard-demo</a></strong> that uses nicely looking and responsive <strong><a href="https://demo.vaadin.com/valo-theme/#!common">Valo theme</a></strong></p>
+<p><img src="/img/2020-04-quarkus-vaadin-sm.gif" alt="quarkus + vaadin" /></p>
+<p><strong>Current solution limitations and workaround:</strong></p>
+<ul>
+<li>Latest Vaadin version (14+) does not work from the box and needs for custom Quarkus extensions like <a href="https://github.com/moewes/quarkus-vaadin-lab">moewes/quarkus-vaadin-lab</a> and there is still no official one :(</li>
+<li>Vaadin CDI doesn't work as expected, so to access your CDI beans from the UI components you should use <strong><code>CDI.current().select(Bean.class).get();</code></strong></li>
+<li>By default Quarkus removes CDI beans from the runtime if no one @Inject them. Use <strong><code>io.quarkus.arc.Unremovable</code></strong> annotation for keep beans you need.</li>
+<li>In case <code>java.lang.IllegalStateException:Unable to configure jsr356 at that stage. ServerContainer is null</code> - provide <code>org.atmosphere.websocket.suppressJSR356</code> VaadinServlet parameter as was shown in the code snippet above</li>
+<li>Quarkus native mode doesn't work</li>
+</ul>
+<p>Described example application source code available on <a href="https://github.com/kostenkoserg/quarkus-vaadin8-example">GitHub</a></p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2020/04/quarkus-vaadin-8.html#disqus_thread" data-disqus-identifier="blog/2020/04/quarkus-vaadin-8.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2020/03/data-processing-with-jakarta-ee-batch-api.html"><h1>Load huge amount of data with Jakarta EE Batch</h1></a>
-				<p>25 March 2020</p>
+				<p>23 March 2020</p>
   			<p><p>Processing huge amount of data is a challenge for every enterprise system. Jakarta EE specifications provides useful approach to get it done through <strong><a href="https://projects.eclipse.org/projects/ee4j.batch">Jakarta Batch</a></strong> (JSR-352):</p>
 <blockquote>
 <p>Batch processing is a pervasive workload pattern, expressed by a distinct application organization and execution model. It is found across virtually every industry, applied to such tasks as statement generation, bank postings, risk evaluation, credit score calculation, inventory management, portfolio optimization, and on and on. Nearly any bulk processing task from any business sector is a candidate for batch processing.<br />
@@ -161,7 +248,7 @@ Batch applications have common requirements, including logging, checkpointing, a
 <li><strong>xml\jsonParser</strong> - parser batchlets, responsible for file parsing to a list of items</li>
 <li><strong>chunkProcessor</strong> - items processing chunk(<strong>reader</strong>, optional <strong>processor</strong> and <strong>writer</strong>) with partitioning to boost performance</li>
 </ul>
-<p>Before start with implementation, let's design useful solution to <strong>share state between steps</strong>. Unfortunately, Jakarta Batch Specification does not provide job scoped CDI beans yet (JBeret implementation does, specification doesn't). But we able to use <strong><code>JobContext.set\getTransientUserData()</code></strong> to deal with the current batch context. In our case we want to share <code>File</code> and <code>Queue</code> with  items for processing:</p>
+<p>First, let's design useful solution to <strong>share state between steps</strong>. Unfortunately, Jakarta Batch Specification does not provide job scoped CDI beans yet (JBeret implementation does, specification doesn't). But we able to use <strong><code>JobContext.set\getTransientUserData()</code></strong> to deal with the current batch context. In our case we want to share <code>File</code> and <code>Queue</code> with  items for processing:</p>
 <pre><code class="language-java">@Named
 public class ImportJobContext {
     @Inject
@@ -188,7 +275,7 @@ public class ImportJobContext {
     }
 }
 </code></pre>
-<p>Now we can inject our custom <strong><code>ImportJobContext</code></strong> to share type-safe state between batchlets. First step is search file for processing by provided in step properties path:</p>
+<p>Now we can inject <strong><code>ImportJobContext</code></strong> to share type-safe state between batchlets</p>
 <pre><code class="language-java">@Named
 public class FileSelectorBatchlet extends AbstractBatchlet {
 
@@ -209,7 +296,6 @@ public class FileSelectorBatchlet extends AbstractBatchlet {
     }
 }
 </code></pre>
-<p>After we need to make decision about parser, for example, based on extension. Decider just returns file extension as string and then  <strong>batch runtime</strong>  should give control to the corresponding parser batchlet. Please, check <code>&lt;decision id=&quot;decider&quot; ref=&quot;myDecider&quot;&gt;</code> section in the XML batch descriptor above.</p>
 <pre><code class="language-java">@Named
 public class MyDecider implements Decider {
 
@@ -227,7 +313,6 @@ public class MyDecider implements Decider {
     }
 }
 </code></pre>
-<p>ParserBatchlet in turn should parse file using <strong>JSON-B</strong> or <strong>JAXB</strong> depends on type and fill Queue with <strong><code>ImportItem</code></strong> objects. I would like to use <strong><code>ConcurrentLinkedQueue</code></strong> to share items between partitions, but if you need for some other behavior here, you can provide <strong><code>javax.batch.api.partition.PartitionMapper</code></strong> with your own implementation</p>
 <pre><code class="language-java">@Named
 public class JsonParserBatchlet  extends AbstractBatchlet {
 
@@ -246,7 +331,6 @@ public class JsonParserBatchlet  extends AbstractBatchlet {
     }
 }
 </code></pre>
-<p>ItemReader then will looks as simple as possible, just pool item from the Queue:</p>
 <pre><code class="language-java">@Named
 public class ItemReader  extends AbstractItemReader {
 
@@ -256,11 +340,11 @@ public class ItemReader  extends AbstractItemReader {
     @Override
     public ImportItem readItem() throws Exception {
 
-        return importJobContext.getItems().poll();
+        ImportItem importItem = importJobContext.getItems().poll();
+        return importItem;
     }
 }
 </code></pre>
-<p>And persist time...</p>
 <pre><code class="language-java">@Named
 public class ItemJpaWriter  extends AbstractItemWriter  {
 
@@ -276,21 +360,6 @@ public class ItemJpaWriter  extends AbstractItemWriter  {
     }
 }
 </code></pre>
-<p>Actually, this is it! Now we able to easily extend our application with new parsers, processors and writers without any existing code changes,  - just describe new (update existing) flows over Jakarta Batch descriptor.<br />
-Of course, <strong>Jakarta Batch specification</strong> provides much more helpful functionality than i have covered in this post (<strong>Checkpoints</strong>, <strong>Exception Handling</strong>, <strong>Listeners</strong>, <strong>Flow Control</strong>, <strong>Failed job restarting</strong> etc.), but even it enough to see how simple, power and well structured it can be.</p>
-<p><strong>Note!</strong> <strong>Wildfly Application Server</strong> implements Jakarta Batch specification through the <strong>batch-jberet subsystem</strong>. By default last one configured to use only <strong>10</strong> threads.</p>
-<pre><code class="language-xml">&lt;subsystem xmlns=&quot;urn:jboss:domain:batch-jberet:2.0&quot;&gt;
-    ...
-    &lt;thread-pool name=&quot;batch&quot;&gt;
-        &lt;max-threads count=&quot;10&quot;/&gt;
-        &lt;keepalive-time time=&quot;30&quot; unit=&quot;seconds&quot;/&gt;
-    &lt;/thread-pool&gt;
-&lt;/subsystem&gt;
-</code></pre>
-<p>So, if you are planing intensive usage of <strong>Batch runtime</strong> - feel free to increase this parameter:</p>
-<pre><code class="language-bash">/subsystem=batch-jberet/thread-pool=batch/:write-attribute(name=max-threads, value=100)
-</code></pre>
-<p>Described sample application source code available on <a href="https://github.com/kostenkoserg/ee-batch-processing-examples">GitHub</a></p>
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2020/03/data-processing-with-jakarta-ee-batch-api.html#disqus_thread" data-disqus-identifier="blog/2020/03/data-processing-with-jakarta-ee-batch-api.html">Comments</a></p>
 				<hr/>
@@ -565,54 +634,6 @@ mp.jwt.verify.issuer=https://kostenko.org
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2020/02/jwt-openapi-microprofile-quarkus.html#disqus_thread" data-disqus-identifier="blog/2020/02/jwt-openapi-microprofile-quarkus.html">Comments</a></p>
 				<hr/>
-				<a href="https://kostenko.org/blog/2020/02/jpa-relation-mappings.html"><h1>Simple note about using JPA relation  mappings</h1></a>
-				<p>14 February 2020</p>
-  			<p><p>There is a lot of typical examples how to build JPA <code>@OneToMany</code> and <code>@ManyToOne</code> relationships in your Jakarta EE application. And usually it looks like:</p>
-<pre><code class="language-java">@Entity
-@Table(name = &quot;author&quot;)
-public class Author {
-    @OneToMany
-    private List&lt;Book&gt; book;
-    ...
-}
-</code></pre>
-<pre><code class="language-java">@Entity
-@Table(name = &quot;book&quot;)
-public class Book {
-    @ManyToOne
-    private Author author;
-    ...
-}
-</code></pre>
-<p>This code looks pretty clear, but on my opinion <strong>you should NOT USE this style</strong> in your real world application. From years of JPA using experience i definitely can say that sooner or later your project will stuck with known performance issues and holy war questions about: <strong>N+1</strong>, <strong>LazyInitializationException</strong>, <strong>Unidirectional @OneToMany</strong> , <strong>CascadeTypes</strong> ,<strong>LAZY vs EAGER</strong>, <strong>JOIN FETCH</strong>, <strong>Entity Graph</strong>, <strong>Fetching lot of unneeded data</strong>, <strong>Extra queries (for example: select Author by id before persist Book)</strong> etcetera.  Even if you are have answers for each potential issue above, usually proposed solution will add unreasonable complexity to the project.</p>
-<p>To avoid potential issues i recommend to follow next rules:</p>
-<ul>
-<li>Avoid using of <code>@OneToMany</code> at all</li>
-<li>Use <code>@ManyToOne</code> to build constrains but work with  <strong>ID</strong> instead of Entity</li>
-</ul>
-<p>Unfortunately, simple snippet below does not work as expected in case <code>persist</code></p>
-<pre><code class="language-java">@ManyToOne(targetEntity = Author.class)
-private long authorId;
-</code></pre>
-<p>But,we can use next one instead of</p>
-<pre><code class="language-java">@JoinColumn(name = &quot;authorId&quot;, insertable = false, updatable = false)
-@ManyToOne(targetEntity = Author.class)
-private Author author;
-
-private long authorId;
-
-public long getAuthorId() {
-    return authorId;
-}
-
-public void setAuthorId(long authorId) {
-    this.authorId = authorId;
-}
-</code></pre>
-<p>Hope, this two simple rules helps you enjoy all power of JPA with KISS and decreasing count of complexity.</p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2020/02/jpa-relation-mappings.html#disqus_thread" data-disqus-identifier="blog/2020/02/jpa-relation-mappings.html">Comments</a></p>
-				<hr/>
 
 		<ul class="pager">
 			<li">Page: 1/9 (<a href="archive.html">archive</a>)</li>
@@ -624,7 +645,7 @@ public void setAuthorId(long authorId) {
 
     <div id="footer">
       <div class="container">
-        <p class="muted credit">&copy; 2019 | Mixed with <a href="http://getbootstrap.com/">Bootstrap v3.1.1</a> | Baked with <a href="http://jbake.org">JBake v2.6.4</a></p>
+        <p class="muted credit">&copy; 2019 | Mixed with <a href="http://getbootstrap.com/">Bootstrap v3.1.1</a> | Baked with <a href="http://jbake.org">JBake v2.6.3</a></p>
       </div>
     </div>
 
