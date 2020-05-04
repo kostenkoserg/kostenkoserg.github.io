@@ -6,8 +6,8 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Wed, 29 Apr 2020 15:23:06 +0300</pubDate>
-    <lastBuildDate>Wed, 29 Apr 2020 15:23:06 +0300</lastBuildDate>
+    <pubDate>Mon, 4 May 2020 20:17:15 +0300</pubDate>
+    <lastBuildDate>Mon, 4 May 2020 20:17:15 +0300</lastBuildDate>
 
     <item>
       <title>Rich web application on pure Java with Vaadin and Quarkus</title>
@@ -104,7 +104,7 @@ To show debug window, add ?debug to your application URL.
     <item>
       <title>Load huge amount of data with Jakarta EE Batch</title>
       <link>https://kostenko.org/blog/2020/03/data-processing-with-jakarta-ee-batch-api.html</link>
-      <pubDate>Mon, 23 Mar 2020 00:00:00 +0200</pubDate>
+      <pubDate>Wed, 25 Mar 2020 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2020/03/data-processing-with-jakarta-ee-batch-api.html</guid>
       	<description>
 	&lt;p&gt;Processing huge amount of data is a challenge for every enterprise system. Jakarta EE specifications provides useful approach to get it done through &lt;strong&gt;&lt;a href=&quot;https://projects.eclipse.org/projects/ee4j.batch&quot;&gt;Jakarta Batch&lt;/a&gt;&lt;/strong&gt; (JSR-352):&lt;/p&gt;
@@ -156,7 +156,7 @@ Batch applications have common requirements, including logging, checkpointing, a
 &lt;li&gt;&lt;strong&gt;xml\jsonParser&lt;/strong&gt; - parser batchlets, responsible for file parsing to a list of items&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;chunkProcessor&lt;/strong&gt; - items processing chunk(&lt;strong&gt;reader&lt;/strong&gt;, optional &lt;strong&gt;processor&lt;/strong&gt; and &lt;strong&gt;writer&lt;/strong&gt;) with partitioning to boost performance&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;First, let&apos;s design useful solution to &lt;strong&gt;share state between steps&lt;/strong&gt;. Unfortunately, Jakarta Batch Specification does not provide job scoped CDI beans yet (JBeret implementation does, specification doesn&apos;t). But we able to use &lt;strong&gt;&lt;code&gt;JobContext.set\getTransientUserData()&lt;/code&gt;&lt;/strong&gt; to deal with the current batch context. In our case we want to share &lt;code&gt;File&lt;/code&gt; and &lt;code&gt;Queue&lt;/code&gt; with  items for processing:&lt;/p&gt;
+&lt;p&gt;Before start with implementation, let&apos;s design useful solution to &lt;strong&gt;share state between steps&lt;/strong&gt;. Unfortunately, Jakarta Batch Specification does not provide job scoped CDI beans yet (JBeret implementation does, specification doesn&apos;t). But we able to use &lt;strong&gt;&lt;code&gt;JobContext.set\getTransientUserData()&lt;/code&gt;&lt;/strong&gt; to deal with the current batch context. In our case we want to share &lt;code&gt;File&lt;/code&gt; and &lt;code&gt;Queue&lt;/code&gt; with  items for processing:&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
 public class ImportJobContext {
     @Inject
@@ -183,7 +183,7 @@ public class ImportJobContext {
     }
 }
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Now we can inject &lt;strong&gt;&lt;code&gt;ImportJobContext&lt;/code&gt;&lt;/strong&gt; to share type-safe state between batchlets&lt;/p&gt;
+&lt;p&gt;Now we can inject our custom &lt;strong&gt;&lt;code&gt;ImportJobContext&lt;/code&gt;&lt;/strong&gt; to share type-safe state between batchlets. First step is search file for processing by provided in step properties path:&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
 public class FileSelectorBatchlet extends AbstractBatchlet {
 
@@ -204,6 +204,7 @@ public class FileSelectorBatchlet extends AbstractBatchlet {
     }
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;After we need to make decision about parser, for example, based on extension. Decider just returns file extension as string and then  &lt;strong&gt;batch runtime&lt;/strong&gt;  should give control to the corresponding parser batchlet. Please, check &lt;code&gt;&amp;lt;decision id=&amp;quot;decider&amp;quot; ref=&amp;quot;myDecider&amp;quot;&amp;gt;&lt;/code&gt; section in the XML batch descriptor above.&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
 public class MyDecider implements Decider {
 
@@ -221,6 +222,7 @@ public class MyDecider implements Decider {
     }
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;ParserBatchlet in turn should parse file using &lt;strong&gt;JSON-B&lt;/strong&gt; or &lt;strong&gt;JAXB&lt;/strong&gt; depends on type and fill Queue with &lt;strong&gt;&lt;code&gt;ImportItem&lt;/code&gt;&lt;/strong&gt; objects. I would like to use &lt;strong&gt;&lt;code&gt;ConcurrentLinkedQueue&lt;/code&gt;&lt;/strong&gt; to share items between partitions, but if you need for some other behavior here, you can provide &lt;strong&gt;&lt;code&gt;javax.batch.api.partition.PartitionMapper&lt;/code&gt;&lt;/strong&gt; with your own implementation&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
 public class JsonParserBatchlet  extends AbstractBatchlet {
 
@@ -239,6 +241,7 @@ public class JsonParserBatchlet  extends AbstractBatchlet {
     }
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;ItemReader then will looks as simple as possible, just pool item from the Queue:&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
 public class ItemReader  extends AbstractItemReader {
 
@@ -248,11 +251,11 @@ public class ItemReader  extends AbstractItemReader {
     @Override
     public ImportItem readItem() throws Exception {
 
-        ImportItem importItem = importJobContext.getItems().poll();
-        return importItem;
+        return importJobContext.getItems().poll();
     }
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And persist time...&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
 public class ItemJpaWriter  extends AbstractItemWriter  {
 
@@ -268,6 +271,21 @@ public class ItemJpaWriter  extends AbstractItemWriter  {
     }
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Actually, this is it! Now we able to easily extend our application with new parsers, processors and writers without any existing code changes,  - just describe new (update existing) flows over Jakarta Batch descriptor.&lt;br /&gt;
+Of course, &lt;strong&gt;Jakarta Batch specification&lt;/strong&gt; provides much more helpful functionality than i have covered in this post (&lt;strong&gt;Checkpoints&lt;/strong&gt;, &lt;strong&gt;Exception Handling&lt;/strong&gt;, &lt;strong&gt;Listeners&lt;/strong&gt;, &lt;strong&gt;Flow Control&lt;/strong&gt;, &lt;strong&gt;Failed job restarting&lt;/strong&gt; etc.), but even it enough to see how simple, power and well structured it can be.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Note!&lt;/strong&gt; &lt;strong&gt;Wildfly Application Server&lt;/strong&gt; implements Jakarta Batch specification through the &lt;strong&gt;batch-jberet subsystem&lt;/strong&gt;. By default last one configured to use only &lt;strong&gt;10&lt;/strong&gt; threads.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;subsystem xmlns=&amp;quot;urn:jboss:domain:batch-jberet:2.0&amp;quot;&amp;gt;
+    ...
+    &amp;lt;thread-pool name=&amp;quot;batch&amp;quot;&amp;gt;
+        &amp;lt;max-threads count=&amp;quot;10&amp;quot;/&amp;gt;
+        &amp;lt;keepalive-time time=&amp;quot;30&amp;quot; unit=&amp;quot;seconds&amp;quot;/&amp;gt;
+    &amp;lt;/thread-pool&amp;gt;
+&amp;lt;/subsystem&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;So, if you are planing intensive usage of &lt;strong&gt;Batch runtime&lt;/strong&gt; - feel free to increase this parameter:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;/subsystem=batch-jberet/thread-pool=batch/:write-attribute(name=max-threads, value=100)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Described sample application source code available on &lt;a href=&quot;https://github.com/kostenkoserg/ee-batch-processing-examples&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
 
 	</description>
     </item>
