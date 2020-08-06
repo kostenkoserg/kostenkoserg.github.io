@@ -6,9 +6,21 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Mon, 4 May 2020 20:17:15 +0300</pubDate>
-    <lastBuildDate>Mon, 4 May 2020 20:17:15 +0300</lastBuildDate>
+    <pubDate>Thu, 6 Aug 2020 14:59:00 +0300</pubDate>
+    <lastBuildDate>Thu, 6 Aug 2020 14:59:00 +0300</lastBuildDate>
 
+    <item>
+      <title>Unzip without root but with java</title>
+      <link>https://kostenko.org/blog/2020/08/java-way-to-unzip.html</link>
+      <pubDate>Thu, 6 Aug 2020 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2020/08/java-way-to-unzip.html</guid>
+      	<description>
+	&lt;p&gt;If you need to &lt;strong&gt;unzip&lt;/strong&gt; file on the server, where is no root and no &lt;code&gt;unzip&lt;/code&gt; installed then time to ask &lt;strong&gt;java&lt;/strong&gt; about:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;jar xvf wildfly-20.0.1.Final.zip
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
     <item>
       <title>Rich web application on pure Java with Vaadin and Quarkus</title>
       <link>https://kostenko.org/blog/2020/04/quarkus-vaadin-8.html</link>

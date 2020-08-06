@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Migration from JEE to JakartaEE</title>
+    <title>Unzip without root but with java</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -111,21 +111,14 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Migration from JEE to JakartaEE</h1>
+		<h1>Unzip without root but with java</h1>
 	</div>
 
-	<p><em>30 September 2019</em></p>
+	<p><em>06 August 2020</em></p>
 
-	<p><p>As you probably know Java EE was moved from Oracle to the Eclipse Foundation where will evolve under the <strong>Jakarta EE</strong> brand.  Sept. 10, 2019 Jakarta EE Full Platform and Web Profile specifications was released by Eclipse Foundation during <a href="https://jakartaone.org/">JakartaOne Livestream</a>. Few days later Wildfly declared that <strong>WildFly 17.0.1</strong> has passed the Jakarta EE 8 TCK and certification request has been approved by the Jakarta EE Spec Committee. So, now WildFly is a Jakarta EE Full platform compatible implementation.</p>
-<p>Let's do migration of typical <a href="https://kostenko.org/blog/2019/08/ee-application-multi-module-template.html">gradle EE project</a> to the Jakarta EE and look how hard is it. Current JakartaEE version <code>8.0.0</code> is fully compatible with JavaEE version <code>8.0</code>, that means no need to change project sources, just update dependency from <code>javax:javaee-api:8.0</code> to <code>jakarta.platform:jakarta.jakartaee-api:8.0.0</code></p>
-<p><code>updated build.gradle:</code></p>
-<pre><code class="language-java">apply plugin: 'war'
-dependencies {
-    providedCompile &quot;jakarta.platform:jakarta.jakartaee-api:8.0.0&quot;
-}
+	<p><p>If you need to <strong>unzip</strong> file on the server, where is no root and no <code>unzip</code> installed then time to ask <strong>java</strong> about:</p>
+<pre><code class="language-bash">jar xvf wildfly-20.0.1.Final.zip
 </code></pre>
-<p>That is it! Application builds and works well under WF17.0.1</p>
-<p>Source code of demo application available on <a href="https://github.com/kostenkoserg/ee-application-multi-module-gradle-template">GitHub</a></p>
 </p>
 
 	<hr />
@@ -136,8 +129,8 @@ dependencies {
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/09/jee-to-jakartaee-migration.html';
-	this.page.identifier = 'blog/2019/09/jee-to-jakartaee-migration.html';
+	this.page.url = 'https://kostenko.org/blog/2020/08/java-way-to-unzip.html';
+	this.page.identifier = 'blog/2020/08/java-way-to-unzip.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE

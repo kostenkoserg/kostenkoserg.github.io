@@ -111,6 +111,42 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2019/10/jax-rs-jersey-thread-leak.html"><h1>JAX-RS Client ThreadPool leak</h1></a>
+				<p>04 October 2019</p>
+  			<p><p>Recently got resource(ThreadPool\Thread) leak with JAX-RS Client implementation on WF10.0.1 (RestEasy).<br />
+<img src="/img/2019-10-thraed-leak.png" alt="jax-rs thread leak" /></p>
+<p>From the dump above we can see, that pool number is extremely height, the same time thread number is always 1. That means that some code uses <code>Executors.new*</code>, which returns <code>java.util.concurrent.ThreadPoolExecutor</code> using the DefaultThreadFactory.</p>
+<p>Actually in this situation, it is <strong>ALL</strong> than we can see from thread and heap dumps when debugging leak like above. Because in case classes containing these executors was garbage collected, the executors get orphaned (but are still alive and uncollectable), making it difficult/impossible to detect from a heap dump where the executors came from.</p>
+<p><strong>Lesson #1</strong> is: Doing <code>Executors.new*</code>, would be nice to little bit think about guys who will support your code and provide non default thread names with custom ThreadFactory like :)</p>
+<pre><code class="language-java">ExecutorService es = Executors.newCachedThreadPool(new CustomThreadFactory());
+
+...
+
+class CustomThreadFactory implements ThreadFactory {
+
+    @Override
+    public Thread newThread(final Runnable r) {
+        return new Thread(r, &quot;nice_place_for_helpful_name&quot;);
+    }
+}
+</code></pre>
+<p>So, after many times of investigation and &quot;heap walking&quot;(paths to GC root) i found few <code>Executors$DefaultThreadFactory</code> like</p>
+<p><img src="/img/2019-10-thraed-leak-1.png" alt="jax-rs thread leak" /></p>
+<p>what made me see the code with REST services invocations. Something like</p>
+<pre><code class="language-java">public void doCall() {
+    Client client = ClientBuilder.newClient();
+    Future&lt;Response&gt; future = client.target(&quot;http://...&quot;)
+                                 .request()
+                                 .async().get();
+}
+</code></pre>
+<p>According to WF10 JAX-RS implementation each <code>newClient()</code> will build ResteasyClient that uses <code>ExecutorService asyncInvocationExecutor</code> to do requests and potentially it is can be the reason of the leak.</p>
+<p><strong>Lesson #2</strong> is: Always! do <code>close()</code> client after usage. Check that implementation closes connection and shutdowns ThreadPool in case errors (timeouts, socket resets, etc).</p>
+<p><strong>Lesson #3</strong> is: Try to construct only a small number of Client instances in the application. Last one is still bit unclear from the pure JakartaEE application point of view, as it not works as well in  multi-threaded environment. (<code>Invalid use of BasicClientConnManager: connection still allocated. Make sure to release the connection before allocating another one.</code>)</p>
+<p>P.S. Many thanks for JProfiler tool trial version to make me happy with ThreadDump walking.</p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2019/10/jax-rs-jersey-thread-leak.html#disqus_thread" data-disqus-identifier="blog/2019/10/jax-rs-jersey-thread-leak.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/09/jee-to-jakartaee-migration.html"><h1>Migration from JEE to JakartaEE</h1></a>
 				<p>30 September 2019</p>
   			<p><p>As you probably know Java EE was moved from Oracle to the Eclipse Foundation where will evolve under the <strong>Jakarta EE</strong> brand.  Sept. 10, 2019 Jakarta EE Full Platform and Web Profile specifications was released by Eclipse Foundation during <a href="https://jakartaone.org/">JakartaOne Livestream</a>. Few days later Wildfly declared that <strong>WildFly 17.0.1</strong> has passed the Jakarta EE 8 TCK and certification request has been approved by the Jakarta EE Spec Committee. So, now WildFly is a Jakarta EE Full platform compatible implementation.</p>
@@ -301,32 +337,6 @@ public class TestServiceImpl implements TestService {
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2019/08/java-catch-os-signals.html#disqus_thread" data-disqus-identifier="blog/2019/08/java-catch-os-signals.html">Comments</a></p>
 				<hr/>
-				<a href="https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html"><h1>Wildfly. Configure load balancing metrics</h1></a>
-				<p>06 August 2019</p>
-  			<p><p>Previously i wrote about <a href="https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html">Wildfly domain mode cluster and load balancing from the box</a>. But what if we would like to do balancing depends on specific server behavior ?</p>
-<p>Wildfly subsystem <code>mod_cluster</code> provide us several predefined metric types to determine best request balancing:</p>
-<ul>
-<li><strong>cpu</strong>: based on CPU load</li>
-<li><strong>mem</strong>: based on system memory usage</li>
-<li><strong>heap</strong>: based on heap usage</li>
-<li><strong>sessions</strong>: based on number of web sessions</li>
-<li><strong>requests</strong>: based on amount of requests/sec</li>
-<li><strong>send-traffic</strong>: based on outgoing requests traffic</li>
-<li><strong>receive-traffic</strong>: based on incoming requests POST traffic</li>
-<li><strong>busyness</strong>: computes based on amount of Thread from Thread Pool usage that are busy servicing requests</li>
-</ul>
-<p>As well you also can configure <strong>weight</strong> (impact of a metric respect to other metrics) and <strong>capacity</strong> properties;<br />
-Below is example, how to change default based on CPU balancing to balancing based on busyness + CPU:</p>
-<pre><code class="language-java">/subsystem=modcluster/mod-cluster-config=configuration/dynamic-load-provider=configuration/load-metric=cpu:remove()
-/subsystem=modcluster/mod-cluster-config=configuration:add-metric(type=busyness,weight=2)
-/subsystem=modcluster/mod-cluster-config=configuration:add-metric(type=cpu,weight=1)
-</code></pre>
-<p>If predefined types is not enough, - you can provide <code>custom-load-metric</code> by implementing <code>org.jboss.modcluster.load.metric.impl.AbstractLoadMetric</code>. To possibility of using your custom metric,- you need to copy packaged JAR to <code>modcluster</code> module and update <code>module.xml</code>. Now you can use your custom metric with your configuration like</p>
-<pre><code class="language-java"> &lt;custom-load-metric class=&quot;org.kostenko.examples.wldfly.modcluster.MyBalancingMetric&quot;&gt;  
-</code></pre>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html#disqus_thread" data-disqus-identifier="blog/2019/08/wildfly-load-balancing-metrics.html">Comments</a></p>
-				<hr/>
 
 		<ul class="pager">
 				<li class="previous"><a href="https://kostenko.org/3">Previous</a></li>
@@ -339,7 +349,7 @@ Below is example, how to change default based on CPU balancing to balancing base
 
     <div id="footer">
       <div class="container">
-        <p class="muted credit">&copy; 2019 | Mixed with <a href="http://getbootstrap.com/">Bootstrap v3.1.1</a> | Baked with <a href="http://jbake.org">JBake v2.6.4</a></p>
+        <p class="muted credit">&copy; 2019 | Mixed with <a href="http://getbootstrap.com/">Bootstrap v3.1.1</a> | Baked with <a href="http://jbake.org">JBake v2.6.3</a></p>
       </div>
     </div>
 

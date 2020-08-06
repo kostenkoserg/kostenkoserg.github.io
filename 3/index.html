@@ -111,6 +111,17 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2019/12/setup-darcula-laf-netbeans-11.html"><h1>How to setup Darcula LAF on Netbeans 11</h1></a>
+				<p>26 December 2019</p>
+  			<p><p>It is pity, but Apache Netbeans IDE still comes without support default <strong>dark</strong> mode. Enabling <code>Netbeans 8.2 Plugin portal</code> does not have any effect, so to use plugins from previous versions we need to add <code>New Provider</code> (Tools-&gt;Plugins) with next URL:</p>
+<pre><code class="language-java">http://plugins.netbeans.org/nbpluginportal/updates/8.2/catalog.xml.gz
+</code></pre>
+<p><img src="/img/2019-12-new-provider.png" alt="add provider" /></p>
+<p>After that you should be able setup Darcula LAF in standard way</p>
+<p><img src="/img/2019-12-select-laf.png" alt="add provider" /></p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2019/12/setup-darcula-laf-netbeans-11.html#disqus_thread" data-disqus-identifier="blog/2019/12/setup-darcula-laf-netbeans-11.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/11/jakartaee-understanding-jms-transactions.html"><h1>Understanding JMS(MDB) transaction scopes in JakartaEE application</h1></a>
 				<p>14 November 2019</p>
   			<p><p>Most useful way to deal with JMS in JakartaEE application is MDB(<strong>M</strong>essage <strong>D</strong>riven <strong>B</strong>eans). This type of bean acts as a JMS message listener to which messages can be delivered from either a queue or a topic.</p>
@@ -350,42 +361,6 @@ According to the fixed Hibernate <a href="https://hibernate.atlassian.net/browse
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2019/10/migration-wildfly-10-to-18.html#disqus_thread" data-disqus-identifier="blog/2019/10/migration-wildfly-10-to-18.html">Comments</a></p>
 				<hr/>
-				<a href="https://kostenko.org/blog/2019/10/jax-rs-jersey-thread-leak.html"><h1>JAX-RS Client ThreadPool leak</h1></a>
-				<p>04 October 2019</p>
-  			<p><p>Recently got resource(ThreadPool\Thread) leak with JAX-RS Client implementation on WF10.0.1 (RestEasy).<br />
-<img src="/img/2019-10-thraed-leak.png" alt="jax-rs thread leak" /></p>
-<p>From the dump above we can see, that pool number is extremely height, the same time thread number is always 1. That means that some code uses <code>Executors.new*</code>, which returns <code>java.util.concurrent.ThreadPoolExecutor</code> using the DefaultThreadFactory.</p>
-<p>Actually in this situation, it is <strong>ALL</strong> than we can see from thread and heap dumps when debugging leak like above. Because in case classes containing these executors was garbage collected, the executors get orphaned (but are still alive and uncollectable), making it difficult/impossible to detect from a heap dump where the executors came from.</p>
-<p><strong>Lesson #1</strong> is: Doing <code>Executors.new*</code>, would be nice to little bit think about guys who will support your code and provide non default thread names with custom ThreadFactory like :)</p>
-<pre><code class="language-java">ExecutorService es = Executors.newCachedThreadPool(new CustomThreadFactory());
-
-...
-
-class CustomThreadFactory implements ThreadFactory {
-
-    @Override
-    public Thread newThread(final Runnable r) {
-        return new Thread(r, &quot;nice_place_for_helpful_name&quot;);
-    }
-}
-</code></pre>
-<p>So, after many times of investigation and &quot;heap walking&quot;(paths to GC root) i found few <code>Executors$DefaultThreadFactory</code> like</p>
-<p><img src="/img/2019-10-thraed-leak-1.png" alt="jax-rs thread leak" /></p>
-<p>what made me see the code with REST services invocations. Something like</p>
-<pre><code class="language-java">public void doCall() {
-    Client client = ClientBuilder.newClient();
-    Future&lt;Response&gt; future = client.target(&quot;http://...&quot;)
-                                 .request()
-                                 .async().get();
-}
-</code></pre>
-<p>According to WF10 JAX-RS implementation each <code>newClient()</code> will build ResteasyClient that uses <code>ExecutorService asyncInvocationExecutor</code> to do requests and potentially it is can be the reason of the leak.</p>
-<p><strong>Lesson #2</strong> is: Always! do <code>close()</code> client after usage. Check that implementation closes connection and shutdowns ThreadPool in case errors (timeouts, socket resets, etc).</p>
-<p><strong>Lesson #3</strong> is: Try to construct only a small number of Client instances in the application. Last one is still bit unclear from the pure JakartaEE application point of view, as it not works as well in  multi-threaded environment. (<code>Invalid use of BasicClientConnManager: connection still allocated. Make sure to release the connection before allocating another one.</code>)</p>
-<p>P.S. Many thanks for JProfiler tool trial version to make me happy with ThreadDump walking.</p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2019/10/jax-rs-jersey-thread-leak.html#disqus_thread" data-disqus-identifier="blog/2019/10/jax-rs-jersey-thread-leak.html">Comments</a></p>
-				<hr/>
 
 		<ul class="pager">
 				<li class="previous"><a href="https://kostenko.org/2">Previous</a></li>
@@ -398,7 +373,7 @@ class CustomThreadFactory implements ThreadFactory {
 
     <div id="footer">
       <div class="container">
-        <p class="muted credit">&copy; 2019 | Mixed with <a href="http://getbootstrap.com/">Bootstrap v3.1.1</a> | Baked with <a href="http://jbake.org">JBake v2.6.4</a></p>
+        <p class="muted credit">&copy; 2019 | Mixed with <a href="http://getbootstrap.com/">Bootstrap v3.1.1</a> | Baked with <a href="http://jbake.org">JBake v2.6.3</a></p>
       </div>
     </div>
 
