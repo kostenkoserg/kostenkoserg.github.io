@@ -111,6 +111,59 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2019/08/java-catch-os-signals.html"><h1>How to catch &apos;kill&apos; signals in java</h1></a>
+				<p>07 August 2019</p>
+  			<p><p>You can send different signals to your application using <strong>kill -l</strong> command. By default <strong>kill</strong> will sent <code>TERM</code> signal. Java by default catches some types of signals, for example</p>
+<pre><code class="language-java">kill -3 &lt;PID&gt;
+</code></pre>
+<p>will dump Java stack traces to the standard error stream.</p>
+<p>Also, you can catch <code>signal</code> inside your application, like</p>
+<pre><code class="language-java">public class App {
+    public static void main(String... s) throws Exception {
+
+        Signal.handle(new Signal(&quot;HUP&quot;), signal -&gt; {
+            System.out.println(signal.getName() + &quot; (&quot; + signal.getNumber() + &quot;)&quot;);
+        });
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        Thread.sleep(1000l);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
+}
+</code></pre>
+<p>List of available signals you can get by executing <code>kill -l</code>:</p>
+<pre><code class="language-java">kostenko@kostenko:~$ kill -l
+ 1) SIGHUP	 2) SIGINT	 3) SIGQUIT	 4) SIGILL	 5) SIGTRAP
+ 6) SIGABRT	 7) SIGBUS	 8) SIGFPE	 9) SIGKILL	10) SIGUSR1
+11) SIGSEGV	12) SIGUSR2	13) SIGPIPE	14) SIGALRM	15) SIGTERM
+16) SIGSTKFLT	17) SIGCHLD	18) SIGCONT	19) SIGSTOP	20) SIGTSTP
+21) SIGTTIN	22) SIGTTOU	23) SIGURG	24) SIGXCPU	25) SIGXFSZ
+26) SIGVTALRM	27) SIGPROF	28) SIGWINCH	29) SIGIO	30) SIGPWR
+31) SIGSYS	34) SIGRTMIN	35) SIGRTMIN+1	36) SIGRTMIN+2	37) SIGRTMIN+3
+38) SIGRTMIN+4	39) SIGRTMIN+5	40) SIGRTMIN+6	41) SIGRTMIN+7	42) SIGRTMIN+8
+43) SIGRTMIN+9	44) SIGRTMIN+10	45) SIGRTMIN+11	46) SIGRTMIN+12	47) SIGRTMIN+13
+48) SIGRTMIN+14	49) SIGRTMIN+15	50) SIGRTMAX-14	51) SIGRTMAX-13	52) SIGRTMAX-12
+53) SIGRTMAX-11	54) SIGRTMAX-10	55) SIGRTMAX-9	56) SIGRTMAX-8	57) SIGRTMAX-7
+58) SIGRTMAX-6	59) SIGRTMAX-5	60) SIGRTMAX-4	61) SIGRTMAX-3	62) SIGRTMAX-2
+63) SIGRTMAX-1	64) SIGRTMAX
+</code></pre>
+<p>Notice! Not all signals can be catched in application, some of them reserved by OS. For example, if you will try to handle <strong>kill -SIGKILL (kill -9)</strong> , then you get:</p>
+<pre><code class="language-java">Exception in thread &quot;main&quot; java.lang.IllegalArgumentException: Signal already used by VM or OS: SIGKILL
+	at java.base/jdk.internal.misc.Signal.handle(Signal.java:173)
+	at jdk.unsupported/sun.misc.Signal.handle(Signal.java:157)
+</code></pre>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2019/08/java-catch-os-signals.html#disqus_thread" data-disqus-identifier="blog/2019/08/java-catch-os-signals.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html"><h1>Wildfly. Configure load balancing metrics</h1></a>
 				<p>06 August 2019</p>
   			<p><p>Previously i wrote about <a href="https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html">Wildfly domain mode cluster and load balancing from the box</a>. But what if we would like to do balancing depends on specific server behavior ?</p>
@@ -168,85 +221,6 @@ httpConfig.setOutputBufferSize(1024);
 </code></pre>
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2019/07/sql-trick-insert-if-noe-exists.html#disqus_thread" data-disqus-identifier="blog/2019/07/sql-trick-insert-if-noe-exists.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2019/07/wildfly-jms-duplicate-detection.html"><h1>JMS Duplicate Message Detection with Wildfly</h1></a>
-				<p>19 July 2019</p>
-  			<p><p>To support JMS specification Wildfly uses Apache ActiveMQ Artemis over active-mq subsystem. Last one provides mechanism to filtering out duplicate messages without application code changes.</p>
-<p>To enable duplicate message detection you just need to set a special property on the message to a unique value</p>
-<pre><code class="language-java">message.setStringProperty(&quot;_AMQ_DUPL_ID&quot;, uniqueId);
-</code></pre>
-<p>So, lets see how it works on practice and create simple Message Driven Bean to consume messages:</p>
-<pre><code class="language-java">@JMSDestinationDefinition(
-        name = DuplicateJMSTestBean.DUPLICATE_QUEUE,
-        interfaceName = &quot;javax.jms.Queue&quot;
-)
-@MessageDriven(activationConfig = {
-    @ActivationConfigProperty(propertyName = &quot;destinationLookup&quot;, propertyValue = DuplicateJMSTestBean.DUPLICATE_QUEUE),
-    @ActivationConfigProperty(propertyName = &quot;destinationType&quot;, propertyValue = &quot;javax.jms.Queue&quot;)
-})
-@TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
-public class DuplicateJMSTestBean implements MessageListener {
-
-    public final static String DUPLICATE_QUEUE = &quot;java:global/jms/duplicateTestQueue&quot;;
-
-    @Override
-    public void onMessage(Message msg) {
-        System.out.println(&quot;Got new message.&quot;);
-        MessageStorage.messages.add(msg);
-        try {
-            Thread.sleep(5_000l);
-        } catch(Exception ignore) {}
-        System.out.println(&quot;Message  successfully processed&quot;);
-    }
-}
-</code></pre>
-<p>And simple JAX-RS endpoint to produce messages</p>
-<pre><code class="language-java">@Path(&quot;/&quot;)
-@Stateless
-@TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
-public class DuplicateTestEndpoint {
-
-    @Inject
-    private JMSContext context;
-    @Resource(lookup = DuplicateJMSTestBean.DUPLICATE_QUEUE)
-    private Queue queue;
-
-    @GET
-    @Path(&quot;/sendmessage&quot;)
-    public Response sendMessage(@QueryParam(&quot;duplicate-id&quot;) String duplicateId) {
-        try {
-            ObjectMessage message = context.createObjectMessage();
-            if (duplicateId == null) {
-                context.createProducer().send(queue, message);
-            } else {
-                message.setStringProperty(&quot;_AMQ_DUPL_ID&quot;, duplicateId);
-                context.createProducer().send(queue, message);
-            }
-            return Response.ok().entity(&quot;Message was sent.  Recieved &quot; + MessageStorage.messages.size() + &quot; messagges: &quot; + MessageStorage.messages).build();
-        } catch (Throwable e) {
-            return Response.ok().entity(&quot;Error: &quot; + e).build();
-        }
-    }
-}
-</code></pre>
-<p>Now in case we send message with the same <code>_AMQ_DUPL_ID</code> without transaction by <code>http://127.0.0.1:8080/jms-examples/sendmessage?duplicate-id=myuniqueid</code> we will get in logs:</p>
-<pre><code class="language-java">WARN [org.apache.activemq.artemis.core.server] (Thread-448 (ActiveMQ-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$5@e47887a)) AMQ222059: Duplicate message detected - message will not be routed. Message information:
-CoreMessage[messageID=1505,durable=true,userID=3d27afde-a9fa-11e9-af5d-0242e352ec80,priority=4, timestamp=Fri Jul 19 10:53:04 EEST 2019,expiration=0, durable=true, address=jms.queue.jms-examples_jms-examples_jms-examples_java:global/jms/duplicateTestQueue,size=416,properties=TypedProperties[__AMQ_CID=38587489-a9fa-11e9-af5d-0242e352ec80,_AMQ_DUPL_ID=myuniqueid,_AMQ_ROUTING_TYPE=1]]@145077408
-</code></pre>
-<p>and message will NOT consume by consumer. In case you send message in transaction - you will get <code>Exception</code> on commit.</p>
-<p>Keep in mind, that to store IDs activemq uses circular fixed size cache</p>
-<pre><code class="language-java">/subsystem=messaging-activemq/server=default:read-attribute(name=id-cache-size)
-{
-    &quot;outcome&quot; =&gt; &quot;success&quot;,
-    &quot;result&quot; =&gt; 20000
-}
-</code></pre>
-<p>so, this value should be big enough to avoid rewriting. Also, you can configure persist cache or not (by default: <code>true</code>)</p>
-<pre><code class="language-java">/subsystem=messaging-activemq/server=default:write-attribute(name=persist-id-cache,value=false)
-</code></pre>
-<p>Source code available on <a href="https://github.com/kostenkoserg/ee-jms-examples">GitHub</a></p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2019/07/wildfly-jms-duplicate-detection.html#disqus_thread" data-disqus-identifier="blog/2019/07/wildfly-jms-duplicate-detection.html">Comments</a></p>
 				<hr/>
 
 		<ul class="pager">

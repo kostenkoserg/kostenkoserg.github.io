@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Unzip without root but with java</title>
+    <title>Migration from Wildfly 18 to Wildfly 20</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -111,14 +111,28 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Unzip without root but with java</h1>
+		<h1>Migration from Wildfly 18 to Wildfly 20</h1>
 	</div>
 
-	<p><em>05 August 2020</em></p>
+	<p><em>06 August 2020</em></p>
 
-	<p><p>If you need to <strong>unzip</strong> file on the server, where is no root and no <code>unzip</code> installed then time to ask <strong>java</strong> about:</p>
-<pre><code class="language-bash">jar xvf wildfly-20.0.1.Final.zip
+	<p><p>Some time ago i wrote article about migration from <a href="https://kostenko.org/blog/2019/10/migration-wildfly-10-to-18.html">Wildfly 10 to Wildfly 18 and application level migration issues</a>. Migration from Wildfly 18 to <strong>Wildfly 20</strong> does not provoke any application level issues and can be done in minutes:</p>
+<pre><code class="language-java">git clone https://github.com/wildfly/wildfly-server-migration.git
+cd ./wildfly-server-migration/
+mvn clean install
+cd ./dist/standalone/target/
+unzip jboss-server-migration-1.10.0-SNAPSHOT.zip
+cd ./jboss-server-migration
+
+./jboss-server-migration.sh -s /opt/wildfly-18.0.0.Final -t /opt/wildfly-20.0.1.Final/
 </code></pre>
+<p><strong>Why should i do migration to Wildfly 20 ?</strong></p>
+<ul>
+<li>Supports the <a href="https://download.eclipse.org/microprofile/microprofile-3.3/microprofile-spec-3.3.html">Eclipse MicroProfile 3.3 platform specifications</a></li>
+<li>Possible to use TLS 1.3 with WildFly when running against JDK 11 or higher.</li>
+<li>RESTEasy (integrated in WildFly via the jaxrs subsystem) can now be configured using MicroProfile Config.</li>
+<li>Many component upgrades and bug fixes</li>
+</ul>
 </p>
 
 	<hr />
@@ -129,8 +143,8 @@
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2020/08/java-way-to-unzip.html';
-	this.page.identifier = 'blog/2020/08/java-way-to-unzip.html';
+	this.page.url = 'https://kostenko.org/blog/2020/08/migration-wildfly-18-to-20.html';
+	this.page.identifier = 'blog/2020/08/migration-wildfly-18-to-20.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE
