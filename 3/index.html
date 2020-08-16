@@ -63,6 +63,7 @@
 										<li><a href="../tags/wildfly.html">wildfly</a></li>
 										<li><a href="../tags/logging.html">logging</a></li>
 										<li><a href="../tags/jakartaee.html">jakartaee</a></li>
+										<li><a href="../tags/resin.html">resin</a></li>
 										<li><a href="../tags/performance.html">performance</a></li>
 										<li><a href="../tags/infinispan.html">infinispan</a></li>
 										<li><a href="../tags/gradle.html">gradle</a></li>
@@ -111,6 +112,93 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2020/01/infinispan-distributed-cache-issues.html"><h1>ISPN000299: Unable to acquire lock after 15 seconds for key</h1></a>
+				<p>05 February 2020</p>
+  			<p><p>Distributed cache is a wide used technology that provides useful possibilities to share state whenever it necessary. Wildfly supports distributed cache through <a href="https://infinispan.org/">infinispan</a> subsystem and actually it works well, but in case height load and concurrent data access you may run into a some issues like:</p>
+<ul>
+<li>ISPN000299: Unable to acquire lock after 15 seconds for key</li>
+<li>ISPN000924: beforeCompletion() failed for SynchronizationAdapter</li>
+<li>ISPN000160: Could not complete injected transaction.</li>
+<li>ISPN000136: Error executing command PrepareCommand on Cache</li>
+<li>ISPN000476: Timed out waiting for responses for request</li>
+<li>ISPN000482: Cannot create remote transaction GlobalTx</li>
+</ul>
+<p>and others.</p>
+<p>In my case i had two node cluster with next infinispan configuration:</p>
+<pre><code class="language-java">/profile=full-ha/subsystem=infinispan/cache-container=myCache/distributed-cache=userdata:add()
+/profile=full-ha/subsystem=infinispan/cache-container=myCache/distributed-cache=userdata/component=transaction:add(mode=BATCH)
+</code></pre>
+<p><strong>distributed</strong> cache above means that number of copies are maintained, however this is typically less than the number of nodes in the cluster. From other point of view, to provide redundancy and fault tolerance you should configure enough amount of <strong>owners</strong> and obviously <strong>2</strong> is the necessary minimum here. So, in case usage small cluster and keep in mind the <a href="https://issues.redhat.com/browse/JDG-1318">BUG</a>, - i recommend use <strong>replicated-cache</strong> (all nodes in a cluster hold all keys)</p>
+<p>Please, compare <a href="https://infinispan.org/docs/dev/titles/clustering/clustering.html#which_cache_mode_should_i_use">Which cache mode should I use?</a> with your needs.</p>
+<p>Solution:</p>
+<pre><code class="language-java">/profile=full-ha/subsystem=infinispan/cache-container=myCache/distributed-cache=userdata:remove()
+/profile=full-ha/subsystem=infinispan/cache-container=myCache/replicated-cache=userdata:add()
+/profile=full-ha/subsystem=infinispan/cache-container=myCache/replicated-cache=userdata/component=transaction:add(mode=NON_DURABLE_XA, locking=OPTIMISTIC)
+</code></pre>
+<p>Note!, <code>NON_DURABLE_XA</code> doesn't keep any transaction recovery information and if you still getting <code>Unable to acquire lock</code> errors on application critical data - you can try to resolve it by some <strong>retry</strong> policy and <strong>fail-fast</strong> transaction:</p>
+<pre><code class="language-java">/profile=full-ha/subsystem=infinispan/cache-container=myCache/distributed-cache=userdata/component=locking:write-attribute(name=acquire-timeout, value=0)
+</code></pre>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2020/01/infinispan-distributed-cache-issues.html#disqus_thread" data-disqus-identifier="blog/2020/01/infinispan-distributed-cache-issues.html">Comments</a></p>
+				<hr/>
+				<a href="https://kostenko.org/blog/2020/01/sql-spying-with-wildfly.html"><h1>Logging for JPA SQL queries with Wildfly</h1></a>
+				<p>10 January 2020</p>
+  			<p><p>Logging for real SQL queries is very important in case using any ORM solution, - as you never can be sure <strong>which</strong> and <strong>how many</strong> requests will send JPA provider to do <code>find</code>, <code>merge</code>, <code>query</code> or some other operation.</p>
+<p>Wildfly uses Hibernate as JPA provider and provides few standard ways to enable SQL logging:</p>
+<p><strong>1.</strong> Add <code>hibernate.show_sql</code> property to your <strong>persistence.xml</strong> :</p>
+<pre><code class="language-java">&lt;properties&gt;
+    ...
+    &lt;property name=&quot;hibernate.show_sql&quot; value=&quot;true&quot; /&gt;
+    ...
+&lt;/properties&gt;
+</code></pre>
+<pre><code class="language-java">INFO  [stdout] (default task-1) Hibernate: insert into blogentity (id, body, title) values (null, ?, ?)
+INFO  [stdout] (default task-1) Hibernate: select blogentity0_.id as id1_0_, blogentity0_.body as body2_0_, blogentity0_.title as title3_0_ from blogentity blogentity0_ where blogentity0_.title=?
+</code></pre>
+<p><strong>2.</strong> Enable <code>ALL</code> log level for <code>org.hibernate</code> category like:</p>
+<pre><code class="language-java">/subsystem=logging/periodic-rotating-file-handler=sql_handler:add(level=ALL, file={&quot;path&quot;=&gt;&quot;sql.log&quot;}, append=true, autoflush=true, suffix=.yyyy-MM-dd,formatter=&quot;%d{yyyy-MM-dd HH:mm:ss,SSS}&quot;)
+/subsystem=logging/logger=org.hibernate.SQL:add(use-parent-handlers=false,handlers=[&quot;sql_handler&quot;])
+/subsystem=logging/logger=org.hibernate.type.descriptor.sql.BasicBinder:add(use-parent-handlers=false,handlers=[&quot;sql_handler&quot;])
+</code></pre>
+<pre><code class="language-java">DEBUG [o.h.SQL] insert into blogentity (id, body, title) values (null, ?, ?)
+TRACE [o.h.t.d.s.BasicBinder] binding parameter [1] as [VARCHAR] - [this is body]
+TRACE [o.h.t.d.s.BasicBinder] binding parameter [2] as [VARCHAR] - [title]
+DEBUG [o.h.SQL] select blogentity0_.id as id1_0_, blogentity0_.body as body2_0_, blogentity0_.title as title3_0_ from blogentity blogentity0_ where blogentity0_.title=?
+TRACE [o.h.t.d.s.BasicBinder] binding parameter [1] as [VARCHAR] - [title]
+</code></pre>
+<p><strong>3.</strong> Enable spying of SQL statements:</p>
+<pre><code class="language-java">/subsystem=datasources/data-source=ExampleDS/:write-attribute(name=spy,value=true)
+/subsystem=logging/logger=jboss.jdbc.spy/:add(level=DEBUG)
+</code></pre>
+<pre><code class="language-java">DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [DataSource] getConnection()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [Connection] prepareStatement(insert into blogentity (id, body, title) values (null, ?, ?), 1)
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [PreparedStatement] setString(1, this is body)
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [PreparedStatement] setString(2, title)
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [PreparedStatement] executeUpdate()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [PreparedStatement] getGeneratedKeys()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] next()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] getMetaData()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] getLong(1)
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] close()
+...
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [DataSource] getConnection()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [Connection] prepareStatement(select blogentity0_.id as id1_0_, blogentity0_.body as body2_0_, blogentity0_.title as title3_0_ from blogentity blogentity0_ where blogentity0_.title=?)
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [PreparedStatement] setString(1, title)
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [PreparedStatement] executeQuery()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] next()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] getLong(id1_0_)
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] wasNull()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] getString(body2_0_)
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] wasNull()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] getString(title3_0_)
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] wasNull()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] next()
+DEBUG [j.j.spy] java:jboss/datasources/ExampleDS [ResultSet] close()
+</code></pre>
+<p>So, from above we can see that variants <strong>2</strong> and <strong>3</strong> is most useful as allows to log queries with parameters. From other point of view - SQL logging can generate lot of unneeded debug information on production. To avoid garbage data in your log files, feel free to use <strong><a href="https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/6.4/html/administration_and_configuration_guide/chap-the_logging_subsystem#Filter_Expressions_for_Logging">Filter Expressions for Logging</a></strong></p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2020/01/sql-spying-with-wildfly.html#disqus_thread" data-disqus-identifier="blog/2020/01/sql-spying-with-wildfly.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/12/jakarta-ee-asvs-security.html"><h1>Why Jakarta EE beats other java solutions from security point of view</h1></a>
 				<p>27 December 2019</p>
   			<p><p>No one care about security until security incident. In case enterprise development last one can costs too much, so any preventive steps can help.  Significant part part of the OWASP Application Security Verification Standard (<strong>ASVS</strong>) reads:</p>
@@ -250,70 +338,10 @@ WARN  [org.apache.activemq.artemis.core.client] (Thread-1 (ActiveMQ-client-globa
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2019/11/jakartaee-understanding-jms-transactions.html#disqus_thread" data-disqus-identifier="blog/2019/11/jakartaee-understanding-jms-transactions.html">Comments</a></p>
 				<hr/>
-				<a href="https://kostenko.org/blog/2019/11/java-primitive-types-calculation.html"><h1>Never use Java primitives for math calculation</h1></a>
-				<p>08 November 2019</p>
-  			<p><p>This is well known stuff about representation of <a href="https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html">Floating point types in java</a>, but time from time each developer can forget about</p>
-<pre><code class="language-java">@Test
-public void primitiveTest() {
-
-    // right way:
-    BigDecimal bgDcml = BigDecimal.valueOf(100000f).multiply(BigDecimal.valueOf(750f)).multiply(BigDecimal.valueOf(15f)).setScale(0);
-    BigDecimal bgDcml2 = BigDecimal.valueOf(0.04d).multiply(BigDecimal.valueOf(15.0d));
-
-    // wrong way:
-    float flt = 100000f * 750f * 15f;
-    float flt2 = 0.04f * 15.0f;
-
-    System.out.println(&quot;BigDecimal (correct): &quot; + bgDcml);
-    System.out.println(String.format(&quot;Float (incorrect): %s (%s)&quot;, flt, new BigDecimal(flt)));
-    System.out.println(&quot;BigDecimal (correct): &quot; + bgDcml2);
-    System.out.println(String.format(&quot;Float (incorrect): %s&quot;, flt2));
-}
-</code></pre>
-<pre><code class="language-java">-------------------------------------------------------
- T E S T S
--------------------------------------------------------
-BigDecimal (correct): 1125000000
-Float (incorrect): 1.12499994E9 (1124999936)
-BigDecimal (correct): 0.600
-Float (incorrect): 0.59999996
-</code></pre>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2019/11/java-primitive-types-calculation.html#disqus_thread" data-disqus-identifier="blog/2019/11/java-primitive-types-calculation.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2019/11/jakarta-batch-garbage-collection-jberet.html"><h1>Jakarta Batch garbage collection with Jberet</h1></a>
-				<p>04 November 2019</p>
-  			<p><p>To implement Jakarta Batch Specification Wildfly uses JBeret as implementation of JSR 352 (Batch Applications for the Java Platform). During processing, last one persists some working data to the memory, JDBC or another repository depends on configuration.</p>
-<p>In case intensive usage it can collect lot of data and as result provoke some application server performance issues. To cleanup  <strong>unwanted job data</strong> you can design your own solution or use provided by Jberet <a href="https://docs.jboss.org/jberet/1.3.0.Final/javadoc/jberet-core/org/jberet/repository/PurgeBatchlet.html">org.jberet.repository.PurgeBatchlet</a> in standard way:</p>
-<pre><code class="language-java">&lt;job id=&quot;batchGarbageCollector&quot; xmlns=&quot;http://xmlns.jcp.org/xml/ns/javaee&quot;
-     xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
-     xsi:schemaLocation=&quot;http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/jobXML_1_0.xsd&quot;
-     version=&quot;1.0&quot;&gt;
-    &lt;step id=&quot;batchGarbageCollector.step1&quot;&gt;
-        &lt;batchlet ref=&quot;org.jberet.repository.PurgeBatchlet&quot;&gt;
-            &lt;properties&gt;
-                &lt;property name=&quot;sqlFile&quot; value=&quot;#{jobParameters['sqlFile']}&quot;/&gt;
-            &lt;/properties&gt;
-        &lt;/batchlet&gt;
-    &lt;/step&gt;
-&lt;/job&gt;
-</code></pre>
-<p>From the documentation <code>PurgeBatchlet</code> supports rich set of properties and looks pretty good, <strong>BUT</strong> on practice lot of them does not work as expected. I tried <code>numberOfRecentJobExecutionsToKeep</code> and <code>batchStatuses</code> on both WF repositories (inMemory and JDBC) and on both of them <strong>it does not work</strong> for me.</p>
-<p>I am getting output like below, but garbage still was with me :(</p>
-<pre><code class="language-java">...
-INFO  [org.jberet] (Batch Thread - 8) [] JBERET000023: Removing javax.batch.runtime.JobExecution 35256804
-INFO  [org.jberet] (Batch Thread - 8) [] JBERET000023: Removing javax.batch.runtime.JobExecution 35256806
-...
-</code></pre>
-<p>Good news is, that in case using JDBC repository job parameter <code>sqlFile</code> works as expected and PurgeBatchlet executes provided SQL... without any log outputs.</p>
-<p>Source code of test application available on <a href="https://github.com/kostenkoserg/ee-batch-processing-examples">GitHub</a></p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2019/11/jakarta-batch-garbage-collection-jberet.html#disqus_thread" data-disqus-identifier="blog/2019/11/jakarta-batch-garbage-collection-jberet.html">Comments</a></p>
-				<hr/>
 
 		<ul class="pager">
 				<li class="previous"><a href="https://kostenko.org/2">Previous</a></li>
-			<li">Page: 3/9 (<a href="../archive.html">archive</a>)</li>
+			<li">Page: 3/10 (<a href="../archive.html">archive</a>)</li>
 				<li class="next"><a href="https://kostenko.org/4">Next</a></li>
 		</ul>
 		</div>
@@ -322,7 +350,7 @@ INFO  [org.jberet] (Batch Thread - 8) [] JBERET000023: Removing javax.batch.runt
 
     <div id="footer">
       <div class="container">
-        <p class="muted credit">&copy; 2019 | Mixed with <a href="http://getbootstrap.com/">Bootstrap v3.1.1</a> | Baked with <a href="http://jbake.org">JBake v2.6.3</a></p>
+        <p class="muted credit">&copy; 2019 | Mixed with <a href="http://getbootstrap.com/">Bootstrap v3.1.1</a> | Baked with <a href="http://jbake.org">JBake v2.6.4</a></p>
       </div>
     </div>
 

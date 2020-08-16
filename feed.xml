@@ -6,9 +6,48 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Thu, 6 Aug 2020 15:43:39 +0300</pubDate>
-    <lastBuildDate>Thu, 6 Aug 2020 15:43:39 +0300</lastBuildDate>
+    <pubDate>Sun, 16 Aug 2020 23:32:28 +0300</pubDate>
+    <lastBuildDate>Sun, 16 Aug 2020 23:32:28 +0300</lastBuildDate>
 
+    <item>
+      <title>Caucho Resin datasource configuration</title>
+      <link>https://kostenko.org/blog/2020/08/resin-datasource-configuration.html</link>
+      <pubDate>Sun, 16 Aug 2020 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2020/08/resin-datasource-configuration.html</guid>
+      	<description>
+	&lt;p&gt;There is few possible ways to do datasource configuration  for Jakarta EE application on Resin Application Server:&lt;/p&gt;
+&lt;p&gt;Way #1 - &lt;strong&gt;Application level&lt;/strong&gt;. Place JDBC driver to the application classpath and edit &lt;strong&gt;&lt;code&gt;WEB-INF/resin-web.xml&lt;/code&gt;&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;web-app xmlns=&amp;quot;http://caucho.com/ns/resin&amp;quot;&amp;gt;
+    &amp;lt;database jndi-name=&apos;jdbc/myds&apos;&amp;gt;
+        &amp;lt;driver type=&amp;quot;com.microsoft.sqlserver.jdbc.SQLServerDriver&amp;quot;&amp;gt;
+            &amp;lt;url&amp;gt;jdbc:sqlserver://localhost:1433&amp;lt;/url&amp;gt;
+            &amp;lt;user&amp;gt;user&amp;lt;/user&amp;gt;
+            &amp;lt;password&amp;gt;password&amp;lt;/password&amp;gt;
+        &amp;lt;/driver&amp;gt;
+    &amp;lt;/database&amp;gt;
+&amp;lt;/web-app&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Way #2 - &lt;strong&gt;Application Server level&lt;/strong&gt;. Put JDBC driver to &lt;strong&gt;&lt;code&gt;&amp;lt;resin_home&amp;gt;/lib&lt;/code&gt;&lt;/strong&gt;  directory and edit &lt;strong&gt;&lt;code&gt;&amp;lt;resin_home&amp;gt;/conf/resin.xml&lt;/code&gt;&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;...
+&amp;lt;cluster id=&amp;quot;app&amp;quot;&amp;gt;
+  ...
+  &amp;lt;database&amp;gt;
+    &amp;lt;jndi-name&amp;gt;jdbc/myds&amp;lt;/jndi-name&amp;gt;
+    &amp;lt;driver type=&amp;quot;com.microsoft.sqlserver.jdbc.SQLServerDriver&amp;quot;&amp;gt;
+      &amp;lt;url&amp;gt;jdbc:sqlserver://localhost:1433&amp;lt;/url&amp;gt;
+      &amp;lt;user&amp;gt;user&amp;lt;/user&amp;gt;
+      &amp;lt;password&amp;gt;password&amp;lt;/password&amp;gt;
+     &amp;lt;/driver&amp;gt;
+     &amp;lt;prepared-statement-cache-size&amp;gt;8&amp;lt;/prepared-statement-cache-size&amp;gt;
+     &amp;lt;max-connections&amp;gt;20&amp;lt;/max-connections&amp;gt;
+     &amp;lt;max-idle-time&amp;gt;30s&amp;lt;/max-idle-time&amp;gt;
+   &amp;lt;/database&amp;gt;
+&amp;lt;/cluster&amp;gt;
+...
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
     <item>
       <title>Migration from Wildfly 18 to Wildfly 20</title>
       <link>https://kostenko.org/blog/2020/08/migration-wildfly-18-to-20.html</link>

@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>WFLYEJB0054: Failed to marshal EJB parameters</title>
+    <title>Caucho Resin datasource configuration</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -60,24 +60,43 @@
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown">Tags <b class="caret"></b></a>
               <ul class="dropdown-menu">
-										<li><a href="../../../tags/Jetty.html">Jetty</a></li>
-										<li><a href="../../../tags/Gradle.html">Gradle</a></li>
-										<li><a href="../../../tags/API.html">API</a></li>
-										<li><a href="../../../tags/JPA.html">JPA</a></li>
-										<li><a href="../../../tags/JMX.html">JMX</a></li>
-										<li><a href="../../../tags/Jakarta EE.html">Jakarta EE</a></li>
-										<li><a href="../../../tags/Linux.html">Linux</a></li>
-										<li><a href="../../../tags/JBake.html">JBake</a></li>
-										<li><a href="../../../tags/JMS.html">JMS</a></li>
-										<li><a href="../../../tags/Jenkins.html">Jenkins</a></li>
-										<li><a href="../../../tags/SQL.html">SQL</a></li>
-										<li><a href="../../../tags/CDI.html">CDI</a></li>
-										<li><a href="../../../tags/GitHub.html">GitHub</a></li>
-										<li><a href="../../../tags/CI.html">CI</a></li>
-										<li><a href="../../../tags/Hibernate.html">Hibernate</a></li>
-										<li><a href="../../../tags/Wildfly.html">Wildfly</a></li>
-										<li><a href="../../../tags/Java.html">Java</a></li>
-										<li><a href="../../../tags/Java EE.html">Java EE</a></li>
+										<li><a href="../../../tags/wildfly.html">wildfly</a></li>
+										<li><a href="../../../tags/logging.html">logging</a></li>
+										<li><a href="../../../tags/jakartaee.html">jakartaee</a></li>
+										<li><a href="../../../tags/resin.html">resin</a></li>
+										<li><a href="../../../tags/performance.html">performance</a></li>
+										<li><a href="../../../tags/infinispan.html">infinispan</a></li>
+										<li><a href="../../../tags/gradle.html">gradle</a></li>
+										<li><a href="../../../tags/ide.html">ide</a></li>
+										<li><a href="../../../tags/cdi.html">cdi</a></li>
+										<li><a href="../../../tags/batch.html">batch</a></li>
+										<li><a href="../../../tags/ci.html">ci</a></li>
+										<li><a href="../../../tags/openapi.html">openapi</a></li>
+										<li><a href="../../../tags/microprofile.html">microprofile</a></li>
+										<li><a href="../../../tags/jberet.html">jberet</a></li>
+										<li><a href="../../../tags/github.html">github</a></li>
+										<li><a href="../../../tags/activemq.html">activemq</a></li>
+										<li><a href="../../../tags/jetty.html">jetty</a></li>
+										<li><a href="../../../tags/api.html">api</a></li>
+										<li><a href="../../../tags/jpa.html">jpa</a></li>
+										<li><a href="../../../tags/jenkins.html">jenkins</a></li>
+										<li><a href="../../../tags/json-b.html">json-b</a></li>
+										<li><a href="../../../tags/linux.html">linux</a></li>
+										<li><a href="../../../tags/jmx.html">jmx</a></li>
+										<li><a href="../../../tags/vaadin.html">vaadin</a></li>
+										<li><a href="../../../tags/java.html">java</a></li>
+										<li><a href="../../../tags/security.html">security</a></li>
+										<li><a href="../../../tags/jms.html">jms</a></li>
+										<li><a href="../../../tags/jaxb.html">jaxb</a></li>
+										<li><a href="../../../tags/sql.html">sql</a></li>
+										<li><a href="../../../tags/swagger.html">swagger</a></li>
+										<li><a href="../../../tags/hibernate.html">hibernate</a></li>
+										<li><a href="../../../tags/quarkus.html">quarkus</a></li>
+										<li><a href="../../../tags/jwt.html">jwt</a></li>
+										<li><a href="../../../tags/rest-client.html">rest-client</a></li>
+										<li><a href="../../../tags/jax-rs.html">jax-rs</a></li>
+										<li><a href="../../../tags/jsr532.html">jsr532</a></li>
+										<li><a href="../../../tags/jbake.html">jbake</a></li>
 								</ul>
 						</li>
           </ul>
@@ -93,17 +112,41 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>WFLYEJB0054: Failed to marshal EJB parameters</h1>
+		<h1>Caucho Resin datasource configuration</h1>
 	</div>
 
-	<p><em>05 августа 2019</em></p>
+	<p><em>16 August 2020</em></p>
 
-	<p><p>Обычно ошибка <code>WFLYEJB0054: Failed to marshal EJB parameters</code> может быть вызвана по следующим причинам:</p>
-<ul>
-<li>Ваш объект передачи данных не имплементируется  Serializable</li>
-<li>Ваш объект передачи данных не существует в пути к классу модуля назначения (например, если вы используете  DTO  без строгой типизации)</li>
-</ul>
-<p>Кроме того, вы можете словить эту ошибку с абсолютно неожиданным сценарием и нечеткой трассировкой стека, когда ваш EJB выбрасывает несколько непроверяемых ошибок со стековой трассировкой, которая имеет объекты из точек выше.</p>
+	<p><p>There is few possible ways to do datasource configuration  for Jakarta EE application on Resin Application Server:</p>
+<p>Way #1 - <strong>Application level</strong>. Place JDBC driver to the application classpath and edit <strong><code>WEB-INF/resin-web.xml</code></strong></p>
+<pre><code class="language-xml">&lt;web-app xmlns=&quot;http://caucho.com/ns/resin&quot;&gt;
+    &lt;database jndi-name='jdbc/myds'&gt;
+        &lt;driver type=&quot;com.microsoft.sqlserver.jdbc.SQLServerDriver&quot;&gt;
+            &lt;url&gt;jdbc:sqlserver://localhost:1433&lt;/url&gt;
+            &lt;user&gt;user&lt;/user&gt;
+            &lt;password&gt;password&lt;/password&gt;
+        &lt;/driver&gt;
+    &lt;/database&gt;
+&lt;/web-app&gt;
+</code></pre>
+<p>Way #2 - <strong>Application Server level</strong>. Put JDBC driver to <strong><code>&lt;resin_home&gt;/lib</code></strong>  directory and edit <strong><code>&lt;resin_home&gt;/conf/resin.xml</code></strong></p>
+<pre><code class="language-xml">...
+&lt;cluster id=&quot;app&quot;&gt;
+  ...
+  &lt;database&gt;
+    &lt;jndi-name&gt;jdbc/myds&lt;/jndi-name&gt;
+    &lt;driver type=&quot;com.microsoft.sqlserver.jdbc.SQLServerDriver&quot;&gt;
+      &lt;url&gt;jdbc:sqlserver://localhost:1433&lt;/url&gt;
+      &lt;user&gt;user&lt;/user&gt;
+      &lt;password&gt;password&lt;/password&gt;
+     &lt;/driver&gt;
+     &lt;prepared-statement-cache-size&gt;8&lt;/prepared-statement-cache-size&gt;
+     &lt;max-connections&gt;20&lt;/max-connections&gt;
+     &lt;max-idle-time&gt;30s&lt;/max-idle-time&gt;
+   &lt;/database&gt;
+&lt;/cluster&gt;
+...
+</code></pre>
 </p>
 
 	<hr />
@@ -114,8 +157,8 @@
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/08/WFLYEJB0054.html';
-	this.page.identifier = 'blog/2019/08/WFLYEJB0054.html';
+	this.page.url = 'https://kostenko.org/blog/2020/08/resin-datasource-configuration.html';
+	this.page.identifier = 'blog/2020/08/resin-datasource-configuration.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE
