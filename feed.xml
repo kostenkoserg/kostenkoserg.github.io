@@ -6,9 +6,174 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Sun, 16 Aug 2020 23:32:28 +0300</pubDate>
-    <lastBuildDate>Sun, 16 Aug 2020 23:32:28 +0300</lastBuildDate>
+    <pubDate>Wed, 26 Aug 2020 21:36:38 +0300</pubDate>
+    <lastBuildDate>Wed, 26 Aug 2020 21:36:38 +0300</lastBuildDate>
 
+    <item>
+      <title>Distributed caching with Wildfly/Infinispan and poor JCache support.</title>
+      <link>https://kostenko.org/blog/2020/08/wildfly-infinspan.html</link>
+      <pubDate>Wed, 26 Aug 2020 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2020/08/wildfly-infinspan.html</guid>
+      	<description>
+	&lt;p&gt;Latest trends teach us to do development of stateless applications, and if you can - keep your design stateless. But, by some reason, you may need to cache and share state between nodes.&lt;/p&gt;
+&lt;p&gt;It would be nice to have &lt;strong&gt;&lt;a href=&quot;https://jcp.org/en/jsr/detail?id=107&quot;&gt;JSR 107: JCACHE - Java Temporary Caching API&lt;/a&gt;&lt;/strong&gt; support in Wildfly Application Server, but unfortunately, JCache still not a part of JakartaEE specification (i hope one day it will) and pity to realize that Wildfly does not support JCache by default.&lt;/p&gt;
+&lt;p&gt;From other point of view many well known vendors like &lt;a href=&quot;https://hazelcast.org/&quot;&gt;Hazelcast&lt;/a&gt;, &lt;a href=&quot;https://infinispan.org/&quot;&gt;Infinispan&lt;/a&gt;, &lt;a href=&quot;https://www.ehcache.org/&quot;&gt;Ehcache&lt;/a&gt; etc, supports JCache API as well. In turn significant Infinispan part integrated into Wildfly Application Server and can be used as distributed cache provider over  separate &lt;strong&gt;&lt;a href=&quot;https://docs.wildfly.org/20/wildscribe/subsystem/infinispan/index.html&quot;&gt;infinispan subsystem&lt;/a&gt;&lt;/strong&gt; configuration.&lt;/p&gt;
+&lt;p&gt;So, let&apos;s design sample Jakarta EE application to see how &lt;strong&gt;distrubuted cache&lt;/strong&gt; looks and works on practice.&lt;/p&gt;
+&lt;p&gt;First, we need for at least two node Wildfly cluster - please refer to my article about &lt;a href=&quot;https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html&quot;&gt;Wildfly domain mode cluster and load balancing from the box&lt;/a&gt;. And then we are ready to configure distributed cache for our application:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;/profile=full-ha/subsystem=infinispan/cache-container=mycachecontainer:add
+/profile=full-ha/subsystem=infinispan/cache-container=mycachecontainer/distributed-cache=mycache:add
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;After simply server configuration above, we are ready to create our sample application. And as usual with Jakarta EE - &lt;strong&gt;&lt;code&gt;build.gradle&lt;/code&gt;&lt;/strong&gt; looks pretty simple and clear :&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;apply plugin: &apos;war&apos;
+dependencies {
+    providedCompile &amp;quot;jakarta.platform:jakarta.jakartaee-api:8.0.0&amp;quot;
+    providedCompile &amp;quot;org.infinispan:infinispan-core:10.1.8.Final&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now to use configured above &lt;code&gt;mycache&lt;/code&gt; we need to register cache resource in the one from two ways :&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Startup
+@Singleton
+@LocalBean
+public class MyCacheResource {
+    @Resource(lookup = &amp;quot;java:jboss/infinispan/cache/mycachecontainer/mycache&amp;quot;)
+    private org.infinispan.Cache&amp;lt;String, Object&amp;gt; myCache;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;OR&lt;/strong&gt; provide  resource reference in your &lt;strong&gt;WEB-INF/web.xml&lt;/strong&gt; descriptor:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;web-app version=&amp;quot;2.5&amp;quot;  xmlns=&amp;quot;http://java.sun.com/xml/ns/javaee&amp;quot;  xmlns:xsi=&amp;quot;http://www.w3.org/2001/XMLSchema-instance&amp;quot; xsi:schemaLocation=&amp;quot;http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd&amp;quot;&amp;gt;
+    &amp;lt;display-name&amp;gt;JCache API example&amp;lt;/display-name&amp;gt;
+    &amp;lt;resource-env-ref&amp;gt;
+        &amp;lt;resource-env-ref-name&amp;gt;mycache&amp;lt;/resource-env-ref-name&amp;gt;
+        &amp;lt;lookup-name&amp;gt;java:jboss/infinispan/cache/mycachecontainer/mycache&amp;lt;/lookup-name&amp;gt;
+    &amp;lt;/resource-env-ref&amp;gt;    
+&amp;lt;/web-app&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I personally prefer second one because it allows move vendor specific code and dependencies from application source level to the descriptor which is designed for. Actually, i recommend to use standard API as much as possible and &lt;strong&gt;refer to custom vendor specific stuff very carefully&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Also to help Wildfly avoid casting exception like &lt;strong&gt;&lt;code&gt;java.lang.IllegalArgumentException: Can not set org.infinispan.Cache field to org.jboss.as.clustering.infinispan.DefaultCache&lt;/code&gt;&lt;/strong&gt; we need to configure module dependencies over &lt;strong&gt;MANIFEST.MF&lt;/strong&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Manifest-Version: 1.0
+Dependencies: org.infinispan export
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;OR&lt;/strong&gt; over &lt;strong&gt;jboss-deployment-structure.xml&lt;/strong&gt; :&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;jboss-deployment-structure&amp;gt;
+   &amp;lt;deployment&amp;gt;
+      &amp;lt;dependencies&amp;gt;
+         &amp;lt;module name=&amp;quot;org.infinispan&amp;quot; export=&amp;quot;TRUE&amp;quot; /&amp;gt;
+      &amp;lt;/dependencies&amp;gt;
+   &amp;lt;/deployment&amp;gt;
+&amp;lt;/jboss-deployment-structure&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And again, I prefer second way as &lt;strong&gt;vendor specific descriptor is a right place for vendor specific stuff&lt;/strong&gt;.  Please refer to &lt;strong&gt;&lt;a href=&quot;https://access.redhat.com/documentation/en-us/jboss_enterprise_application_platform/6/html/development_guide/add_an_explicit_module_dependency_to_a_deployment1&quot;&gt;deployment module dependencies&lt;/a&gt;&lt;/strong&gt; explanation for the details&lt;/p&gt;
+&lt;p&gt;Now when all preparation is complete, - let&apos;s implement simple service and JAX-RS resource to check how cache distribution works:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;TestCacheService.java:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Named
+public class TestCacheService {
+
+    @Resource(name = &amp;quot;mycache&amp;quot;)
+    org.infinispan.Cache cache;
+
+    public void putIspnCache(String key, String value) {
+        cache.put(key, String.format(&amp;quot;%s (%s)&amp;quot;, value, new Date()));
+    }
+
+    public Object getIspnCache(String key) {
+        return cache.get(key);
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;TestCacheEndpoint.java:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Stateless
+@ApplicationPath(&amp;quot;/&amp;quot;)
+@Path(&amp;quot;/jcache&amp;quot;)
+public class TestCacheEndpoint extends Application {
+
+    @Inject
+    TestCacheService service;
+
+    @GET
+    @Path(&amp;quot;/ispn-put&amp;quot;)
+    public Response putIspn(@QueryParam(&amp;quot;key&amp;quot;) String key, @QueryParam(&amp;quot;value&amp;quot;) String value) {
+        service.putIspnCache(key, value);
+        return Response.ok(&amp;quot;ok&amp;quot;).build();
+    }
+
+    @GET
+    @Path(&amp;quot;/ispn-get&amp;quot;)
+    public Response getIspn(@QueryParam(&amp;quot;key&amp;quot;) String key) {
+        return Response.ok(service.getIspnCache(key)).build();
+    }
+}    
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Time to do deploy and test:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;[domain@localhost:9990 /] deploy ~/work/kostenko/wildfly-infinispan-example/build/libs/jcache-examples.war --server-groups=backend-servers
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;curl -o - &amp;quot;http://localhost:8180/jcache-examples/jcache/ispn-put?key=KEY1&amp;amp;value=VALUE1&amp;quot;
+ok
+curl -o - &amp;quot;http://localhost:8280/jcache-examples/jcache/ispn-get?key=KEY1&amp;quot;
+VALUE1 (Mon Aug 24 21:26:56 EEST 2020)
+curl -o - &amp;quot;http://localhost:8280/jcache-examples/jcache/ispn-put?key=KEY2&amp;amp;value=VALUE2&amp;quot;
+ok
+curl -o - &amp;quot;http://localhost:8180/jcache-examples/jcache/ispn-get?key=KEY2&amp;quot;
+VALUE2 (Mon Aug 24 21:27:52 EEST 2020)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;As you can see from above, value we put on node1 available on node2 and vice versa. Even if we add new node to the cluster - cached values will be available on the fresh node as well:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;[domain@localhost:9990 /] /host=master/server-config=backend3:add(group=backend-servers, socket-binding-port-offset=300)
+[domain@localhost:9990 /] /host=master/server-config=backend3:start(blocking=true)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;curl -o - &amp;quot;http://localhost:8380/jcache-examples/jcache/ispn-get?key=KEY2&amp;quot;
+VALUE2 (Mon Aug 24 21:27:52 EEST 2020)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Great! So for now we able to share state between cluster members and, actually, this is enough for lot of typical use cases.&lt;br /&gt;
+So, what about some  standardization of our application ? As was noticed above &lt;strong&gt;JCache&lt;/strong&gt; can be helpful here, but unfortunately enabling last one on Wildfly is not trivial at all.&lt;/p&gt;
+&lt;p&gt;To get JCache worked you can patch your Wildfly Application Server with &lt;a href=&quot;https://infinispan.org/download-archive/&quot;&gt;Infinispan wildfly modules&lt;/a&gt; or just put missed libraries to the your application and exclude transitive ones to avoid conflicts with libraries that already present in the Wildfly.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;build.gradle:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;...
+dependencies {
+    providedCompile &amp;quot;jakarta.platform:jakarta.jakartaee-api:8.0.0&amp;quot;
+    compile &amp;quot;javax.cache:cache-api:1.0.0&amp;quot;
+    compile &amp;quot;org.infinispan:infinispan-jcache:10.1.8.Final&amp;quot;
+    compile &amp;quot;org.infinispan:infinispan-cdi-embedded:10.1.8.Final&amp;quot;
+}
+configurations {
+  runtime.exclude group: &amp;quot;org.infinispan&amp;quot;, module: &amp;quot;infinispan-core&amp;quot;
+  runtime.exclude group: &amp;quot;org.infinispan&amp;quot;, module: &amp;quot;infinispan-commons&amp;quot;
+  runtime.exclude group: &amp;quot;org.infinispan.protostream&amp;quot;, module: &amp;quot;protostream&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;jboss-deployment-structure.xml:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;
+&amp;lt;jboss-deployment-structure&amp;gt;
+    &amp;lt;deployment&amp;gt;
+        &amp;lt;dependencies&amp;gt;
+           &amp;lt;module name=&amp;quot;org.infinispan&amp;quot; export=&amp;quot;TRUE&amp;quot; /&amp;gt;
+           &amp;lt;module name=&amp;quot;org.infinispan.commons&amp;quot; export=&amp;quot;TRUE&amp;quot; /&amp;gt;
+           &amp;lt;module name=&amp;quot;org.infinispan.protostream&amp;quot; export=&amp;quot;TRUE&amp;quot; /&amp;gt;
+        &amp;lt;/dependencies&amp;gt;
+    &amp;lt;/deployment&amp;gt;
+&amp;lt;/jboss-deployment-structure&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;After that you should be able to use JCache in the usual way:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;TestCacheService.java:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;...
+@CacheResult(cacheName = &amp;quot;mycache&amp;quot;)
+public String getJCacheResult() {
+    System.out.println(&amp;quot;getJCacheResult&amp;quot;);
+    return new Date().toString();
+}
+...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;beans.xml:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;
+&amp;lt;beans xmlns=&amp;quot;http://xmlns.jcp.org/xml/ns/javaee&amp;quot; xmlns:xsi=&amp;quot;http://www.w3.org/2001/XMLSchema-instance&amp;quot; xsi:schemaLocation=&amp;quot;http://xmlns.jcp.org/xml/ns/javaee  http://xmlns.jcp.org/xml/ns/javaee/beans_1_1.xsd&amp;quot; bean-discovery-mode=&amp;quot;all&amp;quot;&amp;gt;
+    &amp;lt;interceptors&amp;gt;
+        &amp;lt;class&amp;gt;org.infinispan.jcache.annotation.CacheResultInterceptor&amp;lt;/class&amp;gt;
+    &amp;lt;/interceptors&amp;gt;
+&amp;lt;/beans&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;@CacheResult&lt;/strong&gt; works and caching the result  &lt;strong&gt;BUT it is not related to the configured on Wildfly &lt;code&gt;mycache&lt;/code&gt; and ignores configured options&lt;/strong&gt; like lifespans, distributions etc because Infinispan&apos;s JCache CachingProvider implementation created caches from an Infinispan native configuration file (based on the provided URI, interpreted as a file path) instead of WF configuration.&lt;/p&gt;
+&lt;p&gt;I did some digging about possibility to produce custom JCache CachingProvider but unfortunately did not find any workable solution for it. Also refer to my post about &lt;a href=&quot;https://kostenko.org/blog/2020/01/infinispan-distributed-cache-issues.html&quot;&gt;ispn distributed cache issues&lt;/a&gt; workaround.&lt;/p&gt;
+&lt;p&gt;As usual samle source code available on &lt;a href=&quot;https://github.com/kostenkoserg/wildfly-infinispan-example&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Caucho Resin datasource configuration</title>
       <link>https://kostenko.org/blog/2020/08/resin-datasource-configuration.html</link>
