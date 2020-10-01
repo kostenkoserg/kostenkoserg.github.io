@@ -6,9 +6,65 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Thu, 1 Oct 2020 13:59:55 +0300</pubDate>
-    <lastBuildDate>Thu, 1 Oct 2020 13:59:55 +0300</lastBuildDate>
+    <pubDate>Fri, 2 Oct 2020 00:27:41 +0300</pubDate>
+    <lastBuildDate>Fri, 2 Oct 2020 00:27:41 +0300</lastBuildDate>
 
+    <item>
+      <title>Jakarta EE JPA paging and COUNT(*) OVER()</title>
+      <link>https://kostenko.org/blog/2020/10/jpa-count-over.html</link>
+      <pubDate>Fri, 2 Oct 2020 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2020/10/jpa-count-over.html</guid>
+      	<description>
+	&lt;p&gt;&lt;img src=&quot;/img/2020-10-pager.png&quot; alt=&quot;pager&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;Almost all data related applications and UI\UX practices need for paging. Jakarta EE JPA specification helps to do it on backend side  by providing simple &lt;strong&gt;Query API:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;setFirstResult(int startPosition)&lt;/code&gt;&lt;/strong&gt; - Set the position of the first result to retrieve.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;setMaxResults(int maxResult)&lt;/code&gt;&lt;/strong&gt; -  Set the maximum number of results to retrieve.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Typically, to implement paging with JPA you need for two queries: one to &lt;strong&gt;select page&lt;/strong&gt; and second to &lt;strong&gt;select total count&lt;/strong&gt; to calculate count of pages. It works well with simple queries and well described in many articles. But real world enterprise application often enough operates with complex queries with complex filters on big amount of data and unfortunately &lt;strong&gt;second query is not for free&lt;/strong&gt; here from performance point of view.&lt;/p&gt;
+&lt;p&gt;Fortunately, since &lt;strong&gt;JPA 2.1&lt;/strong&gt; developers can use &lt;strong&gt;&lt;code&gt;function()&lt;/code&gt;&lt;/strong&gt; to call not standard DB functions. Let&apos;s play around it to use power of database window functions and JPA usability.&lt;/p&gt;
+&lt;p&gt;Actually, in case Hibernate JPA provider all we need is register our custom function for our custom dialect like:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public class MyOraDialect extends Oracle10gDialect {
+    public MyOraDialect () {
+        super();
+        registerFunction(&amp;quot;countover&amp;quot;, new SQLFunctionTemplate(StandardBasicTypes.INTEGER, &amp;quot;count(*) over()&amp;quot;));
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;and use dialect above in the our application &lt;code&gt;persistence.xml&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;  &amp;lt;property name=&amp;quot;hibernate.dialect&amp;quot; value=&amp;quot;org.kostenko.example.jpa.dialect.MyOraDialect&amp;quot;/&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Looks so easy, - time to test!&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public class OraTest {
+    @Test
+    public void countOver() throws Exception {
+        EntityManager em = Persistence.createEntityManagerFactory(&amp;quot;myDSTestOra&amp;quot;).createEntityManager();
+        this.generateTestData(em);
+        Query query =  em.createQuery(&amp;quot;SELECT b as post, function(&apos;countover&apos;) as cnt FROM OraBlogEntity b&amp;quot;, Tuple.class);
+        query.setFirstResult(10);
+        query.setMaxResults(5);
+        List&amp;lt;Tuple&amp;gt; tpList = query.getResultList();
+        for (Tuple tp : tpList) {
+            System.out.println(tp.get(&amp;quot;post&amp;quot;));
+            System.out.println(&amp;quot;Total:&amp;quot; + tp.get(&amp;quot;cnt&amp;quot;));
+        }
+    }
+    ...
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Output:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Hibernate: select * from ( select row_.*, rownum rownum_ from ( select orablogent0_.id as col_0_0_, count(*) over() as col_1_0_, orablogent0_.id as id1_0_, orablogent0_.body as body2_0_, orablogent0_.title as title3_0_ from orablogentity orablogent0_ ) row_ where rownum &amp;lt;= ?) where rownum_ &amp;gt; ?
+OraBlogEntity{id=151, title=title7, body=body7}
+Total:3003
+OraBlogEntity{id=152, title=title8, body=body8}
+Total:3003
+...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Please, note: &lt;strong&gt;count(*) over()&lt;/strong&gt; construction is not supported by &lt;strong&gt;all&lt;/strong&gt; RDBMS, but in turn supports by Oracle, Postres, MSSQL Server and others.&lt;/p&gt;
+&lt;p&gt;Source code of described example as usual available on &lt;a href=&quot;https://github.com/kostenkoserg/ee-jpa-examples&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>JPA @ManyToOne. Keep separate reference by ID and by Entity</title>
       <link>https://kostenko.org/blog/2020/10/jpa-manytoone-get-id-one-query.html</link>
