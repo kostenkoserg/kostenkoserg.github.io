@@ -95,6 +95,7 @@
 										<li><a href="../../../tags/quarkus.html">quarkus</a></li>
 										<li><a href="../../../tags/jwt.html">jwt</a></li>
 										<li><a href="../../../tags/rest-client.html">rest-client</a></li>
+										<li><a href="../../../tags/tomcat.html">tomcat</a></li>
 										<li><a href="../../../tags/jax-rs.html">jax-rs</a></li>
 										<li><a href="../../../tags/jsr532.html">jsr532</a></li>
 										<li><a href="../../../tags/jbake.html">jbake</a></li>
@@ -273,7 +274,7 @@ public String getJCacheResult() {
 </code></pre>
 <p><strong>@CacheResult</strong> works and caching the result  <strong>BUT it is not related to the configured on Wildfly <code>mycache</code> and ignores configured options</strong> like lifespans, distributions etc because Infinispan's JCache CachingProvider implementation created caches from an Infinispan native configuration file (based on the provided URI, interpreted as a file path) instead of WF configuration.</p>
 <p>I did some digging about possibility to produce custom JCache CachingProvider but unfortunately did not find any workable solution for it. Also refer to my post about <a href="https://kostenko.org/blog/2020/01/infinispan-distributed-cache-issues.html">ispn distributed cache issues</a> workaround.</p>
-<p>As usual samle source code available on <a href="https://github.com/kostenkoserg/wildfly-infinispan-example">GitHub</a></p>
+<p>As usual, sample source code available on <a href="https://github.com/kostenkoserg/wildfly-infinispan-example">GitHub</a></p>
 </p>
 
 	<hr />

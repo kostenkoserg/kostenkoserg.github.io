@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Wildfly. Configure load balancing metrics</title>
+    <title>Simple trick to reload application on Tomcat</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -114,32 +114,16 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Wildfly. Configure load balancing metrics</h1>
+		<h1>Simple trick to reload application on Tomcat</h1>
 	</div>
 
-	<p><em>06 August 2019</em></p>
+	<p><em>30 September 2020</em></p>
 
-	<p><p>Previously i wrote about <a href="https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html">Wildfly domain mode cluster and load balancing from the box</a>. But what if we would like to do balancing depends on specific server behavior ?</p>
-<p>Wildfly subsystem <code>mod_cluster</code> provide us several predefined metric types to determine best request balancing:</p>
-<ul>
-<li><strong>cpu</strong>: based on CPU load</li>
-<li><strong>mem</strong>: based on system memory usage</li>
-<li><strong>heap</strong>: based on heap usage</li>
-<li><strong>sessions</strong>: based on number of web sessions</li>
-<li><strong>requests</strong>: based on amount of requests/sec</li>
-<li><strong>send-traffic</strong>: based on outgoing requests traffic</li>
-<li><strong>receive-traffic</strong>: based on incoming requests POST traffic</li>
-<li><strong>busyness</strong>: computes based on amount of Thread from Thread Pool usage that are busy servicing requests</li>
-</ul>
-<p>As well you also can configure <strong>weight</strong> (impact of a metric respect to other metrics) and <strong>capacity</strong> properties;<br />
-Below is example, how to change default based on CPU balancing to balancing based on busyness + CPU:</p>
-<pre><code class="language-java">/subsystem=modcluster/mod-cluster-config=configuration/dynamic-load-provider=configuration/load-metric=cpu:remove()
-/subsystem=modcluster/mod-cluster-config=configuration:add-metric(type=busyness,weight=2)
-/subsystem=modcluster/mod-cluster-config=configuration:add-metric(type=cpu,weight=1)
+	<p><p>Reload tomcat application without accessing to manager console you can just by touch</p>
+<pre><code class="language-bash">cd tomcat/webapps/&lt;application&gt;/WEB-INF/
+touch web.xml
 </code></pre>
-<p>If predefined types is not enough, - you can provide <code>custom-load-metric</code> by implementing <code>org.jboss.modcluster.load.metric.impl.AbstractLoadMetric</code>. To possibility of using your custom metric,- you need to copy packaged JAR to <code>modcluster</code> module and update <code>module.xml</code>. Now you can use your custom metric with your configuration like</p>
-<pre><code class="language-java"> &lt;custom-load-metric class=&quot;org.kostenko.examples.wldfly.modcluster.MyBalancingMetric&quot;&gt;  
-</code></pre>
+<p>The trick above <strong>will work on other application servers</strong> with &quot;hot deploy&quot; support.</p>
 </p>
 
 	<hr />
@@ -150,8 +134,8 @@ Below is example, how to change default based on CPU balancing to balancing base
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html';
-	this.page.identifier = 'blog/2019/08/wildfly-load-balancing-metrics.html';
+	this.page.url = 'https://kostenko.org/blog/2020/09/tomcat-reload-application.html';
+	this.page.identifier = 'blog/2020/09/tomcat-reload-application.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE

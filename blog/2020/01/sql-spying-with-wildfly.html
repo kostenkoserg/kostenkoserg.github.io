@@ -95,6 +95,7 @@
 										<li><a href="../../../tags/quarkus.html">quarkus</a></li>
 										<li><a href="../../../tags/jwt.html">jwt</a></li>
 										<li><a href="../../../tags/rest-client.html">rest-client</a></li>
+										<li><a href="../../../tags/tomcat.html">tomcat</a></li>
 										<li><a href="../../../tags/jax-rs.html">jax-rs</a></li>
 										<li><a href="../../../tags/jsr532.html">jsr532</a></li>
 										<li><a href="../../../tags/jbake.html">jbake</a></li>
@@ -131,7 +132,7 @@
 INFO  [stdout] (default task-1) Hibernate: select blogentity0_.id as id1_0_, blogentity0_.body as body2_0_, blogentity0_.title as title3_0_ from blogentity blogentity0_ where blogentity0_.title=?
 </code></pre>
 <p><strong>2.</strong> Enable <code>ALL</code> log level for <code>org.hibernate</code> category like:</p>
-<pre><code class="language-java">/subsystem=logging/periodic-rotating-file-handler=sql_handler:add(level=ALL, file={&quot;path&quot;=&gt;&quot;sql.log&quot;}, append=true, autoflush=true, suffix=.yyyy-MM-dd,formatter=&quot;%d{yyyy-MM-dd HH:mm:ss,SSS}&quot;)
+<pre><code class="language-java">/subsystem=logging/periodic-rotating-file-handler=sql_handler:add(level=ALL, file={&quot;path&quot;=&gt;&quot;sql.log&quot;}, append=true, autoflush=true, suffix=.yyyy-MM-dd,formatter=&quot;%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n&quot;)
 /subsystem=logging/logger=org.hibernate.SQL:add(use-parent-handlers=false,handlers=[&quot;sql_handler&quot;])
 /subsystem=logging/logger=org.hibernate.type.descriptor.sql.BasicBinder:add(use-parent-handlers=false,handlers=[&quot;sql_handler&quot;])
 </code></pre>

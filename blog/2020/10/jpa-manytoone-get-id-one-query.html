@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Wildfly. Configure load balancing metrics</title>
+    <title>JPA @ManyToOne. Keep separate reference by ID and by Entity</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -114,32 +114,88 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Wildfly. Configure load balancing metrics</h1>
+		<h1>JPA @ManyToOne. Keep separate reference by ID and by Entity</h1>
 	</div>
 
-	<p><em>06 August 2019</em></p>
+	<p><em>01 October 2020</em></p>
 
-	<p><p>Previously i wrote about <a href="https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html">Wildfly domain mode cluster and load balancing from the box</a>. But what if we would like to do balancing depends on specific server behavior ?</p>
-<p>Wildfly subsystem <code>mod_cluster</code> provide us several predefined metric types to determine best request balancing:</p>
-<ul>
-<li><strong>cpu</strong>: based on CPU load</li>
-<li><strong>mem</strong>: based on system memory usage</li>
-<li><strong>heap</strong>: based on heap usage</li>
-<li><strong>sessions</strong>: based on number of web sessions</li>
-<li><strong>requests</strong>: based on amount of requests/sec</li>
-<li><strong>send-traffic</strong>: based on outgoing requests traffic</li>
-<li><strong>receive-traffic</strong>: based on incoming requests POST traffic</li>
-<li><strong>busyness</strong>: computes based on amount of Thread from Thread Pool usage that are busy servicing requests</li>
-</ul>
-<p>As well you also can configure <strong>weight</strong> (impact of a metric respect to other metrics) and <strong>capacity</strong> properties;<br />
-Below is example, how to change default based on CPU balancing to balancing based on busyness + CPU:</p>
-<pre><code class="language-java">/subsystem=modcluster/mod-cluster-config=configuration/dynamic-load-provider=configuration/load-metric=cpu:remove()
-/subsystem=modcluster/mod-cluster-config=configuration:add-metric(type=busyness,weight=2)
-/subsystem=modcluster/mod-cluster-config=configuration:add-metric(type=cpu,weight=1)
+	<p><p>Some time you may need to keep reference by class and reference by ID for your <strong>JPA @Entity</strong>. It can be very helpful, for example, to do some default JSON serialization with no risk to stuck with well known <strong>N+1</strong> issue. In this case i would like to avoid <strong>@OneToMany</strong> and <strong>@ManyToOne</strong> fields serialization by default and use ID reference instead.</p>
+<p>So, below is simple example how to do above.</p>
+<pre><code class="language-java">@Entity
+@Table(name = &quot;book&quot;)
+public class Book {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long id;
+
+    @Column(name = &quot;name&quot;)
+    private String name;
+
+    @JoinColumn(name = &quot;author&quot;, insertable = false, updatable = false)
+    @ManyToOne(targetEntity = Author.class, fetch = FetchType.LAZY)
+    private Author author;
+
+    @Column(name = &quot;author&quot;)
+    private long authorId;
+    ...
+    public void setAuthor(Author author) {
+        setAuthorId(author.getId());
+        this.author = author;
+    }
+    ...
+}
 </code></pre>
-<p>If predefined types is not enough, - you can provide <code>custom-load-metric</code> by implementing <code>org.jboss.modcluster.load.metric.impl.AbstractLoadMetric</code>. To possibility of using your custom metric,- you need to copy packaged JAR to <code>modcluster</code> module and update <code>module.xml</code>. Now you can use your custom metric with your configuration like</p>
-<pre><code class="language-java"> &lt;custom-load-metric class=&quot;org.kostenko.examples.wldfly.modcluster.MyBalancingMetric&quot;&gt;  
+<p>Testing time:</p>
+<pre><code class="language-java">public class ManyToOneTest {
+    @Test
+    public void relationManyToOneTest() {
+        EntityManager em = Persistence.createEntityManagerFactory(&quot;myDSTest&quot;).createEntityManager();
+        this.generateTestData(em);
+
+        List &lt;Book&gt; books =em.createQuery(&quot;FROM Book&quot;, Book.class).getResultList();
+        // lazy loading test
+        for (Book b : books) {
+            System.out.println(&quot;Bookd:&quot; + b.getName());
+            System.out.println(&quot;AuthorId:&quot; + b.getAuthorId());
+            // lazy load
+            System.out.println(&quot;Author:&quot; + b.getAuthor());
+        }
+        // JPQL with direct id reference
+        books = em.createQuery(&quot;FROM Book where authorId = 1&quot;, Book.class).getResultList();
+        // JPQL with author.id reference
+        books = em.createQuery(&quot;FROM Book where author.id = 1&quot;, Book.class).getResultList();
+    }
+
+    private void generateTestData(EntityManager em) {
+        em.getTransaction().begin();
+
+        Author author = new Author();
+        author.setName(&quot;A Name&quot;);
+        em.persist(author);
+
+        Book book = new Book();
+        book.setName(&quot;Book Name&quot;);
+        book.setAuthorId(author.getId());
+        //book.setAuthor(author);
+        em.persist(book);
+        em.getTransaction().commit();
+        em.clear();
+    }
+}
 </code></pre>
+<p>Test Output:</p>
+<pre><code class="language-bash">...
+Hibernate: select book0_.id as id1_2_, book0_.author as author2_2_, book0_.name as name3_2_ from book book0_
+Bookd:Book Name
+AuthorId:1
+# call book.getAuthor():
+Hibernate: select author0_.id as id1_0_0_, author0_.name as name2_0_0_ from author author0_ where author0_.id=?
+Author:Author{id=1, name=A Name}
+
+</code></pre>
+<p><strong>PS:</strong> <code>book.getAuthor().getId()</code> <strong>will not trigger Author lazy loading</strong>, but book.getAuthor().getName() will.</p>
+<p>Source code of described application available on <a href="https://github.com/kostenkoserg/ee-jpa-examples">GitHub</a></p>
 </p>
 
 	<hr />
@@ -150,8 +206,8 @@ Below is example, how to change default based on CPU balancing to balancing base
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html';
-	this.page.identifier = 'blog/2019/08/wildfly-load-balancing-metrics.html';
+	this.page.url = 'https://kostenko.org/blog/2020/10/jpa-manytoone-get-id-one-query.html';
+	this.page.identifier = 'blog/2020/10/jpa-manytoone-get-id-one-query.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE

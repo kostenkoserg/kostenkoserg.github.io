@@ -95,6 +95,7 @@
 										<li><a href="../tags/quarkus.html">quarkus</a></li>
 										<li><a href="../tags/jwt.html">jwt</a></li>
 										<li><a href="../tags/rest-client.html">rest-client</a></li>
+										<li><a href="../tags/tomcat.html">tomcat</a></li>
 										<li><a href="../tags/jax-rs.html">jax-rs</a></li>
 										<li><a href="../tags/jsr532.html">jsr532</a></li>
 										<li><a href="../tags/jbake.html">jbake</a></li>
@@ -113,6 +114,124 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2020/08/migration-wildfly-18-to-20.html"><h1>Migration from Wildfly 18 to Wildfly 20</h1></a>
+				<p>06 August 2020</p>
+  			<p><p>Some time ago i wrote article about migration from <a href="https://kostenko.org/blog/2019/10/migration-wildfly-10-to-18.html">Wildfly 10 to Wildfly 18 and application level migration issues</a>. Migration from Wildfly 18 to <strong>Wildfly 20</strong> does not provoke any application level issues and can be done in minutes:</p>
+<pre><code class="language-java">git clone https://github.com/wildfly/wildfly-server-migration.git
+cd ./wildfly-server-migration/
+mvn clean install
+cd ./dist/standalone/target/
+unzip jboss-server-migration-1.10.0-SNAPSHOT.zip
+cd ./jboss-server-migration
+
+./jboss-server-migration.sh -s /opt/wildfly-18.0.0.Final -t /opt/wildfly-20.0.1.Final/
+</code></pre>
+<p><strong>Why should i do migration to Wildfly 20 ?</strong></p>
+<ul>
+<li>Supports the <a href="https://download.eclipse.org/microprofile/microprofile-3.3/microprofile-spec-3.3.html">Eclipse MicroProfile 3.3 platform specifications</a></li>
+<li>Possible to use TLS 1.3 with WildFly when running against JDK 11 or higher.</li>
+<li>RESTEasy (integrated in WildFly via the jaxrs subsystem) can now be configured using MicroProfile Config.</li>
+<li>Many component upgrades and bug fixes</li>
+</ul>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2020/08/migration-wildfly-18-to-20.html#disqus_thread" data-disqus-identifier="blog/2020/08/migration-wildfly-18-to-20.html">Comments</a></p>
+				<hr/>
+				<a href="https://kostenko.org/blog/2020/08/java-way-to-unzip.html"><h1>Unzip without root but with java</h1></a>
+				<p>05 August 2020</p>
+  			<p><p>If you need to <strong>unzip</strong> file on the server, where is no root and no <code>unzip</code> installed then time to ask <strong>java</strong> about:</p>
+<pre><code class="language-bash">jar xvf wildfly-20.0.1.Final.zip
+</code></pre>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2020/08/java-way-to-unzip.html#disqus_thread" data-disqus-identifier="blog/2020/08/java-way-to-unzip.html">Comments</a></p>
+				<hr/>
+				<a href="https://kostenko.org/blog/2020/04/quarkus-vaadin-8.html"><h1>Rich web application on pure Java with Vaadin and Quarkus</h1></a>
+				<p>29 April 2020</p>
+  			<p><p>Recently I wrote about <a href="https://kostenko.org/blog/2020/02/jwt-openapi-microprofile-quarkus.html">REST API with Eclipse Microprofile and Quarkus</a> - and it is very useful for the microservices development, but from time to time every backend Java developer <strong>needs for the UI</strong>. With <strong><a href="https://vaadin.com/">Vaadin web framework</a></strong> you can write UI 100% in Java without getting bogged down in JS, HTML, and CSS.</p>
+<p>Quarkus provides <strong><code>Servlet</code></strong> and  <strong><code>Websocket</code></strong> support as well, so there is no any blockers to run web application.<br />
+To bootstrap Quarkus from the scratch you can visit  <strong><a href="https://code.quarkus.io/">code.quarkus.io</a></strong> and select build tool you like and extensions you need. In our case we need for:</p>
+<ul>
+<li><strong>Undertow Servlet</strong></li>
+<li><strong>Undertow WebSockets</strong></li>
+</ul>
+<p>With <strong>Vaadin 8</strong> dependencies my <strong><code>build.gradle</code></strong> looks pretty clear:</p>
+<pre><code class="language-java">plugins {
+    id 'java'
+    id 'io.quarkus'
+}
+repositories {
+     mavenLocal()
+     mavenCentral()
+}
+dependencies {
+    compile 'com.vaadin:vaadin-server:8.10.3'
+    compile 'com.vaadin:vaadin-push:8.10.3'
+    compile 'com.vaadin:vaadin-client-compiled:8.10.3'
+    compile 'com.vaadin:vaadin-themes:8.10.3'
+    implementation 'io.quarkus:quarkus-undertow-websockets'
+    implementation 'io.quarkus:quarkus-undertow'
+    implementation enforcedPlatform(&quot;${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}&quot;)
+}
+
+group 'org.kostenko'
+version '1.0.0-SNAPSHOT'
+
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs &lt;&lt; '-parameters'
+}
+</code></pre>
+<p>Now we able to create <strong><code>com.vaadin.ui.UI</code></strong></p>
+<pre><code class="language-java">@Theme(&quot;dashboard&quot;)
+public class MyUI extends UI {
+
+    @Override
+    protected void init(VaadinRequest vaadinRequest) {
+      ...
+    }
+
+    /**
+     * VaadinServlet configuration
+     */
+    @WebServlet(urlPatterns = &quot;/*&quot;, name = &quot;MyUIServlet&quot;, asyncSupported = true, initParams = {
+        @WebInitParam(name = &quot;org.atmosphere.websocket.suppressJSR356&quot;, value = &quot;true&quot;)}
+    )
+    @VaadinServletConfiguration(ui = MyUI.class, productionMode = false)
+    public static class MyUIServlet extends VaadinServlet {
+    }
+}
+</code></pre>
+<p>Put Vaadin static files to the <code>/src/main/resources/META-INF/resources/VAADIN</code> and run quarkus in dev mode as usual <strong>./gradlew quarkusDev</strong>:</p>
+<pre><code class="language-bash">Listening for transport dt_socket at address: 5005
+__  ____  __  _____   ___  __ ____  ______
+ --/ __ \/ / / / _ | / _ \/ //_/ / / / __/
+ -/ /_/ / /_/ / __ |/ , _/ ,&lt; / /_/ /\ \   
+--\___\_\____/_/ |_/_/|_/_/|_|\____/___/   
+2020-04-29 09:49:37,718 WARN  [io.qua.dep.QuarkusAugmentor] (main) Using Java versions older than 11 to build Quarkus applications is deprecated and will be disallowed in a future release!
+2020-04-29 09:49:38,389 INFO  [io.und.servlet] (Quarkus Main Thread) Initializing AtmosphereFramework
+2020-04-29 09:49:38,579 INFO  [io.quarkus] (Quarkus Main Thread) Quarkus 1.4.1.Final started in 0.995s. Listening on: http://0.0.0.0:8080
+2020-04-29 09:49:38,579 INFO  [io.quarkus] (Quarkus Main Thread) Profile dev activated. Live Coding activated.
+2020-04-29 09:49:38,579 INFO  [io.quarkus] (Quarkus Main Thread) Installed features: [cdi, servlet, undertow-websockets]
+2020-04-29 09:49:46,423 WARNING [com.vaa.ser.DefaultDeploymentConfiguration] (executor-thread-1)                                                                                                                                                             
+=================================================================                                                                                                                                                                                            
+Vaadin is running in DEBUG MODE.
+Add productionMode=true to web.xml to disable debug features.
+To show debug window, add ?debug to your application URL.
+=================================================================
+</code></pre>
+<p>Example application I did based on <strong><a href="https://github.com/vaadin/dashboard-demo">vaadin/dashboard-demo</a></strong> that uses nicely looking and responsive <strong><a href="https://demo.vaadin.com/valo-theme/#!common">Valo theme</a></strong></p>
+<p><img src="/img/2020-04-quarkus-vaadin-sm.gif" alt="quarkus + vaadin" /></p>
+<p><strong>Current solution limitations and workaround:</strong></p>
+<ul>
+<li>Latest Vaadin version (14+) does not work from the box and needs for custom Quarkus extensions like <a href="https://github.com/moewes/quarkus-vaadin-lab">moewes/quarkus-vaadin-lab</a> and there is still no official one :(</li>
+<li>Vaadin CDI doesn't work as expected, so to access your CDI beans from the UI components you should use <strong><code>CDI.current().select(Bean.class).get();</code></strong></li>
+<li>By default Quarkus removes CDI beans from the runtime if no one @Inject them. Use <strong><code>io.quarkus.arc.Unremovable</code></strong> annotation for keep beans you need.</li>
+<li>In case <code>java.lang.IllegalStateException:Unable to configure jsr356 at that stage. ServerContainer is null</code> - provide <code>org.atmosphere.websocket.suppressJSR356</code> VaadinServlet parameter as was shown in the code snippet above</li>
+<li>Quarkus native mode doesn't work</li>
+</ul>
+<p>Described example application source code available on <a href="https://github.com/kostenkoserg/quarkus-vaadin8-example">GitHub</a></p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2020/04/quarkus-vaadin-8.html#disqus_thread" data-disqus-identifier="blog/2020/04/quarkus-vaadin-8.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2020/03/data-processing-with-jakarta-ee-batch-api.html"><h1>Load huge amount of data with Jakarta EE Batch</h1></a>
 				<p>25 March 2020</p>
   			<p><p>Processing huge amount of data is a challenge for every enterprise system. Jakarta EE specifications provides useful approach to get it done through <strong><a href="https://projects.eclipse.org/projects/ee4j.batch">Jakarta Batch</a></strong> (JSR-352):</p>
@@ -366,255 +485,6 @@ provision {
 <p>Enjoy!</p>
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2020/03/jpa-wildfly-slow-sql.html#disqus_thread" data-disqus-identifier="blog/2020/03/jpa-wildfly-slow-sql.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2020/03/firebase-push-microprofile-rest-client.html"><h1>Firebase push notifications with Eclipse Microprofile Rest Client</h1></a>
-				<p>05 March 2020</p>
-  			<p><p>Nowadays <strong>Push notifications</strong> is a must have feature for any trend application. Firebase Cloud Messaging (<strong>FCM</strong>) is a free (at least in this moment) cross-platform solution for messages and notifications for <strong>Android</strong>, <strong>iOS</strong> and <strong>Web applications</strong>.</p>
-<p><img src="/img/2020-03-firebase-mp-rest-client.png" alt="firebase, push, microprofile, rest client" /></p>
-<p>To enable push notification on client side you should create Firebase project and follow the <a href="https://firebase.google.com/docs/cloud-messaging">manual</a> or  <a href="https://github.com/firebase/quickstart-js/tree/master/messaging">examples</a>. From the server side perspective all you need to send push notification is:</p>
-<ul>
-<li><strong>Server key</strong> - will be created for your firebase project</li>
-<li><strong>Instance ID token</strong> - id of specific subscribed instance (instance destination id)</li>
-</ul>
-<p>Firebase provides <strong><code>https://fcm.googleapis.com/fcm/send</code></strong> endpoint and very simple <a href="https://firebase.google.com/docs/cloud-messaging/http-server-ref">HTTP API</a> like</p>
-<pre><code class="language-java">{
-    &quot;to&quot;: &quot;&lt;Instance ID token&gt;&quot;,
-    &quot;notification&quot;: {
-      &quot;title&quot;: &quot;THIS IS MP REST CLIENT!&quot;,
-      &quot;body&quot;: &quot;The quick brown fox jumps over the lazy dog.&quot;
-      }
-}
-</code></pre>
-<p>So, let's design simple Microprofile REST client to deal with above:</p>
-<pre><code class="language-java">@Path(&quot;/&quot;)
-@RegisterRestClient(configKey = &quot;push-api&quot;)
-public interface PushClientService {
-
-    @POST
-    @Path(&quot;/fcm/send&quot;)
-    @Produces(&quot;application/json&quot;)
-    @ClientHeaderParam(name = &quot;Authorization&quot;, value = &quot;{generateAuthHeader}&quot;)
-    void send(PushMessage msg);
-
-    default String generateAuthHeader() {
-        return &quot;key=&quot; + ConfigProvider.getConfig().getValue(&quot;firebase.server_key&quot;, String.class);
-    }
-}
-</code></pre>
-<pre><code class="language-java">public class PushMessage {
-
-    public String to;
-    public PushNotification notification;
-
-    public static class PushNotification {
-        public String title;
-        public String body;
-    }
-}
-</code></pre>
-<p>and application.properties</p>
-<pre><code class="language-bash"># firebase server key
-firebase.server_key=&lt;SERVER_KEY&gt;
-# rest client
-push-api/mp-rest/url=https://fcm.googleapis.com/
-</code></pre>
-<p>Actually, this is it! Now you able to <code>@Inject</code>  PushClientService and enjoy push notifications as well.</p>
-<pre><code class="language-java">@Inject
-@RestClient
-PushClientService pushService;
-...
-pushService.send(message);
-</code></pre>
-<p>If you would like to test how it works from client side perspective, - feel free to use <strong><a href="https://kostenko.org/blog/2020/03/firebase-push-microprofile-rest-client/index.htm">Test web application</a></strong> to generate instance ID token and check notifications delivery.</p>
-<p>Described sample application source code with swagger-ui endpoint and firebase.server_key available on <a href="https://github.com/kostenkoserg/microprofile-quarkus-example">GitHub</a></p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2020/03/firebase-push-microprofile-rest-client.html#disqus_thread" data-disqus-identifier="blog/2020/03/firebase-push-microprofile-rest-client.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2020/02/jwt-openapi-microprofile-quarkus.html"><h1>Well secured and documented REST API with Eclipse Microprofile and Quarkus</h1></a>
-				<p>20 February 2020</p>
-  			<p><p>Eclipse Microprofile specification provides several many helpful sections about building well designed microservice-oriented applications. <strong>OpenAPI</strong>, <strong>JWT Propagation</strong> and <strong>JAX-RS</strong> - the ones of them.<br />
-<img src="/img/2020-02-jwt-openapi-jaxrs-microprofile.png" alt="microprofile, jwt, openapi, jax-rs" /><br />
-To see how it works on practice let's design two typical REST resources: insecured <strong>token</strong> to generate JWT and secured  <strong>user</strong>, based on Quarkus Microprofile implementation.</p>
-<p>Easiest way to bootstrap Quarkus application from scratch is generation project structure by provided starter page - <strong><a href="https://code.quarkus.io/">code.quarkus.io</a></strong>. Just select build tool you like and extensions you need. In our case it is:</p>
-<ul>
-<li><strong>SmallRye JWT</strong></li>
-<li><strong>SmallRye OpenAPI</strong></li>
-</ul>
-<p>I prefer <strong>gradle</strong>, - and my <code>build.gradle</code> looks pretty simple</p>
-<pre><code class="language-java">group 'org.kostenko'
-version '1.0.0'
-plugins {
-    id 'java'
-    id 'io.quarkus'
-}
-repositories {
-     mavenLocal()
-     mavenCentral()
-}
-dependencies {
-    implementation 'io.quarkus:quarkus-smallrye-jwt'
-    implementation 'io.quarkus:quarkus-smallrye-openapi'
-    implementation 'io.quarkus:quarkus-resteasy-jackson'    
-    implementation 'io.quarkus:quarkus-resteasy'
-    implementation enforcedPlatform(&quot;${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}&quot;)
-    testImplementation 'io.quarkus:quarkus-junit5'
-    testImplementation 'io.rest-assured:rest-assured'
-}
-compileJava {
-    options.compilerArgs &lt;&lt; '-parameters'
-}
-</code></pre>
-<p>Now we are ready to improve standard <strong>JAX-RS</strong> service with <strong>OpenAPI</strong> and <strong>JWT</strong> stuff:</p>
-<pre><code class="language-java">@RequestScoped
-@Path(&quot;/user&quot;)
-@Consumes(MediaType.APPLICATION_JSON)
-@Produces(MediaType.APPLICATION_JSON)
-@Tags(value = @Tag(name = &quot;user&quot;, description = &quot;All the user methods&quot;))
-@SecurityScheme(securitySchemeName = &quot;jwt&quot;, type = SecuritySchemeType.HTTP, scheme = &quot;bearer&quot;, bearerFormat = &quot;jwt&quot;)
-public class UserResource {
-
-    @Inject
-    @Claim(&quot;user_name&quot;)
-    Optional&lt;JsonString&gt; userName;
-
-    @POST
-    @PermitAll
-    @Path(&quot;/token/{userName}&quot;)
-    @APIResponses(value = {
-        @APIResponse(responseCode = &quot;400&quot;, description = &quot;JWT generation error&quot;),
-        @APIResponse(responseCode = &quot;200&quot;, description = &quot;JWT successfuly created.&quot;, content = @Content(schema = @Schema(implementation = User.class)))})
-    @Operation(summary = &quot;Create JWT token by provided user name&quot;)
-    public User getToken(@PathParam(&quot;userName&quot;) String userName) {
-        User user = new User();
-        user.setJwt(TokenUtils.generateJWT(userName));
-        return user;    
-    }
-
-    @GET
-    @RolesAllowed(&quot;user&quot;)
-    @Path(&quot;/current&quot;)
-    @SecurityRequirement(name = &quot;jwt&quot;, scopes = {})
-    @APIResponses(value = {
-        @APIResponse(responseCode = &quot;401&quot;, description = &quot;Unauthorized Error&quot;),
-        @APIResponse(responseCode = &quot;200&quot;, description = &quot;Return user data&quot;, content = @Content(schema = @Schema(implementation = User.class)))})
-    @Operation(summary = &quot;Return user data by provided JWT token&quot;)
-    public User getUser() {
-        User user = new User();
-        user.setName(userName.get().toString());
-        return user;
-    }
-}
-</code></pre>
-<p>First let's take a brief review of used <strong><a href="https://github.com/eclipse/microprofile-open-api">Open API</a></strong> annotations:</p>
-<ul>
-<li><code>@Tags(value = @Tag(name = &quot;user&quot;, description = &quot;All the user methods&quot;))</code> -  Represents a tag. Tag is a meta-information you can use to help organize your API end-points.</li>
-<li><code>@SecurityScheme(securitySchemeName = &quot;jwt&quot;, type = SecuritySchemeType.HTTP, scheme = &quot;bearer&quot;, bearerFormat = &quot;jwt&quot;)</code> - Defines a security scheme that can be used by the operations.</li>
-<li><code>@APIResponse(responseCode = &quot;401&quot;, description = &quot;Unauthorized Error&quot;)</code> - Corresponds to the OpenAPI response model object which  describes a single response from an API Operation.</li>
-<li><code>@Operation(summary = &quot;Return user data by provided JWT token&quot;)</code> - Describes an operation or typically a HTTP method against a specific path.</li>
-<li><code>@Schema(implementation = User.class)</code> - Allows the definition of input and output data types.</li>
-</ul>
-<p>To more details about Open API annotations, please refer to the <strong><a href="https://github.com/eclipse/microprofile-open-api/blob/master/spec/src/main/asciidoc/microprofile-openapi-spec.adoc">MicroProfile OpenAPI Specification</a></strong>.</p>
-<p>After start the application, you will able to get your Open API description in the  <strong>.yaml</strong> format by the next URL <a href="http://0.0.0.0:8080/openapi">http://0.0.0.0:8080/openapi</a> or even enjoy <strong>Swagger UI</strong> as well by <a href="http://0.0.0.0:8080/swagger-ui/">http://0.0.0.0:8080/swagger-ui/</a> :<br />
-<img src="/img/2020-02-swagger-ui.png" alt="microprofile, openapi, swagger-ui" /></p>
-<p><strong>Note</strong> By default swagger-ui available in the dev mode only. If you would like to keep swagger on production, - add next property to your <code>application.properties</code></p>
-<pre><code class="language-java">quarkus.swagger-ui.always-include=true
-</code></pre>
-<p>Second part of this post is a <strong><a href="https://github.com/eclipse/microprofile-jwt-auth">JWT role based access control(RBAC)</a></strong> for microservice endpoints. JSON Web Tokens are an open, industry standard  <a href="https://tools.ietf.org/html/rfc7519">RFC 7519</a> method for representing claims securely between two parties and below we will see how easy it can be integrated in your application with Eclipse Microprofile.</p>
-<p>As JWT suggests usage of cryptography - we need to generate public\private key pair before start coding:</p>
-<pre><code class="language-bash"># Generate a private key
-openssl genpkey -algorithm RSA -out private_key.pem -pkeyopt rsa_keygen_bits:2048
-
-# Derive the public key from the private key
-openssl rsa -pubout -in private_key.pem -out public_key.pem
-</code></pre>
-<p>Now we are able to generate JWT and sign data with our private key in the, for example, next way:</p>
-<pre><code class="language-java">public static String generateJWT(String userName) throws Exception {
-
-    Map&lt;String, Object&gt; claimMap = new HashMap&lt;&gt;();
-    claimMap.put(&quot;iss&quot;, &quot;https://kostenko.org&quot;);
-    claimMap.put(&quot;sub&quot;, &quot;jwt-rbac&quot;);
-    claimMap.put(&quot;exp&quot;, currentTimeInSecs + 300)
-    claimMap.put(&quot;iat&quot;, currentTimeInSecs);
-    claimMap.put(&quot;auth_time&quot;, currentTimeInSecs);
-    claimMap.put(&quot;jti&quot;, UUID.randomUUID().toString());
-    claimMap.put(&quot;upn&quot;, &quot;UPN&quot;);
-    claimMap.put(&quot;groups&quot;, Arrays.asList(&quot;user&quot;));
-    claimMap.put(&quot;raw_token&quot;, UUID.randomUUID().toString());
-    claimMap.put(&quot;user_bane&quot;, userName);
-
-    return Jwt.claims(claimMap).jws().signatureKeyId(&quot;META-INF/private_key.pem&quot;).sign(readPrivateKey(&quot;META-INF/private_key.pem&quot;));
-}
-</code></pre>
-<p>For additional information about JWT structure, please refer <strong><a href="https://jwt.io/introduction/">https://jwt.io</a></strong></p>
-<p>Time to review our application security stuff:<br />
-<code>@RequestScoped</code> -  It is not about security as well. But as JWT is request scoped we need this one to work correctly;<br />
-<code>@PermitAll</code> - Specifies that all security roles are allowed to invoke the specified method;<br />
-<code>@RolesAllowed(&quot;user&quot;)</code> - Specifies the list of roles permitted to access method;<br />
-<code>@Claim(&quot;user_name&quot;)</code> - Allows us inject provided by JWT field;</p>
-<p>To configure JWT in your <code>application.properties</code>, please add</p>
-<pre><code class="language-bash">quarkus.smallrye-jwt.enabled=true
-mp.jwt.verify.publickey.location=META-INF/public_key.pem
-mp.jwt.verify.issuer=https://kostenko.org
-
-# quarkus.log.console.enable=true
-# quarkus.log.category.&quot;io.quarkus.smallrye.jwt&quot;.level=TRACE
-# quarkus.log.category.&quot;io.undertow.request.security&quot;.level=TRACE
-</code></pre>
-<p>And actually that is it, - if you try to reach <code>/user/current</code> service without or with bad JWT token in the <code>Authorization</code> header - you will get  <strong>HTTP 401 Unauthorized</strong> error.</p>
-<p>curl example:</p>
-<pre><code class="language-java">curl -X GET &quot;http://localhost:8080/user/current&quot; -H &quot;accept: application/json&quot; -H &quot;Authorization: Bearer eyJraWQiOiJNRVRBLUlORi9wcml2YXRlX2tleS5wZW0iLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJqd3QtcmJhYyIsInVwbiI6IlVQTiIsInJhd190b2tlbiI6IjQwOWY3MzVkLTQyMmItNDI2NC1iN2UyLTc1YTk0OGFjMTg3MyIsInVzZXJfbmFtZSI6InNlcmdpaSIsImF1dGhfdGltZSI6MTU4MjE5NzM5OSwiaXNzIjoiaHR0cHM6Ly9rb3N0ZW5rby5vcmciLCJncm91cHMiOlsidXNlciJdLCJleHAiOjkyMjMzNzIwMzY4NTQ3NzU4MDcsImlhdCI6MTU4MjE5NzM5OSwianRpIjoiMzNlMGMwZjItMmU0Yi00YTczLWJkNDItNDAzNWQ4NTYzODdlIn0.QteseKKwnYJWyj8ccbI1FuHBgWOk98PJuN0LU1vnYO69SYiuPF0d9VFbBada46N_kXIgzw7btIc4zvHKXVXL5Uh3IO2v1lnw0I_2Seov1hXnzvB89SAcFr61XCtE-w4hYWAOaWlkdTAmpMSUt9wHtjc0MwvI_qSBD3ol_VEoPv5l3_W2NJ2YBnqkY8w68c8txL1TnoJOMtJWB-Rpzy0XrtiO7HltFAz-Gm3spMlB3FEjnmj8-LvMmoZ3CKIybKO0U-bajWLPZ6JMJYtp3HdlpsiXNmv5QdIq1yY7uOPIKDNnPohWCgOhFVW-bVv9m-LErc_s45bIB9djwe13jFTbNg&quot;
-</code></pre>
-<p>Source code of described sample application available on <a href="https://github.com/kostenkoserg/microprofile-quarkus-example">GitHub</a></p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2020/02/jwt-openapi-microprofile-quarkus.html#disqus_thread" data-disqus-identifier="blog/2020/02/jwt-openapi-microprofile-quarkus.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2020/02/jpa-relation-mappings.html"><h1>Simple note about using JPA relation  mappings</h1></a>
-				<p>14 February 2020</p>
-  			<p><p>There is a lot of typical examples how to build JPA <code>@OneToMany</code> and <code>@ManyToOne</code> relationships in your Jakarta EE application. And usually it looks like:</p>
-<pre><code class="language-java">@Entity
-@Table(name = &quot;author&quot;)
-public class Author {
-    @OneToMany
-    private List&lt;Book&gt; book;
-    ...
-}
-</code></pre>
-<pre><code class="language-java">@Entity
-@Table(name = &quot;book&quot;)
-public class Book {
-    @ManyToOne
-    private Author author;
-    ...
-}
-</code></pre>
-<p>This code looks pretty clear, but on my opinion <strong>you should NOT USE this style</strong> in your real world application. From years of JPA using experience i definitely can say that sooner or later your project will stuck with known performance issues and holy war questions about: <strong>N+1</strong>, <strong>LazyInitializationException</strong>, <strong>Unidirectional @OneToMany</strong> , <strong>CascadeTypes</strong> ,<strong>LAZY vs EAGER</strong>, <strong>JOIN FETCH</strong>, <strong>Entity Graph</strong>, <strong>Fetching lot of unneeded data</strong>, <strong>Extra queries (for example: select Author by id before persist Book)</strong> etcetera.  Even if you are have answers for each potential issue above, usually proposed solution will add unreasonable complexity to the project.</p>
-<p>To avoid potential issues i recommend to follow next rules:</p>
-<ul>
-<li>Avoid using of <code>@OneToMany</code> at all</li>
-<li>Use <code>@ManyToOne</code> to build constrains but work with  <strong>ID</strong> instead of Entity</li>
-</ul>
-<p>Unfortunately, simple snippet below does not work as expected in case <code>persist</code></p>
-<pre><code class="language-java">@ManyToOne(targetEntity = Author.class)
-private long authorId;
-</code></pre>
-<p>But,we can use next one instead of</p>
-<pre><code class="language-java">@JoinColumn(name = &quot;authorId&quot;, insertable = false, updatable = false)
-@ManyToOne(targetEntity = Author.class)
-private Author author;
-
-private long authorId;
-
-public long getAuthorId() {
-    return authorId;
-}
-
-public void setAuthorId(long authorId) {
-    this.authorId = authorId;
-}
-</code></pre>
-<p>Hope, this two simple rules helps you enjoy all power of JPA with KISS and decreasing count of complexity.</p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2020/02/jpa-relation-mappings.html#disqus_thread" data-disqus-identifier="blog/2020/02/jpa-relation-mappings.html">Comments</a></p>
 				<hr/>
 
 		<ul class="pager">

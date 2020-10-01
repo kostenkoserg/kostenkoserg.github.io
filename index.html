@@ -95,6 +95,7 @@
 										<li><a href="tags/quarkus.html">quarkus</a></li>
 										<li><a href="tags/jwt.html">jwt</a></li>
 										<li><a href="tags/rest-client.html">rest-client</a></li>
+										<li><a href="tags/tomcat.html">tomcat</a></li>
 										<li><a href="tags/jax-rs.html">jax-rs</a></li>
 										<li><a href="tags/jsr532.html">jsr532</a></li>
 										<li><a href="tags/jbake.html">jbake</a></li>
@@ -113,6 +114,98 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2020/10/jpa-manytoone-get-id-one-query.html"><h1>JPA @ManyToOne. Keep separate reference by ID and by Entity</h1></a>
+				<p>01 October 2020</p>
+  			<p><p>Some time you may need to keep reference by class and reference by ID for your <strong>JPA @Entity</strong>. It can be very helpful, for example, to do some default JSON serialization with no risk to stuck with well known <strong>N+1</strong> issue. In this case i would like to avoid <strong>@OneToMany</strong> and <strong>@ManyToOne</strong> fields serialization by default and use ID reference instead.</p>
+<p>So, below is simple example how to do above.</p>
+<pre><code class="language-java">@Entity
+@Table(name = &quot;book&quot;)
+public class Book {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long id;
+
+    @Column(name = &quot;name&quot;)
+    private String name;
+
+    @JoinColumn(name = &quot;author&quot;, insertable = false, updatable = false)
+    @ManyToOne(targetEntity = Author.class, fetch = FetchType.LAZY)
+    private Author author;
+
+    @Column(name = &quot;author&quot;)
+    private long authorId;
+    ...
+    public void setAuthor(Author author) {
+        setAuthorId(author.getId());
+        this.author = author;
+    }
+    ...
+}
+</code></pre>
+<p>Testing time:</p>
+<pre><code class="language-java">public class ManyToOneTest {
+    @Test
+    public void relationManyToOneTest() {
+        EntityManager em = Persistence.createEntityManagerFactory(&quot;myDSTest&quot;).createEntityManager();
+        this.generateTestData(em);
+
+        List &lt;Book&gt; books =em.createQuery(&quot;FROM Book&quot;, Book.class).getResultList();
+        // lazy loading test
+        for (Book b : books) {
+            System.out.println(&quot;Bookd:&quot; + b.getName());
+            System.out.println(&quot;AuthorId:&quot; + b.getAuthorId());
+            // lazy load
+            System.out.println(&quot;Author:&quot; + b.getAuthor());
+        }
+        // JPQL with direct id reference
+        books = em.createQuery(&quot;FROM Book where authorId = 1&quot;, Book.class).getResultList();
+        // JPQL with author.id reference
+        books = em.createQuery(&quot;FROM Book where author.id = 1&quot;, Book.class).getResultList();
+    }
+
+    private void generateTestData(EntityManager em) {
+        em.getTransaction().begin();
+
+        Author author = new Author();
+        author.setName(&quot;A Name&quot;);
+        em.persist(author);
+
+        Book book = new Book();
+        book.setName(&quot;Book Name&quot;);
+        book.setAuthorId(author.getId());
+        //book.setAuthor(author);
+        em.persist(book);
+        em.getTransaction().commit();
+        em.clear();
+    }
+}
+</code></pre>
+<p>Test Output:</p>
+<pre><code class="language-bash">...
+Hibernate: select book0_.id as id1_2_, book0_.author as author2_2_, book0_.name as name3_2_ from book book0_
+Bookd:Book Name
+AuthorId:1
+# call book.getAuthor():
+Hibernate: select author0_.id as id1_0_0_, author0_.name as name2_0_0_ from author author0_ where author0_.id=?
+Author:Author{id=1, name=A Name}
+
+</code></pre>
+<p><strong>PS:</strong> <code>book.getAuthor().getId()</code> <strong>will not trigger Author lazy loading</strong>, but book.getAuthor().getName() will.</p>
+<p>Source code of described application available on <a href="https://github.com/kostenkoserg/ee-jpa-examples">GitHub</a></p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2020/10/jpa-manytoone-get-id-one-query.html#disqus_thread" data-disqus-identifier="blog/2020/10/jpa-manytoone-get-id-one-query.html">Comments</a></p>
+				<hr/>
+				<a href="https://kostenko.org/blog/2020/09/tomcat-reload-application.html"><h1>Simple trick to reload application on Tomcat</h1></a>
+				<p>30 September 2020</p>
+  			<p><p>Reload tomcat application without accessing to manager console you can just by touch</p>
+<pre><code class="language-bash">cd tomcat/webapps/&lt;application&gt;/WEB-INF/
+touch web.xml
+</code></pre>
+<p>The trick above <strong>will work on other application servers</strong> with &quot;hot deploy&quot; support.</p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2020/09/tomcat-reload-application.html#disqus_thread" data-disqus-identifier="blog/2020/09/tomcat-reload-application.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2020/08/wildfly-infinspan.html"><h1>Distributed caching with Wildfly/Infinispan and poor JCache support.</h1></a>
 				<p>26 August 2020</p>
   			<p><p>Latest trends teach us to do development of stateless applications, and if you can - keep your design stateless. But, by some reason, you may need to cache and share state between nodes.</p>
@@ -270,7 +363,7 @@ public String getJCacheResult() {
 </code></pre>
 <p><strong>@CacheResult</strong> works and caching the result  <strong>BUT it is not related to the configured on Wildfly <code>mycache</code> and ignores configured options</strong> like lifespans, distributions etc because Infinispan's JCache CachingProvider implementation created caches from an Infinispan native configuration file (based on the provided URI, interpreted as a file path) instead of WF configuration.</p>
 <p>I did some digging about possibility to produce custom JCache CachingProvider but unfortunately did not find any workable solution for it. Also refer to my post about <a href="https://kostenko.org/blog/2020/01/infinispan-distributed-cache-issues.html">ispn distributed cache issues</a> workaround.</p>
-<p>As usual samle source code available on <a href="https://github.com/kostenkoserg/wildfly-infinispan-example">GitHub</a></p>
+<p>As usual, sample source code available on <a href="https://github.com/kostenkoserg/wildfly-infinispan-example">GitHub</a></p>
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2020/08/wildfly-infinspan.html#disqus_thread" data-disqus-identifier="blog/2020/08/wildfly-infinspan.html">Comments</a></p>
 				<hr/>
@@ -308,124 +401,6 @@ public String getJCacheResult() {
 </code></pre>
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2020/08/resin-datasource-configuration.html#disqus_thread" data-disqus-identifier="blog/2020/08/resin-datasource-configuration.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2020/08/migration-wildfly-18-to-20.html"><h1>Migration from Wildfly 18 to Wildfly 20</h1></a>
-				<p>06 August 2020</p>
-  			<p><p>Some time ago i wrote article about migration from <a href="https://kostenko.org/blog/2019/10/migration-wildfly-10-to-18.html">Wildfly 10 to Wildfly 18 and application level migration issues</a>. Migration from Wildfly 18 to <strong>Wildfly 20</strong> does not provoke any application level issues and can be done in minutes:</p>
-<pre><code class="language-java">git clone https://github.com/wildfly/wildfly-server-migration.git
-cd ./wildfly-server-migration/
-mvn clean install
-cd ./dist/standalone/target/
-unzip jboss-server-migration-1.10.0-SNAPSHOT.zip
-cd ./jboss-server-migration
-
-./jboss-server-migration.sh -s /opt/wildfly-18.0.0.Final -t /opt/wildfly-20.0.1.Final/
-</code></pre>
-<p><strong>Why should i do migration to Wildfly 20 ?</strong></p>
-<ul>
-<li>Supports the <a href="https://download.eclipse.org/microprofile/microprofile-3.3/microprofile-spec-3.3.html">Eclipse MicroProfile 3.3 platform specifications</a></li>
-<li>Possible to use TLS 1.3 with WildFly when running against JDK 11 or higher.</li>
-<li>RESTEasy (integrated in WildFly via the jaxrs subsystem) can now be configured using MicroProfile Config.</li>
-<li>Many component upgrades and bug fixes</li>
-</ul>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2020/08/migration-wildfly-18-to-20.html#disqus_thread" data-disqus-identifier="blog/2020/08/migration-wildfly-18-to-20.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2020/08/java-way-to-unzip.html"><h1>Unzip without root but with java</h1></a>
-				<p>05 August 2020</p>
-  			<p><p>If you need to <strong>unzip</strong> file on the server, where is no root and no <code>unzip</code> installed then time to ask <strong>java</strong> about:</p>
-<pre><code class="language-bash">jar xvf wildfly-20.0.1.Final.zip
-</code></pre>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2020/08/java-way-to-unzip.html#disqus_thread" data-disqus-identifier="blog/2020/08/java-way-to-unzip.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2020/04/quarkus-vaadin-8.html"><h1>Rich web application on pure Java with Vaadin and Quarkus</h1></a>
-				<p>29 April 2020</p>
-  			<p><p>Recently I wrote about <a href="https://kostenko.org/blog/2020/02/jwt-openapi-microprofile-quarkus.html">REST API with Eclipse Microprofile and Quarkus</a> - and it is very useful for the microservices development, but from time to time every backend Java developer <strong>needs for the UI</strong>. With <strong><a href="https://vaadin.com/">Vaadin web framework</a></strong> you can write UI 100% in Java without getting bogged down in JS, HTML, and CSS.</p>
-<p>Quarkus provides <strong><code>Servlet</code></strong> and  <strong><code>Websocket</code></strong> support as well, so there is no any blockers to run web application.<br />
-To bootstrap Quarkus from the scratch you can visit  <strong><a href="https://code.quarkus.io/">code.quarkus.io</a></strong> and select build tool you like and extensions you need. In our case we need for:</p>
-<ul>
-<li><strong>Undertow Servlet</strong></li>
-<li><strong>Undertow WebSockets</strong></li>
-</ul>
-<p>With <strong>Vaadin 8</strong> dependencies my <strong><code>build.gradle</code></strong> looks pretty clear:</p>
-<pre><code class="language-java">plugins {
-    id 'java'
-    id 'io.quarkus'
-}
-repositories {
-     mavenLocal()
-     mavenCentral()
-}
-dependencies {
-    compile 'com.vaadin:vaadin-server:8.10.3'
-    compile 'com.vaadin:vaadin-push:8.10.3'
-    compile 'com.vaadin:vaadin-client-compiled:8.10.3'
-    compile 'com.vaadin:vaadin-themes:8.10.3'
-    implementation 'io.quarkus:quarkus-undertow-websockets'
-    implementation 'io.quarkus:quarkus-undertow'
-    implementation enforcedPlatform(&quot;${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}&quot;)
-}
-
-group 'org.kostenko'
-version '1.0.0-SNAPSHOT'
-
-compileJava {
-    options.encoding = 'UTF-8'
-    options.compilerArgs &lt;&lt; '-parameters'
-}
-</code></pre>
-<p>Now we able to create <strong><code>com.vaadin.ui.UI</code></strong></p>
-<pre><code class="language-java">@Theme(&quot;dashboard&quot;)
-public class MyUI extends UI {
-
-    @Override
-    protected void init(VaadinRequest vaadinRequest) {
-      ...
-    }
-
-    /**
-     * VaadinServlet configuration
-     */
-    @WebServlet(urlPatterns = &quot;/*&quot;, name = &quot;MyUIServlet&quot;, asyncSupported = true, initParams = {
-        @WebInitParam(name = &quot;org.atmosphere.websocket.suppressJSR356&quot;, value = &quot;true&quot;)}
-    )
-    @VaadinServletConfiguration(ui = MyUI.class, productionMode = false)
-    public static class MyUIServlet extends VaadinServlet {
-    }
-}
-</code></pre>
-<p>Put Vaadin static files to the <code>/src/main/resources/META-INF/resources/VAADIN</code> and run quarkus in dev mode as usual <strong>./gradlew quarkusDev</strong>:</p>
-<pre><code class="language-bash">Listening for transport dt_socket at address: 5005
-__  ____  __  _____   ___  __ ____  ______
- --/ __ \/ / / / _ | / _ \/ //_/ / / / __/
- -/ /_/ / /_/ / __ |/ , _/ ,&lt; / /_/ /\ \   
---\___\_\____/_/ |_/_/|_/_/|_|\____/___/   
-2020-04-29 09:49:37,718 WARN  [io.qua.dep.QuarkusAugmentor] (main) Using Java versions older than 11 to build Quarkus applications is deprecated and will be disallowed in a future release!
-2020-04-29 09:49:38,389 INFO  [io.und.servlet] (Quarkus Main Thread) Initializing AtmosphereFramework
-2020-04-29 09:49:38,579 INFO  [io.quarkus] (Quarkus Main Thread) Quarkus 1.4.1.Final started in 0.995s. Listening on: http://0.0.0.0:8080
-2020-04-29 09:49:38,579 INFO  [io.quarkus] (Quarkus Main Thread) Profile dev activated. Live Coding activated.
-2020-04-29 09:49:38,579 INFO  [io.quarkus] (Quarkus Main Thread) Installed features: [cdi, servlet, undertow-websockets]
-2020-04-29 09:49:46,423 WARNING [com.vaa.ser.DefaultDeploymentConfiguration] (executor-thread-1)                                                                                                                                                             
-=================================================================                                                                                                                                                                                            
-Vaadin is running in DEBUG MODE.
-Add productionMode=true to web.xml to disable debug features.
-To show debug window, add ?debug to your application URL.
-=================================================================
-</code></pre>
-<p>Example application I did based on <strong><a href="https://github.com/vaadin/dashboard-demo">vaadin/dashboard-demo</a></strong> that uses nicely looking and responsive <strong><a href="https://demo.vaadin.com/valo-theme/#!common">Valo theme</a></strong></p>
-<p><img src="/img/2020-04-quarkus-vaadin-sm.gif" alt="quarkus + vaadin" /></p>
-<p><strong>Current solution limitations and workaround:</strong></p>
-<ul>
-<li>Latest Vaadin version (14+) does not work from the box and needs for custom Quarkus extensions like <a href="https://github.com/moewes/quarkus-vaadin-lab">moewes/quarkus-vaadin-lab</a> and there is still no official one :(</li>
-<li>Vaadin CDI doesn't work as expected, so to access your CDI beans from the UI components you should use <strong><code>CDI.current().select(Bean.class).get();</code></strong></li>
-<li>By default Quarkus removes CDI beans from the runtime if no one @Inject them. Use <strong><code>io.quarkus.arc.Unremovable</code></strong> annotation for keep beans you need.</li>
-<li>In case <code>java.lang.IllegalStateException:Unable to configure jsr356 at that stage. ServerContainer is null</code> - provide <code>org.atmosphere.websocket.suppressJSR356</code> VaadinServlet parameter as was shown in the code snippet above</li>
-<li>Quarkus native mode doesn't work</li>
-</ul>
-<p>Described example application source code available on <a href="https://github.com/kostenkoserg/quarkus-vaadin8-example">GitHub</a></p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2020/04/quarkus-vaadin-8.html#disqus_thread" data-disqus-identifier="blog/2020/04/quarkus-vaadin-8.html">Comments</a></p>
 				<hr/>
 
 		<ul class="pager">
