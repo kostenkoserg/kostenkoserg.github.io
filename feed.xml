@@ -6,13 +6,13 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Tue, 13 Oct 2020 11:06:29 +0300</pubDate>
-    <lastBuildDate>Tue, 13 Oct 2020 11:06:29 +0300</lastBuildDate>
+    <pubDate>Tue, 13 Oct 2020 11:15:46 +0300</pubDate>
+    <lastBuildDate>Tue, 13 Oct 2020 11:15:46 +0300</lastBuildDate>
 
     <item>
       <title>JPA and &quot;ORA-01795: maximum number of expressions in a list is 1000 error&quot; workaround</title>
       <link>https://kostenko.org/blog/2020/10/jpa-ora-01795-hibernate-interceptor.html</link>
-      <pubDate>Fri, 9 Oct 2020 00:00:00 +0300</pubDate>
+      <pubDate>Tue, 13 Oct 2020 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2020/10/jpa-ora-01795-hibernate-interceptor.html</guid>
       	<description>
 	&lt;p&gt;Oracle RDBMS has a known &lt;strong&gt;1000 elements&lt;/strong&gt; limitation on count of parameters for the &lt;strong&gt;&lt;code&gt;IN&lt;/code&gt;&lt;/strong&gt; clause.&lt;/p&gt;
