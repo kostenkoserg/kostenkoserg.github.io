@@ -127,7 +127,7 @@
 <li>Use temporary table to insert IDs and use sub select like <strong><code>field IN (select id from TMP_IDS)</code></strong></li>
 <li>Use tuples like <strong><code>where (id, 0) IN ((1, 0)...(n, 0))</code></strong></li>
 </ul>
-<p>Some data mapping frameworks provides solution for above by default, but unfortunately, Hibernate (most popular JPA provider) does not yet.</p>
+<p>Some data mapping frameworks provides solution for above by default, but unfortunately, <strong>Hibernate</strong> (most popular JPA provider) does not yet.</p>
 <p>Fortunately, we can provide custom solution here by overriding <strong>EmptyInterceptor.onPrepareStatement(String sql)</strong> which is called when SQL string is being prepared and perform some String manipulation with the SQL.</p>
 <p>First, we need for regular expression to find <strong>IN</strong> clause matches in the query. <a href="https://regex101.com/">regex101.com</a> provides great help here<br />
 <img src="/img/2020-10-jpa-in-regexp-s.png" alt="pager" /></p>
@@ -169,6 +169,9 @@
         return sql;
     }
 }
+</code></pre>
+<p>To enable interceptor, -  add next property to the your <strong><code>persistence.xml</code></strong></p>
+<pre><code class="language-xml">&lt;property name=&quot;hibernate.ejb.interceptor&quot; value=&quot;org.kostenko.example.jpa.dialect.SafeInInterceptor&quot; /&gt;
 </code></pre>
 <p>Time to test:</p>
 <pre><code class="language-java">@Test

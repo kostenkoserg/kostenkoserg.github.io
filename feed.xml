@@ -6,8 +6,8 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Tue, 13 Oct 2020 11:15:46 +0300</pubDate>
-    <lastBuildDate>Tue, 13 Oct 2020 11:15:46 +0300</lastBuildDate>
+    <pubDate>Tue, 13 Oct 2020 12:15:34 +0300</pubDate>
+    <lastBuildDate>Tue, 13 Oct 2020 12:15:34 +0300</lastBuildDate>
 
     <item>
       <title>JPA and &quot;ORA-01795: maximum number of expressions in a list is 1000 error&quot; workaround</title>
@@ -25,7 +25,7 @@
 &lt;li&gt;Use temporary table to insert IDs and use sub select like &lt;strong&gt;&lt;code&gt;field IN (select id from TMP_IDS)&lt;/code&gt;&lt;/strong&gt;&lt;/li&gt;
 &lt;li&gt;Use tuples like &lt;strong&gt;&lt;code&gt;where (id, 0) IN ((1, 0)...(n, 0))&lt;/code&gt;&lt;/strong&gt;&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;Some data mapping frameworks provides solution for above by default, but unfortunately, Hibernate (most popular JPA provider) does not yet.&lt;/p&gt;
+&lt;p&gt;Some data mapping frameworks provides solution for above by default, but unfortunately, &lt;strong&gt;Hibernate&lt;/strong&gt; (most popular JPA provider) does not yet.&lt;/p&gt;
 &lt;p&gt;Fortunately, we can provide custom solution here by overriding &lt;strong&gt;EmptyInterceptor.onPrepareStatement(String sql)&lt;/strong&gt; which is called when SQL string is being prepared and perform some String manipulation with the SQL.&lt;/p&gt;
 &lt;p&gt;First, we need for regular expression to find &lt;strong&gt;IN&lt;/strong&gt; clause matches in the query. &lt;a href=&quot;https://regex101.com/&quot;&gt;regex101.com&lt;/a&gt; provides great help here&lt;br /&gt;
 &lt;img src=&quot;/img/2020-10-jpa-in-regexp-s.png&quot; alt=&quot;pager&quot; /&gt;&lt;/p&gt;
@@ -67,6 +67,9 @@
         return sql;
     }
 }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;To enable interceptor, -  add next property to the your &lt;strong&gt;&lt;code&gt;persistence.xml&lt;/code&gt;&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;property name=&amp;quot;hibernate.ejb.interceptor&amp;quot; value=&amp;quot;org.kostenko.example.jpa.dialect.SafeInInterceptor&amp;quot; /&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Time to test:&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Test
