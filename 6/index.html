@@ -73,6 +73,7 @@
 										<li><a href="../tags/ci.html">ci</a></li>
 										<li><a href="../tags/openapi.html">openapi</a></li>
 										<li><a href="../tags/microprofile.html">microprofile</a></li>
+										<li><a href="../tags/oracle.html">oracle</a></li>
 										<li><a href="../tags/jberet.html">jberet</a></li>
 										<li><a href="../tags/github.html">github</a></li>
 										<li><a href="../tags/activemq.html">activemq</a></li>
@@ -114,6 +115,32 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2019/08/wildfly-jconsole-mbeans-list-problem.html"><h1>Wildfly JMX connection problems (so slow and terminates)</h1></a>
+				<p>19 August 2019</p>
+  			<p><p>JMX (Java Management Extensions ) - is a technology that provide us possibility to monitoring applications (application servers) by <strong>MBeans (Managed Bean)</strong> objects.<br />
+List of supported MBeans can be obtained by <strong>JConsole</strong> tool that already included to JDK. As JMX does not provide strong defined communication protocol, - implementations can be different depends on vendor.<br />
+For example, to connect to Wildfly Application Server you need to use included in distribution <code>jconsole.sh</code> script:</p>
+<pre><code class="language-java">&lt;WFLY_HOME&gt;/bin/jconsole.sh
+</code></pre>
+<p>or add <code>&lt;WFLY_HOME&gt;/bin/client/jboss-client.jar</code> to classpath:</p>
+<pre><code class="language-java">jconsole J-Djava.class.path=$JAVA_HOME\lib\tools.jar;$JAVA_HOME\lib\jconsole.jar;jboss-client.jar
+</code></pre>
+<p>By default, Wildfly uses <code>timeout = 60s</code> for <strong>remote JMX connections</strong>, after that connection will terminated:<br />
+<img src="/img/2019-08-jmx-jconsole.png" alt="jconsole terminated connection" /><br />
+To change default timeout value, use <code>org.jboss.remoting-jmx.timeout</code> property:</p>
+<pre><code class="language-java">./jconsole.sh -J-Dorg.jboss.remoting-jmx.timeout=300
+</code></pre>
+<p>But increasing timeouts, is not always good solution. So, lets search for the reason of slowness. To construct list of MBeans, jconsole recursively requests ALL MBeans, that can be extremely slow in case many deployments and many loggers. (Reported issue: <a href="https://issues.jboss.org/browse/WFCORE-3186">WFCORE-3186</a>). Partial solution here is reducing count of log files by changing rotating type from <code>periodic-size-rotating-file-handler</code>  to <code>size-rotating-file-handler</code>.</p>
+<p>Other reason of extremely slowness can be <code>Batch subsystem (JBeret)</code>. Last one stores a lot of working information in their tables (in memory or on remote DB, depends on configuration). If this tables big enough - it can negative affect performance of server. So, if you, no need for this data then just cleanup this stuff periodically. (for example, every redeploy in case you do it often enough):</p>
+<pre><code class="language-java">TRUNCATE TABLE PARTITION_EXECUTION CASCADE;
+TRUNCATE TABLE STEP_EXECUTION CASCADE;
+TRUNCATE TABLE JOB_EXECUTION CASCADE;
+TRUNCATE TABLE JOB_INSTANCE CASCADE;  
+</code></pre>
+<p>From other point of view, obtaining ALL MBeans is not good decision as well. So, just use tooling that allows to find MBeans by path.</p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2019/08/wildfly-jconsole-mbeans-list-problem.html#disqus_thread" data-disqus-identifier="blog/2019/08/wildfly-jconsole-mbeans-list-problem.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/08/ee-application-multi-module-template.html"><h1>Jakarta EE application multi module gradle template</h1></a>
 				<p>08 August 2019</p>
   			<p><p>In this post i will share simple and useful <strong>gradle</strong> template to organize multi module Jakarta EE application. We will implement typical one which consists from REST controller (<strong>module1</strong>) and some main logic (<strong>module2</strong>). Big picture of our application architecture is:</p>
@@ -299,21 +326,10 @@ httpConfig.setOutputBufferSize(1024);
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html#disqus_thread" data-disqus-identifier="blog/2019/08/embedded-jetty-server-cut-responses.html">Comments</a></p>
 				<hr/>
-				<a href="https://kostenko.org/blog/2019/08/WFLYEJB0054.html"><h1>WFLYEJB0054: Failed to marshal EJB parameters</h1></a>
-				<p>05 August 2019</p>
-  			<p><p>Usually error <code>WFLYEJB0054: Failed to marshal EJB parameters</code> can be throw by next reason:</p>
-<ul>
-<li>Your data transfer object does not implement Serializable</li>
-<li>Your transfered object does not exist in destination module classpath (for example, if you are using DTO without strong typing)</li>
-</ul>
-<p>Also, you can catch this error with absolutely unexpected scenario and unclear stacktrace when your EJB throws some unchecked exception with stacktrace that has objects from points above.</p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2019/08/WFLYEJB0054.html#disqus_thread" data-disqus-identifier="blog/2019/08/WFLYEJB0054.html">Comments</a></p>
-				<hr/>
 
 		<ul class="pager">
 				<li class="previous"><a href="https://kostenko.org/5">Previous</a></li>
-			<li">Page: 6/10 (<a href="../archive.html">archive</a>)</li>
+			<li">Page: 6/11 (<a href="../archive.html">archive</a>)</li>
 				<li class="next"><a href="https://kostenko.org/7">Next</a></li>
 		</ul>
 		</div>

@@ -73,6 +73,7 @@
 										<li><a href="../tags/ci.html">ci</a></li>
 										<li><a href="../tags/openapi.html">openapi</a></li>
 										<li><a href="../tags/microprofile.html">microprofile</a></li>
+										<li><a href="../tags/oracle.html">oracle</a></li>
 										<li><a href="../tags/jberet.html">jberet</a></li>
 										<li><a href="../tags/github.html">github</a></li>
 										<li><a href="../tags/activemq.html">activemq</a></li>
@@ -114,6 +115,44 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2019/06/runtime-class-loading.html"><h1>How to use custom ClassLoader to load jars in runtime</h1></a>
+				<p>28 June 2019</p>
+  			<p><p>To load calsses in runtime java uses ClassLoader mechanism which is based on next core principles:</p>
+<ul>
+<li><strong>delegation</strong> - by default uses <code>parent-first delegation</code>, - child ClassLoader will be used if parent is not able to find or load class. This behavior can be changed to <code>child-first</code> by overwriting <code>ClassLoader.loadClass(...)</code>;</li>
+<li><strong>visibility</strong> - child ClassLoader is able to see all the classes loaded by parent but vice-versa is not true;</li>
+<li><strong>uniqueness</strong> - allows to load a class exactly once, which is basically achieved by delegation and ensures that child ClassLoader doesn't reload the class already loaded by parent;</li>
+</ul>
+<p>The main scenarios to use custom ClassLoader is:</p>
+<ul>
+<li><strong>Class Instrumentation</strong> - modifying classes at runtime. For example, to unit testing, debugging or monitoring;</li>
+<li><strong>Isolation of executions</strong> - isolate several execution environments within a single process by making visible only a subset of classes for a particular thread, like it does in EE environments;</li>
+</ul>
+<p>So, let's see how using of custom ClassLoader looks from source code perspective:</p>
+<pre><code class="language-java">List&lt;File&gt; jars = Arrays.asList(new File(&quot;/tmp/jars&quot;).listFiles());
+URL[] urls = new URL[files.size()];
+for (int i = 0; i &lt; jars.size(); i++) {
+    try {
+        urls[i] = jars.get(i).toURI().toURL();
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+URLClassLoader childClassLoader = new URLClassLoader(urls, ClassLoader.getSystemClassLoader());
+</code></pre>
+<p>Then load class with custom ClassLoader:</p>
+<pre><code class="language-java">Class.forName(&quot;org.kostenko.examples.core.classloader.ClassLoaderTest&quot;, true , childClassLoader);
+</code></pre>
+<p>Note! If your loaded libraries uses some resources like properties or something else, you need to provide context class loader:</p>
+<pre><code class="language-java">Thread.currentThread().setContextClassLoader(childClassLoader);  
+</code></pre>
+<p>Also, you can use custom ClassLoaders to load services with Java Service Provider Interface(SPI)</p>
+<pre><code class="language-java">ServiceLoader&lt;MyProvider&gt; serviceLoader = ServiceLoader.load(MyProvider.class, childClassLoader);
+...
+</code></pre>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2019/06/runtime-class-loading.html#disqus_thread" data-disqus-identifier="blog/2019/06/runtime-class-loading.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/05/design-dsl-api-java.html"><h1>Design DSL API in Java</h1></a>
 				<p>27 May 2019</p>
   			<p><p>Well designed API is very important in case you expect your API will use someone else instead of just you. To build readable and writable DSL(domain specific language) in Java usually uses Builder pattern with few simple rules:</p>
@@ -323,39 +362,10 @@ Source code available on GitHub:  <a href="https://github.com/kostenkoserg/ee-ja
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html#disqus_thread" data-disqus-identifier="blog/2019/04/wildfly-cluster-domain-mode.html">Comments</a></p>
 				<hr/>
-				<a href="https://kostenko.org/blog/2019/04/jbake-blog-pagination.html"><h1>JBake blog pagination</h1></a>
-				<p>10 April 2019</p>
-  			<p><p>To enable pagintation support on your JBake based blog you need to provide next properties in your <code>jbake.properties</code> file:</p>
-<pre><code class="language-java">index.paginate=true
-index.posts_per_page=5
-</code></pre>
-<p>After that JBake will generate subdirectories <code>2,3,4...</code> for your <code>index.html</code>. Next, you need to update <code>index</code> template to generate necessary count of posts per each index page and provide &quot;previous&quot;,&quot;next&quot; navigation buttons.</p>
-<p>Below, I will show you freemarker template with pagination support, that I am using for this blog</p>
-<pre><code class="language-java">&lt;#include &quot;header.ftl&quot;&gt;
-	&lt;#include &quot;menu.ftl&quot;&gt;
-	&lt;#list posts as post&gt;
-  		&lt;#if (post.status == &quot;published&quot;  &amp;&amp; post?index &gt;= (currentPageNumber-1) * config.index_posts_per_page?eval &amp;&amp; post?index &lt; currentPageNumber * config.index_posts_per_page?eval)&gt;
-				&lt;a href=&quot;${post.uri}&quot;&gt;&lt;h1&gt;&lt;#escape x as x?xml&gt;${post.title}&lt;/#escape&gt;&lt;/h1&gt;&lt;/a&gt;
-				&lt;p&gt;${post.date?string(&quot;dd MMMM yyyy&quot;)}&lt;/p&gt;
-  			&lt;p&gt;${post.body}&lt;/p&gt;
-				&lt;hr/&gt;
-  		&lt;/#if&gt;
-  	&lt;/#list&gt;
-		&lt;ul class=&quot;pager&quot;&gt;
-			&lt;#if (currentPageNumber &gt; 1)&gt;&lt;li class=&quot;previous&quot;&gt;&lt;a href=&quot;${config.site_host}/${(currentPageNumber==2)?then('', currentPageNumber-1)}&quot;&gt;Previous&lt;/a&gt;&lt;/li&gt;&lt;/#if&gt;
-			&lt;li&gt;Page: ${currentPageNumber}/${numberOfPages} (&lt;a href=&quot;${content.rootpath}${config.archive_file}&quot;&gt;archive&lt;/a&gt;)&lt;/li&gt;
-			&lt;#if (currentPageNumber &lt; numberOfPages)&gt;&lt;li class=&quot;next&quot;&gt;&lt;a href=&quot;${config.site_host}/${currentPageNumber + 1}&quot;&gt;Next&lt;/a&gt;&lt;/li&gt;&lt;/#if&gt;
-		&lt;/ul&gt;
-&lt;#include &quot;footer.ftl&quot;&gt;
-</code></pre>
-<p>Blog sources available on <a href="https://github.com/kostenkoserg/kostenko.blog.src">GitHub</a></p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2019/04/jbake-blog-pagination.html#disqus_thread" data-disqus-identifier="blog/2019/04/jbake-blog-pagination.html">Comments</a></p>
-				<hr/>
 
 		<ul class="pager">
 				<li class="previous"><a href="https://kostenko.org/7">Previous</a></li>
-			<li">Page: 8/10 (<a href="../archive.html">archive</a>)</li>
+			<li">Page: 8/11 (<a href="../archive.html">archive</a>)</li>
 				<li class="next"><a href="https://kostenko.org/9">Next</a></li>
 		</ul>
 		</div>

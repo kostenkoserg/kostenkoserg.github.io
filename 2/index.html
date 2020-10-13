@@ -73,6 +73,7 @@
 										<li><a href="../tags/ci.html">ci</a></li>
 										<li><a href="../tags/openapi.html">openapi</a></li>
 										<li><a href="../tags/microprofile.html">microprofile</a></li>
+										<li><a href="../tags/oracle.html">oracle</a></li>
 										<li><a href="../tags/jberet.html">jberet</a></li>
 										<li><a href="../tags/github.html">github</a></li>
 										<li><a href="../tags/activemq.html">activemq</a></li>
@@ -114,6 +115,167 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2020/08/wildfly-infinspan.html"><h1>Distributed caching with Wildfly/Infinispan and poor JCache support.</h1></a>
+				<p>26 August 2020</p>
+  			<p><p>Latest trends teach us to do development of stateless applications, and if you can - keep your design stateless. But, by some reason, you may need to cache and share state between nodes.</p>
+<p>It would be nice to have <strong><a href="https://jcp.org/en/jsr/detail?id=107">JSR 107: JCACHE - Java Temporary Caching API</a></strong> support in Wildfly Application Server, but unfortunately, JCache still not a part of JakartaEE specification (i hope one day it will) and pity to realize that Wildfly does not support JCache by default.</p>
+<p>From other point of view many well known vendors like <a href="https://hazelcast.org/">Hazelcast</a>, <a href="https://infinispan.org/">Infinispan</a>, <a href="https://www.ehcache.org/">Ehcache</a> etc, supports JCache API as well. In turn significant Infinispan part integrated into Wildfly Application Server and can be used as distributed cache provider over  separate <strong><a href="https://docs.wildfly.org/20/wildscribe/subsystem/infinispan/index.html">infinispan subsystem</a></strong> configuration.</p>
+<p>So, let's design sample Jakarta EE application to see how <strong>distrubuted cache</strong> looks and works on practice.</p>
+<p>First, we need for at least two node Wildfly cluster - please refer to my article about <a href="https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html">Wildfly domain mode cluster and load balancing from the box</a>. And then we are ready to configure distributed cache for our application:</p>
+<pre><code class="language-bash">/profile=full-ha/subsystem=infinispan/cache-container=mycachecontainer:add
+/profile=full-ha/subsystem=infinispan/cache-container=mycachecontainer/distributed-cache=mycache:add
+</code></pre>
+<p>After simply server configuration above, we are ready to create our sample application. And as usual with Jakarta EE - <strong><code>build.gradle</code></strong> looks pretty simple and clear :</p>
+<pre><code class="language-java">apply plugin: 'war'
+dependencies {
+    providedCompile &quot;jakarta.platform:jakarta.jakartaee-api:8.0.0&quot;
+    providedCompile &quot;org.infinispan:infinispan-core:10.1.8.Final&quot;
+}
+</code></pre>
+<p>Now to use configured above <code>mycache</code> we need to register cache resource in the one from two ways :</p>
+<pre><code class="language-java">@Startup
+@Singleton
+@LocalBean
+public class MyCacheResource {
+    @Resource(lookup = &quot;java:jboss/infinispan/cache/mycachecontainer/mycache&quot;)
+    private org.infinispan.Cache&lt;String, Object&gt; myCache;
+</code></pre>
+<p><strong>OR</strong> provide  resource reference in your <strong>WEB-INF/web.xml</strong> descriptor:</p>
+<pre><code class="language-xml">&lt;web-app version=&quot;2.5&quot;  xmlns=&quot;http://java.sun.com/xml/ns/javaee&quot;  xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xsi:schemaLocation=&quot;http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd&quot;&gt;
+    &lt;display-name&gt;JCache API example&lt;/display-name&gt;
+    &lt;resource-env-ref&gt;
+        &lt;resource-env-ref-name&gt;mycache&lt;/resource-env-ref-name&gt;
+        &lt;lookup-name&gt;java:jboss/infinispan/cache/mycachecontainer/mycache&lt;/lookup-name&gt;
+    &lt;/resource-env-ref&gt;    
+&lt;/web-app&gt;
+</code></pre>
+<p>I personally prefer second one because it allows move vendor specific code and dependencies from application source level to the descriptor which is designed for. Actually, i recommend to use standard API as much as possible and <strong>refer to custom vendor specific stuff very carefully</strong>.</p>
+<p>Also to help Wildfly avoid casting exception like <strong><code>java.lang.IllegalArgumentException: Can not set org.infinispan.Cache field to org.jboss.as.clustering.infinispan.DefaultCache</code></strong> we need to configure module dependencies over <strong>MANIFEST.MF</strong>:</p>
+<pre><code class="language-bash">Manifest-Version: 1.0
+Dependencies: org.infinispan export
+</code></pre>
+<p><strong>OR</strong> over <strong>jboss-deployment-structure.xml</strong> :</p>
+<pre><code class="language-xml">&lt;jboss-deployment-structure&gt;
+   &lt;deployment&gt;
+      &lt;dependencies&gt;
+         &lt;module name=&quot;org.infinispan&quot; export=&quot;TRUE&quot; /&gt;
+      &lt;/dependencies&gt;
+   &lt;/deployment&gt;
+&lt;/jboss-deployment-structure&gt;
+</code></pre>
+<p>And again, I prefer second way as <strong>vendor specific descriptor is a right place for vendor specific stuff</strong>.  Please refer to <strong><a href="https://access.redhat.com/documentation/en-us/jboss_enterprise_application_platform/6/html/development_guide/add_an_explicit_module_dependency_to_a_deployment1">deployment module dependencies</a></strong> explanation for the details</p>
+<p>Now when all preparation is complete, - let's implement simple service and JAX-RS resource to check how cache distribution works:</p>
+<p><code>TestCacheService.java:</code></p>
+<pre><code class="language-java">@Named
+public class TestCacheService {
+
+    @Resource(name = &quot;mycache&quot;)
+    org.infinispan.Cache cache;
+
+    public void putIspnCache(String key, String value) {
+        cache.put(key, String.format(&quot;%s (%s)&quot;, value, new Date()));
+    }
+
+    public Object getIspnCache(String key) {
+        return cache.get(key);
+    }
+}
+</code></pre>
+<p><code>TestCacheEndpoint.java:</code></p>
+<pre><code class="language-java">@Stateless
+@ApplicationPath(&quot;/&quot;)
+@Path(&quot;/jcache&quot;)
+public class TestCacheEndpoint extends Application {
+
+    @Inject
+    TestCacheService service;
+
+    @GET
+    @Path(&quot;/ispn-put&quot;)
+    public Response putIspn(@QueryParam(&quot;key&quot;) String key, @QueryParam(&quot;value&quot;) String value) {
+        service.putIspnCache(key, value);
+        return Response.ok(&quot;ok&quot;).build();
+    }
+
+    @GET
+    @Path(&quot;/ispn-get&quot;)
+    public Response getIspn(@QueryParam(&quot;key&quot;) String key) {
+        return Response.ok(service.getIspnCache(key)).build();
+    }
+}    
+</code></pre>
+<p>Time to do deploy and test:</p>
+<pre><code class="language-bash">[domain@localhost:9990 /] deploy ~/work/kostenko/wildfly-infinispan-example/build/libs/jcache-examples.war --server-groups=backend-servers
+</code></pre>
+<pre><code class="language-bash">curl -o - &quot;http://localhost:8180/jcache-examples/jcache/ispn-put?key=KEY1&amp;value=VALUE1&quot;
+ok
+curl -o - &quot;http://localhost:8280/jcache-examples/jcache/ispn-get?key=KEY1&quot;
+VALUE1 (Mon Aug 24 21:26:56 EEST 2020)
+curl -o - &quot;http://localhost:8280/jcache-examples/jcache/ispn-put?key=KEY2&amp;value=VALUE2&quot;
+ok
+curl -o - &quot;http://localhost:8180/jcache-examples/jcache/ispn-get?key=KEY2&quot;
+VALUE2 (Mon Aug 24 21:27:52 EEST 2020)
+</code></pre>
+<p>As you can see from above, value we put on node1 available on node2 and vice versa. Even if we add new node to the cluster - cached values will be available on the fresh node as well:</p>
+<pre><code class="language-bash">[domain@localhost:9990 /] /host=master/server-config=backend3:add(group=backend-servers, socket-binding-port-offset=300)
+[domain@localhost:9990 /] /host=master/server-config=backend3:start(blocking=true)
+</code></pre>
+<pre><code class="language-bash">curl -o - &quot;http://localhost:8380/jcache-examples/jcache/ispn-get?key=KEY2&quot;
+VALUE2 (Mon Aug 24 21:27:52 EEST 2020)
+</code></pre>
+<p>Great! So for now we able to share state between cluster members and, actually, this is enough for lot of typical use cases.<br />
+So, what about some  standardization of our application ? As was noticed above <strong>JCache</strong> can be helpful here, but unfortunately enabling last one on Wildfly is not trivial at all.</p>
+<p>To get JCache worked you can patch your Wildfly Application Server with <a href="https://infinispan.org/download-archive/">Infinispan wildfly modules</a> or just put missed libraries to the your application and exclude transitive ones to avoid conflicts with libraries that already present in the Wildfly.</p>
+<p><code>build.gradle:</code></p>
+<pre><code class="language-java">...
+dependencies {
+    providedCompile &quot;jakarta.platform:jakarta.jakartaee-api:8.0.0&quot;
+    compile &quot;javax.cache:cache-api:1.0.0&quot;
+    compile &quot;org.infinispan:infinispan-jcache:10.1.8.Final&quot;
+    compile &quot;org.infinispan:infinispan-cdi-embedded:10.1.8.Final&quot;
+}
+configurations {
+  runtime.exclude group: &quot;org.infinispan&quot;, module: &quot;infinispan-core&quot;
+  runtime.exclude group: &quot;org.infinispan&quot;, module: &quot;infinispan-commons&quot;
+  runtime.exclude group: &quot;org.infinispan.protostream&quot;, module: &quot;protostream&quot;
+}
+</code></pre>
+<p><code>jboss-deployment-structure.xml:</code></p>
+<pre><code class="language-xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;jboss-deployment-structure&gt;
+    &lt;deployment&gt;
+        &lt;dependencies&gt;
+           &lt;module name=&quot;org.infinispan&quot; export=&quot;TRUE&quot; /&gt;
+           &lt;module name=&quot;org.infinispan.commons&quot; export=&quot;TRUE&quot; /&gt;
+           &lt;module name=&quot;org.infinispan.protostream&quot; export=&quot;TRUE&quot; /&gt;
+        &lt;/dependencies&gt;
+    &lt;/deployment&gt;
+&lt;/jboss-deployment-structure&gt;
+</code></pre>
+<p>After that you should be able to use JCache in the usual way:</p>
+<p><code>TestCacheService.java:</code></p>
+<pre><code class="language-java">...
+@CacheResult(cacheName = &quot;mycache&quot;)
+public String getJCacheResult() {
+    System.out.println(&quot;getJCacheResult&quot;);
+    return new Date().toString();
+}
+...
+</code></pre>
+<p><code>beans.xml:</code></p>
+<pre><code class="language-xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;beans xmlns=&quot;http://xmlns.jcp.org/xml/ns/javaee&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xsi:schemaLocation=&quot;http://xmlns.jcp.org/xml/ns/javaee  http://xmlns.jcp.org/xml/ns/javaee/beans_1_1.xsd&quot; bean-discovery-mode=&quot;all&quot;&gt;
+    &lt;interceptors&gt;
+        &lt;class&gt;org.infinispan.jcache.annotation.CacheResultInterceptor&lt;/class&gt;
+    &lt;/interceptors&gt;
+&lt;/beans&gt;
+</code></pre>
+<p><strong>@CacheResult</strong> works and caching the result  <strong>BUT it is not related to the configured on Wildfly <code>mycache</code> and ignores configured options</strong> like lifespans, distributions etc because Infinispan's JCache CachingProvider implementation created caches from an Infinispan native configuration file (based on the provided URI, interpreted as a file path) instead of WF configuration.</p>
+<p>I did some digging about possibility to produce custom JCache CachingProvider but unfortunately did not find any workable solution for it. Also refer to my post about <a href="https://kostenko.org/blog/2020/01/infinispan-distributed-cache-issues.html">ispn distributed cache issues</a> workaround.</p>
+<p>As usual, sample source code available on <a href="https://github.com/kostenkoserg/wildfly-infinispan-example">GitHub</a></p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2020/08/wildfly-infinspan.html#disqus_thread" data-disqus-identifier="blog/2020/08/wildfly-infinspan.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2020/08/resin-datasource-configuration.html"><h1>Caucho Resin datasource configuration</h1></a>
 				<p>16 August 2020</p>
   			<p><p>There is few possible ways to do datasource configuration  for Jakarta EE application on Resin Application Server:</p>
@@ -267,194 +429,10 @@ To show debug window, add ?debug to your application URL.
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2020/04/quarkus-vaadin-8.html#disqus_thread" data-disqus-identifier="blog/2020/04/quarkus-vaadin-8.html">Comments</a></p>
 				<hr/>
-				<a href="https://kostenko.org/blog/2020/03/data-processing-with-jakarta-ee-batch-api.html"><h1>Load huge amount of data with Jakarta EE Batch</h1></a>
-				<p>25 March 2020</p>
-  			<p><p>Processing huge amount of data is a challenge for every enterprise system. Jakarta EE specifications provides useful approach to get it done through <strong><a href="https://projects.eclipse.org/projects/ee4j.batch">Jakarta Batch</a></strong> (JSR-352):</p>
-<blockquote>
-<p>Batch processing is a pervasive workload pattern, expressed by a distinct application organization and execution model. It is found across virtually every industry, applied to such tasks as statement generation, bank postings, risk evaluation, credit score calculation, inventory management, portfolio optimization, and on and on. Nearly any bulk processing task from any business sector is a candidate for batch processing.<br />
-Batch processing is typified by bulk-oriented, non-interactive, background execution. Frequently long-running, it may be data or computationally intensive, execute sequentially or in parallel, and may be initiated through various invocation models, including ad hoc, scheduled, and on-demand.<br />
-Batch applications have common requirements, including logging, checkpointing, and parallelization. Batch workloads have common requirements, especially operational control, which allow for initiation of, and interaction with, batch instances; such interactions include stop and restart.</p>
-</blockquote>
-<p>One of the typical use case is a import data from different sources and formats to internal database. Below we will design sample application to import data, for example, from  <code>json</code> and <code>xml</code> files to the database and see how well structured it can be.</p>
-<p>Using <strong>Eclipse Red Hat CodeReady Studio plugin</strong>, we can easily design our solution diagram:<br />
-<img src="/img/2020-02-jakarta-batch-import.png" alt="import batch diagram" /></p>
-<p>Jakarta Batch descriptor in this case will looks like:<br />
-<code>META-INF/batch-jobs/hugeImport.xml:</code></p>
-<pre><code class="language-java">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-&lt;job id=&quot;hugeImport&quot; xmlns=&quot;http://xmlns.jcp.org/xml/ns/javaee&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; xsi:schemaLocation=&quot;http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/jobXML_1_0.xsd&quot; version=&quot;1.0&quot;&gt;
-    &lt;step id=&quot;fileSelector&quot; next=&quot;decider&quot;&gt;
-        &lt;batchlet ref=&quot;fileSelectorBatchlet&quot;&gt;
-            &lt;properties&gt;
-                &lt;property name=&quot;path&quot; value=&quot;/tmp/files2import&quot;/&gt;
-            &lt;/properties&gt;
-        &lt;/batchlet&gt;
-    &lt;/step&gt;
-    &lt;decision id=&quot;decider&quot; ref=&quot;myDecider&quot;&gt;
-        &lt;next on=&quot;xml&quot; to=&quot;xmlParser&quot;/&gt;
-        &lt;next on=&quot;json&quot; to=&quot;jsonParser&quot;/&gt;
-    &lt;/decision&gt;
-    &lt;step id=&quot;xmlParser&quot; next=&quot;chunkProcessor&quot;&gt;
-        &lt;batchlet ref=&quot;xmlParserBatchlet&quot;/&gt;
-    &lt;/step&gt;
-    &lt;step id=&quot;jsonParser&quot; next=&quot;chunkProcessor&quot;&gt;
-        &lt;batchlet ref=&quot;jsonParserBatchlet&quot;/&gt;
-    &lt;/step&gt;
-    &lt;step id=&quot;chunkProcessor&quot;&gt;
-        &lt;chunk&gt;
-            &lt;reader ref=&quot;itemReader&quot;/&gt;
-            &lt;processor ref=&quot;itemMockProcessor&quot;/&gt;
-            &lt;writer ref=&quot;itemJpaWriter&quot;/&gt;
-        &lt;/chunk&gt;
-        &lt;partition&gt;
-            &lt;plan partitions=&quot;5&quot;&gt;&lt;/plan&gt;
-        &lt;/partition&gt;
-    &lt;/step&gt;
-&lt;/job&gt;
-</code></pre>
-<p>So, now we need to implement each brick above and try to keep each batchlet independent as much as possible. As you can see from above our sample job consist from:</p>
-<ul>
-<li><strong>fileSelector</strong> - batchlet do file selection based on supported by configuration file extension</li>
-<li><strong>decider</strong> - decision maker, responsible for choosing right parser</li>
-<li><strong>xml\jsonParser</strong> - parser batchlets, responsible for file parsing to a list of items</li>
-<li><strong>chunkProcessor</strong> - items processing chunk(<strong>reader</strong>, optional <strong>processor</strong> and <strong>writer</strong>) with partitioning to boost performance</li>
-</ul>
-<p>Before start with implementation, let's design useful solution to <strong>share state between steps</strong>. Unfortunately, Jakarta Batch Specification does not provide job scoped CDI beans yet (JBeret implementation does, specification doesn't). But we able to use <strong><code>JobContext.set\getTransientUserData()</code></strong> to deal with the current batch context. In our case we want to share <code>File</code> and <code>Queue</code> with  items for processing:</p>
-<pre><code class="language-java">@Named
-public class ImportJobContext {
-    @Inject
-    private JobContext jobContext;
-
-    private Optional&lt;File&gt; file = Optional.empty();
-    private Queue&lt;ImportItem&gt; items = new ConcurrentLinkedQueue&lt;&gt;();
-
-    public Optional&lt;File&gt; getFile() {
-        return getImportJobContext().file;
-    }
-    public void setFile(Optional&lt;File&gt; file) {
-        getImportJobContext().file = file;
-    }
-    public Queue&lt;ImportItem&gt; getItems() {
-        return getImportJobContext().items;
-    }
-
-    private ImportJobContext getImportJobContext() {
-        if (jobContext.getTransientUserData() == null) {
-            jobContext.setTransientUserData(this);
-        }
-        return (ImportJobContext) jobContext.getTransientUserData();
-    }
-}
-</code></pre>
-<p>Now we can inject our custom <strong><code>ImportJobContext</code></strong> to share type-safe state between batchlets. First step is search file for processing by provided in step properties path:</p>
-<pre><code class="language-java">@Named
-public class FileSelectorBatchlet extends AbstractBatchlet {
-
-    @Inject
-    private ImportJobContext jobContext;
-
-    @Inject
-    @BatchProperty
-    private String path;
-
-    @Override
-    public String process() throws Exception {
-        Optional&lt;File&gt; file = Files.walk(Paths.get(path)).filter(Files::isRegularFile).map(Path::toFile).findAny();
-        if (file.isPresent()) {
-            jobContext.setFile(file);
-        }
-        return BatchStatus.COMPLETED.name();
-    }
-}
-</code></pre>
-<p>After we need to make decision about parser, for example, based on extension. Decider just returns file extension as string and then  <strong>batch runtime</strong>  should give control to the corresponding parser batchlet. Please, check <code>&lt;decision id=&quot;decider&quot; ref=&quot;myDecider&quot;&gt;</code> section in the XML batch descriptor above.</p>
-<pre><code class="language-java">@Named
-public class MyDecider implements Decider {
-
-    @Inject
-    private ImportJobContext jobContext;
-
-    @Override
-    public String decide(StepExecution[] ses) throws Exception {
-        if (!jobContext.getFile().isPresent()) {
-            throw new FileNotFoundException();
-        }
-        String name = jobContext.getFile().get().getName();
-        String extension = name.substring(name.lastIndexOf(&quot;.&quot;)+1);
-        return extension;
-    }
-}
-</code></pre>
-<p>ParserBatchlet in turn should parse file using <strong>JSON-B</strong> or <strong>JAXB</strong> depends on type and fill Queue with <strong><code>ImportItem</code></strong> objects. I would like to use <strong><code>ConcurrentLinkedQueue</code></strong> to share items between partitions, but if you need for some other behavior here, you can provide <strong><code>javax.batch.api.partition.PartitionMapper</code></strong> with your own implementation</p>
-<pre><code class="language-java">@Named
-public class JsonParserBatchlet  extends AbstractBatchlet {
-
-    @Inject
-    ImportJobContext importJobContext;
-
-    @Override
-    public String process() throws Exception {
-
-        List&lt;ImportItem&gt; items = JsonbBuilder.create().fromJson(
-                new FileInputStream(importJobContext.getFile().get()),
-                new ArrayList&lt;ImportItem&gt;(){}.getClass().getGenericSuperclass());
-
-        importJobContext.getItems().addAll(items);
-        return BatchStatus.COMPLETED.name();
-    }
-}
-</code></pre>
-<p>ItemReader then will looks as simple as possible, just pool item from the Queue:</p>
-<pre><code class="language-java">@Named
-public class ItemReader  extends AbstractItemReader {
-
-    @Inject
-    ImportJobContext importJobContext;
-
-    @Override
-    public ImportItem readItem() throws Exception {
-
-        return importJobContext.getItems().poll();
-    }
-}
-</code></pre>
-<p>And persist time...</p>
-<pre><code class="language-java">@Named
-public class ItemJpaWriter  extends AbstractItemWriter  {
-
-    @PersistenceContext
-    EntityManager entityManager;
-
-    @Override
-    public void writeItems(List&lt;Object&gt; list) throws Exception {
-        for (Object obj : list) {
-            ImportItem item = (ImportItem) obj;
-            entityManager.merge(item);
-        }
-    }
-}
-</code></pre>
-<p>Actually, this is it! Now we able to easily extend our application with new parsers, processors and writers without any existing code changes,  - just describe new (update existing) flows over Jakarta Batch descriptor.<br />
-Of course, <strong>Jakarta Batch specification</strong> provides much more helpful functionality than i have covered in this post (<strong>Checkpoints</strong>, <strong>Exception Handling</strong>, <strong>Listeners</strong>, <strong>Flow Control</strong>, <strong>Failed job restarting</strong> etc.), but even it enough to see how simple, power and well structured it can be.</p>
-<p><strong>Note!</strong> <strong>Wildfly Application Server</strong> implements Jakarta Batch specification through the <strong>batch-jberet subsystem</strong>. By default last one configured to use only <strong>10</strong> threads.</p>
-<pre><code class="language-xml">&lt;subsystem xmlns=&quot;urn:jboss:domain:batch-jberet:2.0&quot;&gt;
-    ...
-    &lt;thread-pool name=&quot;batch&quot;&gt;
-        &lt;max-threads count=&quot;10&quot;/&gt;
-        &lt;keepalive-time time=&quot;30&quot; unit=&quot;seconds&quot;/&gt;
-    &lt;/thread-pool&gt;
-&lt;/subsystem&gt;
-</code></pre>
-<p>So, if you are planing intensive usage of <strong>Batch runtime</strong> - feel free to increase this parameter:</p>
-<pre><code class="language-bash">/subsystem=batch-jberet/thread-pool=batch/:write-attribute(name=max-threads, value=100)
-</code></pre>
-<p>Described sample application source code available on <a href="https://github.com/kostenkoserg/ee-batch-processing-examples">GitHub</a></p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2020/03/data-processing-with-jakarta-ee-batch-api.html#disqus_thread" data-disqus-identifier="blog/2020/03/data-processing-with-jakarta-ee-batch-api.html">Comments</a></p>
-				<hr/>
 
 		<ul class="pager">
 				<li class="previous"><a href="https://kostenko.org/">Previous</a></li>
-			<li">Page: 2/10 (<a href="../archive.html">archive</a>)</li>
+			<li">Page: 2/11 (<a href="../archive.html">archive</a>)</li>
 				<li class="next"><a href="https://kostenko.org/3">Next</a></li>
 		</ul>
 		</div>

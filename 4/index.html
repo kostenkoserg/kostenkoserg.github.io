@@ -73,6 +73,7 @@
 										<li><a href="../tags/ci.html">ci</a></li>
 										<li><a href="../tags/openapi.html">openapi</a></li>
 										<li><a href="../tags/microprofile.html">microprofile</a></li>
+										<li><a href="../tags/oracle.html">oracle</a></li>
 										<li><a href="../tags/jberet.html">jberet</a></li>
 										<li><a href="../tags/github.html">github</a></li>
 										<li><a href="../tags/activemq.html">activemq</a></li>
@@ -114,6 +115,35 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2020/01/infinispan-distributed-cache-issues.html"><h1>ISPN000299: Unable to acquire lock after 15 seconds for key</h1></a>
+				<p>05 February 2020</p>
+  			<p><p>Distributed cache is a wide used technology that provides useful possibilities to share state whenever it necessary. Wildfly supports distributed cache through <a href="https://infinispan.org/">infinispan</a> subsystem and actually it works well, but in case height load and concurrent data access you may run into a some issues like:</p>
+<ul>
+<li>ISPN000299: Unable to acquire lock after 15 seconds for key</li>
+<li>ISPN000924: beforeCompletion() failed for SynchronizationAdapter</li>
+<li>ISPN000160: Could not complete injected transaction.</li>
+<li>ISPN000136: Error executing command PrepareCommand on Cache</li>
+<li>ISPN000476: Timed out waiting for responses for request</li>
+<li>ISPN000482: Cannot create remote transaction GlobalTx</li>
+</ul>
+<p>and others.</p>
+<p>In my case i had two node cluster with next infinispan configuration:</p>
+<pre><code class="language-java">/profile=full-ha/subsystem=infinispan/cache-container=myCache/distributed-cache=userdata:add()
+/profile=full-ha/subsystem=infinispan/cache-container=myCache/distributed-cache=userdata/component=transaction:add(mode=BATCH)
+</code></pre>
+<p><strong>distributed</strong> cache above means that number of copies are maintained, however this is typically less than the number of nodes in the cluster. From other point of view, to provide redundancy and fault tolerance you should configure enough amount of <strong>owners</strong> and obviously <strong>2</strong> is the necessary minimum here. So, in case usage small cluster and keep in mind the <a href="https://issues.redhat.com/browse/JDG-1318">BUG</a>, - i recommend use <strong>replicated-cache</strong> (all nodes in a cluster hold all keys)</p>
+<p>Please, compare <a href="https://infinispan.org/docs/dev/titles/clustering/clustering.html#which_cache_mode_should_i_use">Which cache mode should I use?</a> with your needs.</p>
+<p>Solution:</p>
+<pre><code class="language-java">/profile=full-ha/subsystem=infinispan/cache-container=myCache/distributed-cache=userdata:remove()
+/profile=full-ha/subsystem=infinispan/cache-container=myCache/replicated-cache=userdata:add()
+/profile=full-ha/subsystem=infinispan/cache-container=myCache/replicated-cache=userdata/component=transaction:add(mode=NON_DURABLE_XA, locking=OPTIMISTIC)
+</code></pre>
+<p>Note!, <code>NON_DURABLE_XA</code> doesn't keep any transaction recovery information and if you still getting <code>Unable to acquire lock</code> errors on application critical data - you can try to resolve it by some <strong>retry</strong> policy and <strong>fail-fast</strong> transaction:</p>
+<pre><code class="language-java">/profile=full-ha/subsystem=infinispan/cache-container=myCache/distributed-cache=userdata/component=locking:write-attribute(name=acquire-timeout, value=0)
+</code></pre>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2020/01/infinispan-distributed-cache-issues.html#disqus_thread" data-disqus-identifier="blog/2020/01/infinispan-distributed-cache-issues.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2020/01/sql-spying-with-wildfly.html"><h1>Logging for JPA SQL queries with Wildfly</h1></a>
 				<p>10 January 2020</p>
   			<p><p>Logging for real SQL queries is very important in case using any ORM solution, - as you never can be sure <strong>which</strong> and <strong>how many</strong> requests will send JPA provider to do <code>find</code>, <code>merge</code>, <code>query</code> or some other operation.</p>
@@ -311,41 +341,10 @@ WARN  [org.apache.activemq.artemis.core.client] (Thread-1 (ActiveMQ-client-globa
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2019/11/jakartaee-understanding-jms-transactions.html#disqus_thread" data-disqus-identifier="blog/2019/11/jakartaee-understanding-jms-transactions.html">Comments</a></p>
 				<hr/>
-				<a href="https://kostenko.org/blog/2019/11/java-primitive-types-calculation.html"><h1>Never use Java primitives for math calculation</h1></a>
-				<p>08 November 2019</p>
-  			<p><p>This is well known stuff about representation of <a href="https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html">Floating point types in java</a>, but time from time each developer can forget about</p>
-<pre><code class="language-java">@Test
-public void primitiveTest() {
-
-    // right way:
-    BigDecimal bgDcml = BigDecimal.valueOf(100000f).multiply(BigDecimal.valueOf(750f)).multiply(BigDecimal.valueOf(15f)).setScale(0);
-    BigDecimal bgDcml2 = BigDecimal.valueOf(0.04d).multiply(BigDecimal.valueOf(15.0d));
-
-    // wrong way:
-    float flt = 100000f * 750f * 15f;
-    float flt2 = 0.04f * 15.0f;
-
-    System.out.println(&quot;BigDecimal (correct): &quot; + bgDcml);
-    System.out.println(String.format(&quot;Float (incorrect): %s (%s)&quot;, flt, new BigDecimal(flt)));
-    System.out.println(&quot;BigDecimal (correct): &quot; + bgDcml2);
-    System.out.println(String.format(&quot;Float (incorrect): %s&quot;, flt2));
-}
-</code></pre>
-<pre><code class="language-java">-------------------------------------------------------
- T E S T S
--------------------------------------------------------
-BigDecimal (correct): 1125000000
-Float (incorrect): 1.12499994E9 (1124999936)
-BigDecimal (correct): 0.600
-Float (incorrect): 0.59999996
-</code></pre>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2019/11/java-primitive-types-calculation.html#disqus_thread" data-disqus-identifier="blog/2019/11/java-primitive-types-calculation.html">Comments</a></p>
-				<hr/>
 
 		<ul class="pager">
 				<li class="previous"><a href="https://kostenko.org/3">Previous</a></li>
-			<li">Page: 4/10 (<a href="../archive.html">archive</a>)</li>
+			<li">Page: 4/11 (<a href="../archive.html">archive</a>)</li>
 				<li class="next"><a href="https://kostenko.org/5">Next</a></li>
 		</ul>
 		</div>

@@ -6,13 +6,13 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Пт, 2 окт 2020 00:27:47 +0300</pubDate>
-    <lastBuildDate>Пт, 2 окт 2020 00:27:47 +0300</lastBuildDate>
+    <pubDate>вт, 13 окт. 2020 11:06:37 +0300</pubDate>
+    <lastBuildDate>вт, 13 окт. 2020 11:06:37 +0300</lastBuildDate>
 
     <item>
       <title>Проблемы с подключением JMX Wildfly (очень медленно и прекращается)</title>
       <link>https://kostenko.org/blog/2019/08/wildfly-jconsole-mbeans-list-problem.html</link>
-      <pubDate>Пн, 19 авг 2019 00:00:00 +0300</pubDate>
+      <pubDate>пн, 19 авг. 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/08/wildfly-jconsole-mbeans-list-problem.html</guid>
       	<description>
 	&lt;p&gt;JMX (Java Management Extensions ) - это технология, которая предоставляет нам возможность мониторинга приложеий (серверов приложения) с помощью &lt;strong&gt;MBeans (Managed Bean)&lt;/strong&gt; объектов.&lt;br /&gt;
@@ -44,7 +44,7 @@ TRUNCATE TABLE JOB_INSTANCE CASCADE;
     <item>
       <title>Jakarta EE мультимодульный шаблон приложения</title>
       <link>https://kostenko.org/blog/2019/08/ee-application-multi-module-template.html</link>
-      <pubDate>Чт, 8 авг 2019 00:00:00 +0300</pubDate>
+      <pubDate>чт, 8 авг. 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/08/ee-application-multi-module-template.html</guid>
       	<description>
 	&lt;p&gt;В этом посту я поделюсь простым и полезным &lt;strong&gt;gradle&lt;/strong&gt; шаблоном для создания мультимодульного Jakarta EE приложения. Мы реализуем один из типичных, который состоит из REST контроллера (&lt;strong&gt;module1&lt;/strong&gt;) и некоторой основной логики (&lt;strong&gt;module2&lt;/strong&gt;). Общая картина архитектуры нашего приложения выглядит вот так:&lt;/p&gt;
@@ -144,7 +144,7 @@ public class TestServiceImpl implements TestService {
     <item>
       <title>Как споймать &apos;убитые&apos; сигналы в Java</title>
       <link>https://kostenko.org/blog/2019/08/java-catch-os-signals.html</link>
-      <pubDate>Ср, 7 авг 2019 00:00:00 +0300</pubDate>
+      <pubDate>ср, 7 авг. 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/08/java-catch-os-signals.html</guid>
       	<description>
 	&lt;p&gt;Вы можете отправлять разные сигналы в ваше приложение, используя команду &lt;strong&gt;kill -l&lt;/strong&gt;. По умолчанию &lt;strong&gt;kill&lt;/strong&gt; будет отправлять сигнао &lt;code&gt;TERM&lt;/code&gt;. Java по умолчанию ловит несколько типов сигналов, например&lt;/p&gt;
@@ -201,7 +201,7 @@ public class TestServiceImpl implements TestService {
     <item>
       <title>Wildfly. Настройка показателей балансировки нагрузки</title>
       <link>https://kostenko.org/blog/2019/08/wildfly-load-balancing-metrics.html</link>
-      <pubDate>Вт, 6 авг 2019 00:00:00 +0300</pubDate>
+      <pubDate>вт, 6 авг. 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/08/wildfly-load-balancing-metrics.html</guid>
       	<description>
 	&lt;p&gt;Ранее я писал о &lt;a href=&quot;https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html&quot;&gt;Кластер доменного режима Wildfly и балансировка нагрузки из коробки&lt;/a&gt;. Но что, если мы хотим выполнить балансировку зависящей от конкретного поведения сервера?&lt;/p&gt;
@@ -232,7 +232,7 @@ public class TestServiceImpl implements TestService {
     <item>
       <title>Встроенный сервер Jetty урезает ответы</title>
       <link>https://kostenko.org/blog/2019/08/embedded-jetty-server-cut-responses.html</link>
-      <pubDate>Вт, 6 авг 2019 00:00:00 +0300</pubDate>
+      <pubDate>вт, 6 авг. 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/08/embedded-jetty-server-cut-responses.html</guid>
       	<description>
 	&lt;p&gt;Jetty сервер имеет множество вариантов конфигурации. Один из них, это &lt;code&gt;OutputBufferSize&lt;/code&gt;&lt;/p&gt;
@@ -246,7 +246,7 @@ httpConfig.setOutputBufferSize(1024);
     <item>
       <title>WFLYEJB0054: Failed to marshal EJB parameters</title>
       <link>https://kostenko.org/blog/2019/08/WFLYEJB0054.html</link>
-      <pubDate>Пн, 5 авг 2019 00:00:00 +0300</pubDate>
+      <pubDate>пн, 5 авг. 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/08/WFLYEJB0054.html</guid>
       	<description>
 	&lt;p&gt;Обычно ошибка &lt;code&gt;WFLYEJB0054: Failed to marshal EJB parameters&lt;/code&gt; может быть вызвана по следующим причинам:&lt;/p&gt;
@@ -261,7 +261,7 @@ httpConfig.setOutputBufferSize(1024);
     <item>
       <title>SQL хак. Вставить, если не сущетсвует</title>
       <link>https://kostenko.org/blog/2019/07/sql-trick-insert-if-noe-exists.html</link>
-      <pubDate>Ср, 24 июл 2019 00:00:00 +0300</pubDate>
+      <pubDate>ср, 24 июл. 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/07/sql-trick-insert-if-noe-exists.html</guid>
       	<description>
 	&lt;p&gt;Следующий SQL хак позволит вам выполнить условный &lt;code&gt;INSERT&lt;/code&gt; для вашего запроса.&lt;/p&gt;
@@ -276,7 +276,7 @@ httpConfig.setOutputBufferSize(1024);
     <item>
       <title>JMS обнаружение дублирующихся сообщений с Wildfly</title>
       <link>https://kostenko.org/blog/2019/07/wildfly-jms-duplicate-detection.html</link>
-      <pubDate>Пт, 19 июл 2019 00:00:00 +0300</pubDate>
+      <pubDate>пт, 19 июл. 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/07/wildfly-jms-duplicate-detection.html</guid>
       	<description>
 	&lt;p&gt;Для поддержки JMS спецификация Wildfly использует Apache ActiveMQ Artemis в подсистеме active-mq. Последнее предоставляет механизм фильтрации повторяющихся сообщений без изменения кода приложения.&lt;/p&gt;
@@ -359,7 +359,7 @@ CoreMessage[messageID=1505,durable=true,userID=3d27afde-a9fa-11e9-af5d-0242e352e
     <item>
       <title>Jenkins. Приятно иметь плагины</title>
       <link>https://kostenko.org/blog/2019/07/jenkins-nice-to-have-plugins.html</link>
-      <pubDate>Пт, 5 июл 2019 00:00:00 +0300</pubDate>
+      <pubDate>пт, 5 июл. 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/07/jenkins-nice-to-have-plugins.html</guid>
       	<description>
 	&lt;p&gt;Jenkins - главный инструмент автоматизации с открытым исходным кодом, который предоставляет множество плагинов для улучшения вашего CI.&lt;br /&gt;
@@ -382,7 +382,7 @@ CoreMessage[messageID=1505,durable=true,userID=3d27afde-a9fa-11e9-af5d-0242e352e
     <item>
       <title>Взаимная блокировка подсистемы Wildfly ActiveMQ</title>
       <link>https://kostenko.org/blog/2019/06/wildfly-activemq-deadlock.html</link>
-      <pubDate>Сб, 29 июн 2019 00:00:00 +0300</pubDate>
+      <pubDate>сб, 29 июн. 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/06/wildfly-activemq-deadlock.html</guid>
       	<description>
 	&lt;p&gt;В последнее время у меня была необычно высокая загрузка ЦП на случайном экземпляре Wildfly cluster.&lt;br /&gt;
@@ -412,7 +412,7 @@ Found a total of 1 deadlock.
     <item>
       <title>Как использовать пользовательский ClassLoader для загрузки JAR-файлов во время выполнения</title>
       <link>https://kostenko.org/blog/2019/06/runtime-class-loading.html</link>
-      <pubDate>Пт, 28 июн 2019 00:00:00 +0300</pubDate>
+      <pubDate>пт, 28 июн. 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/06/runtime-class-loading.html</guid>
       	<description>
 	&lt;p&gt;Для загрузки классов во время выполнения java используют механизм ClassLoader, который основан на нескольких основных принципах:&lt;/p&gt;
@@ -454,7 +454,7 @@ URLClassLoader childClassLoader = new URLClassLoader(urls, ClassLoader.getSystem
     <item>
       <title>Разработка DSL API на Java</title>
       <link>https://kostenko.org/blog/2019/05/design-dsl-api-java.html</link>
-      <pubDate>Пн, 27 мая 2019 00:00:00 +0300</pubDate>
+      <pubDate>пн, 27 мая 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/05/design-dsl-api-java.html</guid>
       	<description>
 	&lt;p&gt;Хорошо разработанный API - очень важен, так как его будут использовать не только вы, но и кто-то другой, если вы ожидаете. По-этому, что бы построить читаемый и хорошо написанный DLS(domain specific language) на Java, обычно используют паттерн Builder с несколькими простыми правилами:&lt;/p&gt;
@@ -521,7 +521,7 @@ URLClassLoader childClassLoader = new URLClassLoader(urls, ClassLoader.getSystem
     <item>
       <title>Моё видео про кластеризацию доменного режима Wildfly</title>
       <link>https://kostenko.org/blog/2019/05/wildfly-domain-mode-cluster-video.html</link>
-      <pubDate>Чт, 2 мая 2019 00:00:00 +0300</pubDate>
+      <pubDate>чт, 2 мая 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/05/wildfly-domain-mode-cluster-video.html</guid>
       	<description>
 	
@@ -537,7 +537,7 @@ URLClassLoader childClassLoader = new URLClassLoader(urls, ClassLoader.getSystem
     <item>
       <title>Кластер доменного режима Wildfly и балансировка нагрузки из коробки</title>
       <link>https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html</link>
-      <pubDate>Пн, 15 апр 2019 00:00:00 +0300</pubDate>
+      <pubDate>пн, 15 апр. 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/04/wildfly-cluster-domain-mode.html</guid>
       	<description>
 	&lt;p&gt;Wildfly Application Server предоставляет нам два возможных режима настройки кластерной среды для приложений Java EE.&lt;/p&gt;
@@ -613,7 +613,7 @@ public class ClusterDemoEndpoint {
     <item>
       <title>Java EE CDI события. Динамический квалификатор.</title>
       <link>https://kostenko.org/blog/2019/04/java-ee-cdi-events.html</link>
-      <pubDate>Пн, 8 апр 2019 00:00:00 +0300</pubDate>
+      <pubDate>пн, 8 апр. 2019 00:00:00 +0300</pubDate>
       <guid isPermaLink="false">blog/2019/04/java-ee-cdi-events.html</guid>
       	<description>
 	&lt;p&gt;Java ЕЕ предоставляет нам  хороший механизм для обработки событий, который является частью CDI для спецификации Java EE. Динамический CDI спецификатор может быть полезен для обработки событий, например, в domain driven архитектуре или при маршрутизации сообщений веб-сокета и т.д.&lt;/p&gt;
@@ -745,7 +745,7 @@ public class UserObserver {
     <item>
       <title>Wildfly обработка больших запросов</title>
       <link>https://kostenko.org/blog/2019/03/wildfly-large-request.html</link>
-      <pubDate>Вт, 26 мар 2019 00:00:00 +0200</pubDate>
+      <pubDate>вт, 26 мар. 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/03/wildfly-large-request.html</guid>
       	<description>
 	&lt;p&gt;По умолчанию подсистема Undertow в Wildfly AS настроена на обработку запросов с &lt;code&gt;max-post-size&lt;/code&gt;= 10MB. В случае, если ваш запрос, больше, чем 10 МБ, вы получите&lt;/p&gt;
@@ -772,7 +772,7 @@ public class UserObserver {
     <item>
       <title>Видео знакомство с Hibernate Search</title>
       <link>https://kostenko.org/blog/2019/03/hibernate-search-intro-video.html</link>
-      <pubDate>Ср, 20 мар 2019 00:00:00 +0200</pubDate>
+      <pubDate>ср, 20 мар. 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/03/hibernate-search-intro-video.html</guid>
       	<description>
 	
@@ -788,7 +788,7 @@ public class UserObserver {
     <item>
       <title>SQL хак. Условный COUNT для выражения  SELECT</title>
       <link>https://kostenko.org/blog/2019/03/sql-trick-conditional-count.html</link>
-      <pubDate>Сб, 16 мар 2019 00:00:00 +0200</pubDate>
+      <pubDate>сб, 16 мар. 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/03/sql-trick-conditional-count.html</guid>
       	<description>
 	&lt;p&gt;Для выполнения условной логики в SQL &lt;code&gt;SELECT&lt;/code&gt;, можно использовать выражение &lt;code&gt;CASE&lt;/code&gt;. Следующий SQL хак  позволит вам выполнить условный &lt;code&gt;count()&lt;/code&gt; для вашего запроса.&lt;/p&gt;
@@ -821,7 +821,7 @@ Number result = em.createQuery(query).getSingleResult();
     <item>
       <title>Как поднять ssh тоннель на Linux</title>
       <link>https://kostenko.org/blog/2019/03/linux-build-ssh-tunnel.html</link>
-      <pubDate>Пт, 15 мар 2019 00:00:00 +0200</pubDate>
+      <pubDate>пт, 15 мар. 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/03/linux-build-ssh-tunnel.html</guid>
       	<description>
 	&lt;p&gt;SSH тоннель позволяет перенаправлять локальный трафик через SSH на удаленный хост. Может быть использован, например, для соедиения с удаленным приложением, которое было запущено на локальном порту удаленного хоста.&lt;/p&gt;
@@ -838,7 +838,7 @@ Number result = em.createQuery(query).getSingleResult();
     <item>
       <title>Hibernate Search вступление. Развертывание на WildFly.</title>
       <link>https://kostenko.org/blog/2019/02/wildfly-hibernate-search.html</link>
-      <pubDate>Чт, 21 фев 2019 00:00:00 +0200</pubDate>
+      <pubDate>чт, 21 февр. 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/02/wildfly-hibernate-search.html</guid>
       	<description>
 	&lt;p&gt;Hibernate  Search - это мощное решение для реализации возможностей полнотекстового поиска (как google или  amazon) в вашем ЕЕ приложении. Под капотом, для построения индекса, будет использоваться Apache Lucene напрямую, или через Elasticsearch. Hibernate Search может быть легко интегрирован с JPA, Hibernate ORM, Infinispan или другими источниками. Если вы используете Wildfly - вам повезло, - Hibernate Search с ним уже интегрирован.&lt;/p&gt;
@@ -1102,7 +1102,7 @@ task run() {
     <item>
       <title>Как сгенерировать ssh ключи в Linux</title>
       <link>https://kostenko.org/blog/2019/02/linux-generate-private-shh-key.html</link>
-      <pubDate>Ср, 20 фев 2019 00:00:00 +0200</pubDate>
+      <pubDate>ср, 20 февр. 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/02/linux-generate-private-shh-key.html</guid>
       	<description>
 	&lt;p&gt;Часто, по соображения безопасности или юзабилити, предпочтительнее использовать ssh ключи вместо паролей. Для этого нужно:&lt;/p&gt;
@@ -1133,7 +1133,7 @@ PermitRootLogin no
     <item>
       <title>Моё первое видео</title>
       <link>https://kostenko.org/blog/2019/02/github-jbake-blog-video.html</link>
-      <pubDate>Сб, 16 фев 2019 00:00:00 +0200</pubDate>
+      <pubDate>сб, 16 февр. 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/02/github-jbake-blog-video.html</guid>
       	<description>
 	
@@ -1149,7 +1149,7 @@ PermitRootLogin no
     <item>
       <title>Jbake. Добавляем теги, поддержку нескольких языков и аналитику</title>
       <link>https://kostenko.org/blog/2019/01/jbake-blog-improve.html</link>
-      <pubDate>Сб, 19 янв 2019 00:00:00 +0200</pubDate>
+      <pubDate>сб, 19 янв. 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/01/jbake-blog-improve.html</guid>
       	<description>
 	&lt;h4&gt;1. Теги&lt;/h4&gt;
@@ -1230,7 +1230,7 @@ P.P.S. Код этого блога доступен на &lt;a href=&quot;https
     <item>
       <title>Как поднять блог на github и jbake</title>
       <link>https://kostenko.org/blog/2019/01/github-jbake-blog.html</link>
-      <pubDate>Пт, 18 янв 2019 00:00:00 +0200</pubDate>
+      <pubDate>пт, 18 янв. 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/01/github-jbake-blog.html</guid>
       	<description>
 	&lt;p&gt;Развернуть свой персональный блог, блог компании или лендинг проекта используя &lt;a href=&quot;https://pages.github.com/&quot;&gt;github&lt;/a&gt; - задача, как оказалось, несложная и не требующая особых навыков. Здесь я, максимально конструктивно, постараюсь изложить основные шаги, которые необходимо сделать для того, что бы обзавестись личным блогом на небезизвестном ресурсе.&lt;/p&gt;
@@ -1309,7 +1309,7 @@ $ /opt/jbake/bin/jbake -i
     <item>
       <title>Первая запись в блоге</title>
       <link>https://kostenko.org/blog/2019/01/start-blogging.html</link>
-      <pubDate>Чт, 17 янв 2019 00:00:00 +0200</pubDate>
+      <pubDate>чт, 17 янв. 2019 00:00:00 +0200</pubDate>
       <guid isPermaLink="false">blog/2019/01/start-blogging.html</guid>
       	<description>
 	&lt;p&gt;Мысли о собственном блоге посещали меня уже давно и достаточно регулярно, но в силу различных причин реализация задуманного откладывалась. Среди причин было и желание реализовать собственный движок для блогов (зачем-то), и поиск подходящих стилей (ведь так важно), и знакомство со специализированными решениями: wordpress, wix, blogger и другими...&lt;/p&gt;
