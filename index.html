@@ -115,6 +115,42 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2020/11/wildfly-infinspan-scaling.html"><h1>Wildfly/Infinispan domain. Keep distributed cache on separate nodes</h1></a>
+				<p>03 November 2020</p>
+  			<p><p>Previously i wrote about development of Jakarta EE application using <a href="https://kostenko.org/blog/2020/08/wildfly-infinspan.html">distributed cache with Wildfly and Infinispan</a>. This solution has a good fit for a small clustered environments where data distribution between nodes will not costs too much. In case you are looking for clustered environment where application scaling should have minimum impact on cache and vice versa, but by some reason you wouldn't like to use a separate infinispan-server cluster as <strong>remote-cache-container</strong> then next topology can be a solution:<br />
+<img src="/img/2020-11-cache-server-group.png" alt="cache-server-group" /></p>
+<p>To make it work we need to configure <strong>distributed-cache</strong> for two server groups and provide <strong>zero capacity-factor</strong> for one of them. Below is simple configuration example:</p>
+<pre><code class="language-bash"># clone current profile
+/profile=full-ha:clone(to-profile=full-ha-cache)
+# Create cache server group based on new profile
+/server-group=cache-servers:add(profile=full-ha-cache, socket-binding-group=full-ha-sockets)
+# Add cache container and distributed cache for both profiles
+/profile=full-ha/subsystem=infinispan/cache-container=mycachecontainer:add(statistics-enabled=true)
+/profile=full-ha-cache/subsystem=infinispan/cache-container=mycachecontainer:add(statistics-enabled=true)
+/profile=ful-ha-cache/subsystem=infinispan/cache-container=mycachecontainer/distributed-cache=mycache:add()
+/profile=full-ha/subsystem=infinispan/cache-container=mycachecontainer/distributed-cache=mycache:add()
+# Create cache servers
+/host=master/server-config=cache1:add(group=cache-servers,socket-binding-port-offset=500)
+/host=master/server-config=cache1:start(blocking=true)
+/host=master/server-config=cache2:add(group=cache-servers,socket-binding-port-offset=600)
+/host=master/server-config=cache2:start(blocking=true)
+# Configure ZERO capacity for profile which we will use for application
+/profile=full-ha/subsystem=infinispan/cache-container=mycachecontainer/distributed-cache=mycache:write-attribute(name=capacity-factor, value=0)
+# Provide transport
+/profile=full-ha/subsystem=infinispan/cache-container=mycachecontainer/transport=jgroups:add()
+/profile=ful-ha-cache/subsystem=infinispan/cache-container=mycachecontainer/transport=jgroups:add()
+</code></pre>
+<p>Now let's deploy our application on two server groups</p>
+<pre><code class="language-bash">deploy jcache-examples.war --server-groups=backend-servers,cache-servers
+</code></pre>
+<p>You can check cached <strong>number-of-entries</strong> on each server by</p>
+<pre><code class="language-bash">/host=master/server=backend1/subsystem=infinispan/cache-container=mycachecontainer/distributed-cache=mycache:read-resource(include-runtime=true)
+/host=master/server=cache1/subsystem=infinispan/cache-container=mycachecontainer/distributed-cache=mycache:read-resource(include-runtime=true)
+</code></pre>
+<p>And be sure that application backend-servers will always show <code>&quot;number-of-entries&quot; =&gt; 0</code></p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2020/11/wildfly-infinspan-scaling.html#disqus_thread" data-disqus-identifier="blog/2020/11/wildfly-infinspan-scaling.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2020/10/jpa-ora-01795-hibernate-interceptor.html"><h1>JPA and &quot;ORA-01795: maximum number of expressions in a list is 1000 error&quot; workaround</h1></a>
 				<p>13 October 2020</p>
   			<p><p>Oracle RDBMS has a known <strong>1000 elements</strong> limitation on count of parameters for the <strong><code>IN</code></strong> clause.</p>

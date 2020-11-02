@@ -6,9 +6,49 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Tue, 13 Oct 2020 12:15:34 +0300</pubDate>
-    <lastBuildDate>Tue, 13 Oct 2020 12:15:34 +0300</lastBuildDate>
+    <pubDate>Tue, 3 Nov 2020 00:36:19 +0200</pubDate>
+    <lastBuildDate>Tue, 3 Nov 2020 00:36:19 +0200</lastBuildDate>
 
+    <item>
+      <title>Wildfly/Infinispan domain. Keep distributed cache on separate nodes</title>
+      <link>https://kostenko.org/blog/2020/11/wildfly-infinspan-scaling.html</link>
+      <pubDate>Tue, 3 Nov 2020 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2020/11/wildfly-infinspan-scaling.html</guid>
+      	<description>
+	&lt;p&gt;Previously i wrote about development of Jakarta EE application using &lt;a href=&quot;https://kostenko.org/blog/2020/08/wildfly-infinspan.html&quot;&gt;distributed cache with Wildfly and Infinispan&lt;/a&gt;. This solution has a good fit for a small clustered environments where data distribution between nodes will not costs too much. In case you are looking for clustered environment where application scaling should have minimum impact on cache and vice versa, but by some reason you wouldn&apos;t like to use a separate infinispan-server cluster as &lt;strong&gt;remote-cache-container&lt;/strong&gt; then next topology can be a solution:&lt;br /&gt;
+&lt;img src=&quot;/img/2020-11-cache-server-group.png&quot; alt=&quot;cache-server-group&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;To make it work we need to configure &lt;strong&gt;distributed-cache&lt;/strong&gt; for two server groups and provide &lt;strong&gt;zero capacity-factor&lt;/strong&gt; for one of them. Below is simple configuration example:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# clone current profile
+/profile=full-ha:clone(to-profile=full-ha-cache)
+# Create cache server group based on new profile
+/server-group=cache-servers:add(profile=full-ha-cache, socket-binding-group=full-ha-sockets)
+# Add cache container and distributed cache for both profiles
+/profile=full-ha/subsystem=infinispan/cache-container=mycachecontainer:add(statistics-enabled=true)
+/profile=full-ha-cache/subsystem=infinispan/cache-container=mycachecontainer:add(statistics-enabled=true)
+/profile=ful-ha-cache/subsystem=infinispan/cache-container=mycachecontainer/distributed-cache=mycache:add()
+/profile=full-ha/subsystem=infinispan/cache-container=mycachecontainer/distributed-cache=mycache:add()
+# Create cache servers
+/host=master/server-config=cache1:add(group=cache-servers,socket-binding-port-offset=500)
+/host=master/server-config=cache1:start(blocking=true)
+/host=master/server-config=cache2:add(group=cache-servers,socket-binding-port-offset=600)
+/host=master/server-config=cache2:start(blocking=true)
+# Configure ZERO capacity for profile which we will use for application
+/profile=full-ha/subsystem=infinispan/cache-container=mycachecontainer/distributed-cache=mycache:write-attribute(name=capacity-factor, value=0)
+# Provide transport
+/profile=full-ha/subsystem=infinispan/cache-container=mycachecontainer/transport=jgroups:add()
+/profile=ful-ha-cache/subsystem=infinispan/cache-container=mycachecontainer/transport=jgroups:add()
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now let&apos;s deploy our application on two server groups&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;deploy jcache-examples.war --server-groups=backend-servers,cache-servers
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;You can check cached &lt;strong&gt;number-of-entries&lt;/strong&gt; on each server by&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;/host=master/server=backend1/subsystem=infinispan/cache-container=mycachecontainer/distributed-cache=mycache:read-resource(include-runtime=true)
+/host=master/server=cache1/subsystem=infinispan/cache-container=mycachecontainer/distributed-cache=mycache:read-resource(include-runtime=true)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And be sure that application backend-servers will always show &lt;code&gt;&amp;quot;number-of-entries&amp;quot; =&amp;gt; 0&lt;/code&gt;&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>JPA and &quot;ORA-01795: maximum number of expressions in a list is 1000 error&quot; workaround</title>
       <link>https://kostenko.org/blog/2020/10/jpa-ora-01795-hibernate-interceptor.html</link>

@@ -6,8 +6,8 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>вт, 13 окт. 2020 12:15:41 +0300</pubDate>
-    <lastBuildDate>вт, 13 окт. 2020 12:15:41 +0300</lastBuildDate>
+    <pubDate>вт, 3 нояб. 2020 00:36:28 +0200</pubDate>
+    <lastBuildDate>вт, 3 нояб. 2020 00:36:28 +0200</lastBuildDate>
 
     <item>
       <title>Проблемы с подключением JMX Wildfly (очень медленно и прекращается)</title>
