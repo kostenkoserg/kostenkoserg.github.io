@@ -6,9 +6,89 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Tue, 3 Nov 2020 00:36:19 +0200</pubDate>
-    <lastBuildDate>Tue, 3 Nov 2020 00:36:19 +0200</lastBuildDate>
+    <pubDate>Fri, 27 Nov 2020 10:14:06 +0200</pubDate>
+    <lastBuildDate>Fri, 27 Nov 2020 10:14:06 +0200</lastBuildDate>
 
+    <item>
+      <title>ORA-01795 and JPA function workaround</title>
+      <link>https://kostenko.org/blog/2020/11/ora-01795-jpa-function-workaround.html</link>
+      <pubDate>Fri, 27 Nov 2020 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2020/11/ora-01795-jpa-function-workaround.html</guid>
+      	<description>
+	&lt;p&gt;Few posts ago i wrote about Hibernate Interceptor to solve &lt;strong&gt;&lt;a href=&quot;https://kostenko.org/blog/2020/10/jpa-ora-01795-hibernate-interceptor.html&quot;&gt;ORA-01795: maximum number of expressions in a list is 1000 error&lt;/a&gt;&lt;/strong&gt;. This way can be very helpful in case you got this limitation, but by some reasons not able to perform refactoring.&lt;/p&gt;
+&lt;p&gt;Another way to get it done with  &lt;strong&gt;JPQL&lt;/strong&gt; is a &lt;strong&gt;JPA function()&lt;/strong&gt;. We used similar approach to implement &lt;a href=&quot;https://kostenko.org/blog/2020/10/jpa-count-over.html&quot;&gt;JPA paging with COUNT(*) OVER()&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;So, let&apos;s see how less code we need to get it work with custom &lt;em&gt;&lt;code&gt;Dialect&lt;/code&gt;&lt;/em&gt;  workaround.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Custom dialect:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public class MyOraDialect extends Oracle10gDialect {
+    public MyOraDialect () {
+        super();
+        // sql tuples workaround
+        registerFunction( &amp;quot;safeTupleIn&amp;quot;, new VarArgsSQLFunction( StandardBasicTypes.INTEGER, &amp;quot;(&amp;quot;, &amp;quot;,0),(&amp;quot;, &amp;quot;,0)&amp;quot;));
+        // custom SQLFunction workaround
+        registerFunction( &amp;quot;safeIn&amp;quot;, new SafeInFunction());
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;Usage example:&lt;/code&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Test
+public void safeTupleIn1000Test() throws Exception {
+     EntityManager em = Persistence.createEntityManagerFactory(&amp;quot;myDSTestOra&amp;quot;).createEntityManager();
+     // this.generateTestData(em);
+     ...
+     Query query =  em.createQuery(&amp;quot;SELECT b as post FROM OraBlogEntity b where (id, 0) in (function(&apos;safeTupleIn&apos;,:ids))&amp;quot;, Tuple.class);
+     query.setParameter(&amp;quot;ids&amp;quot;, idsList);
+     List&amp;lt;Tuple&amp;gt; tpList = query.getResultList();
+     System.out.println(tpList.size());
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;or bit cleaner:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;...
+Query query =  em.createQuery(&amp;quot;SELECT b as post FROM OraBlogEntity b where id in (function(&apos;safeIn&apos;, id, :ids))&amp;quot;, Tuple.class);
+query.setParameter(&amp;quot;ids&amp;quot;, idsList);
+...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Result SQL in this case SQL tuples will looks like&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Hibernate: select orablogent0_.id as id1_0_, orablogent0_.body as body2_0_, orablogent0_.title as title3_0_ from orablogentity orablogent0_ where (orablogent0_.id , 0) in ((?,0),(?,0),(?....)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In case custom SQLFunction implementation:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;Hibernate: select orablogent0_.id as id1_0_, orablogent0_.body as body2_0_, orablogent0_.title as title3_0_ from orablogentity orablogent0_ where orablogent0_.id in (?,...,?) or orablogent0_.id in (?,...,?)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Below is simple example how custom &lt;strong&gt;&lt;code&gt;org.hibernate.dialect.function.SQLFunction&lt;/code&gt;&lt;/strong&gt; can be implemented.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;public class SafeInFunction implements SQLFunction {
+    private final static int IN_CAUSE_LIMIT = 1000;
+    ...
+    @Override
+    public String render(Type firstArgumentType, List arguments, SessionFactoryImplementor factory) throws QueryException {
+        final StringBuilder buf = new StringBuilder();
+        String fieldName = (String) arguments.get(0);
+        for (int i = 1; i &amp;lt; arguments.size(); i++) {
+            if (i % IN_CAUSE_LIMIT == 0) {
+                buf.deleteCharAt(buf.length() - 1).append(&amp;quot;) or &amp;quot;).append(fieldName).append(&amp;quot; in (&amp;quot;);
+            }
+            buf.append(&amp;quot;?,&amp;quot;);
+        }
+        return buf.deleteCharAt(buf.length() - 1).toString();
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;PS. Hibernate provides &lt;strong&gt;&lt;code&gt;org.hibernate.dialect.Dialect&lt;/code&gt;&lt;/strong&gt; method to overwrite&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;/**
+ * Return the limit that the underlying database places on the number of elements in an {@code IN} predicate.
+ * If the database defines no such limits, simply return zero or less-than-zero.
+ *
+ * @return int The limit, or zero-or-less to indicate no limit.
+ */
+public int getInExpressionCountLimit() {
+  return 0;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;But unfortunately did not provides properly implementation yet and just throw warning&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;WARN: HHH000443: Dialect limits the number of elements in an IN predicate to 1000 entries.  However, the given parameter list [ids] contained 1111 entries, which will likely cause failures to execute the query in the database
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Source code of described example available on &lt;a href=&quot;https://github.com/kostenkoserg/ee-jpa-examples&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Wildfly/Infinispan domain. Keep distributed cache on separate nodes</title>
       <link>https://kostenko.org/blog/2020/11/wildfly-infinspan-scaling.html</link>
