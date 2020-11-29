@@ -115,6 +115,160 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2020/11/infinispan-server-wildfly-integration.html"><h1>Infinispan Server as Wildfly remote cache container for your Jakarta EE application</h1></a>
+				<p>29 November 2020</p>
+  			<p><p><img src="/img/2020-11-wildfly-infinispan-server-1.png" alt="pager" /></p>
+<p>Recently i wrote a few articles about <a href="https://kostenko.org/tags/infinispan.html">using infinispan cache</a> based on Wildfly infinispan subsystem. But even though Wildfly provides well cache containers management support, - from the high load and high availability points of view, make sense to take a look to separate clustered cache instances.</p>
+<p><strong>PROS:</strong></p>
+<ul>
+<li>Heap, threads, GC pauses separated between application and cache containers.</li>
+<li>Application or cache can be scaled separately depends on needs</li>
+<li>More configuration possibilities (like ASYNC replication etc)</li>
+<li>Minimizing affect of application to cache distribution and visa verse</li>
+<li>Application containers restart keeps stored cache data</li>
+</ul>
+<p><strong>CONS:</strong></p>
+<ul>
+<li>Increase infrastructure complexity</li>
+<li>Additional support and monitoring unit</li>
+<li>Additional costs in case separate cache cloud nodes</li>
+</ul>
+<p>Fortunately, with Wildfly Application Server it easy enough to <strong>switch between embedded and remote cache containers</strong> even in runtime (just another JNDI lookup). So, let's try it out! And first, we need to download  stable <strong><a href="https://infinispan.org/download-archive/">infinispan server release</a></strong>. I have chosen <strong>10.1.8</strong> as my Wildfly 20 uses this one and  potential compatibility issues should be excluded.</p>
+<p>After download, please extract distribution archive and run infinispan server</p>
+<pre><code class="language-bash">kostenko@kostenko:/opt/infinispan-server-10.1.8.Final/bin$ ./server.sh
+</code></pre>
+<p>By default infinispan server will use port <strong>11222</strong> on <strong>127.0.0.1</strong>. To bind another IP just use <strong>-b</strong> binding parameter like <strong><code>-b 0.0.0.0</code></strong> on startup.</p>
+<p>To create named cache you can use provided UI (<a href="http://127.0.0.1:11222/">http://127.0.0.1:11222/</a>) or cli console like</p>
+<pre><code class="language-bash">/opt/iplatform/infinispan/bin/cli.sh
+[disconnected]&gt; connect
+create cache --template=org.infinispan.REPL_ASYNC myremotecache
+</code></pre>
+<p>Now let's perform Wildfly configuration to use remote cache container</p>
+<pre><code class="language-bash">/socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=ispn1:add(host=127.0.0.1, port=11222)
+batch
+/subsystem=infinispan/remote-cache-container=myRemoteContainer:add(default-remote-cluster=data-grid-cluster)
+/subsystem=infinispan/remote-cache-container=myRemoteContainer/remote-cluster=data-grid-cluster:add(socket-bindings=[ispn1])
+run-batch
+</code></pre>
+<p>Actually, we just have finished with environment configuration and now we are ready for application development. As usual, <strong>Jakarta EE</strong>  <strong><code>build.gradle</code></strong> looks pretty laconical:</p>
+<pre><code class="language-java">apply plugin: 'war'
+dependencies {
+    providedCompile &quot;jakarta.platform:jakarta.jakartaee-api:8.0.0&quot;
+    providedCompile &quot;org.infinispan:infinispan-core:10.1.8.Final&quot;
+    providedCompile &quot;org.infinispan:infinispan-client-hotrod:10.1.8.Final&quot;
+}
+</code></pre>
+<p>To use configured cache container just inject registered <strong>@Resource</strong>:</p>
+<pre><code class="language-java">@Named
+public class TestCacheService {
+
+    public static final String REMOTE_CACHE_NAME = &quot;myremotecache&quot;;
+
+    @Resource(lookup = &quot;java:jboss/infinispan/remote-container/myRemoteContainer&quot;)
+    org.infinispan.client.hotrod.RemoteCacheContainer remoteCacheContainer;
+
+    public void putRemoteCache(String key, String value) {
+        remoteCacheContainer.getCache(REMOTE_CACHE_NAME).put(key, String.format(&quot;%s (%s)&quot;, value, new Date()));
+    }
+
+    public Object getRemoteCache(String key) {
+        return remoteCacheContainer.getCache(REMOTE_CACHE_NAME).get(key);
+    }
+}
+</code></pre>
+<p>Also, you can provide resource reference by <strong><code>WEB-INF/web.xml</code></strong> descriptor and use shorter resource lookup <strong>by name</strong> like <code>@Resource(name = &quot;myremotecontainer&quot;)</code></p>
+<pre><code class="language-xml">&lt;resource-env-ref&gt;
+    &lt;resource-env-ref-name&gt;myremotecontainer&lt;/resource-env-ref-name&gt;
+    &lt;lookup-name&gt;java:jboss/infinispan/remote-container/myRemoteContainer&lt;/lookup-name&gt;
+&lt;/resource-env-ref&gt;
+</code></pre>
+<p>Last thing we need, - is provide module dependencies by <strong><code>MANIFEST.MF</code></strong>:</p>
+<pre><code class="language-java">Manifest-Version: 1.0
+Dependencies: org.infinispan, org.infinispan.commons, org.infinispan.client.hotrod export
+</code></pre>
+<p>OR through <strong><code>jboss-deployment-structure.xml</code></strong> :</p>
+<pre><code class="language-xml">&lt;jboss-deployment-structure&gt;
+   &lt;deployment&gt;
+      &lt;dependencies&gt;
+         &lt;module name=&quot;org.infinispan&quot; export=&quot;TRUE&quot; /&gt;
+         &lt;module name=&quot;org.infinispan.commons&quot; export=&quot;TRUE&quot; /&gt;
+         &lt;module name=&quot;org.infinispan.client.hotrod&quot; export=&quot;TRUE&quot; /&gt;
+      &lt;/dependencies&gt;
+   &lt;/deployment&gt;
+&lt;/jboss-deployment-structure&gt;
+</code></pre>
+<p>This is it! Build, deploy, and test it out.</p>
+<pre><code class="language-bash">curl -o - &quot;http://localhost:8080/jcache-examples/jcache/ispn-remote-put?key=KEY1&amp;value=VALUE1&quot;
+ok
+curl -o - &quot;http://localhost:8080/jcache-examples/jcache/ispn-remote-get?key=KEY1&quot;
+VALUE1 (Sat Nov 28 20:48:51 EET 2020)
+</code></pre>
+<p>To check remote cache container statistics you can use UI or  Infinispan <strong>CLI</strong> console:</p>
+<pre><code class="language-bash">[disconnected]&gt; connect
+cd caches
+stats myremotecache
+</code></pre>
+<pre><code class="language-bash">{
+  &quot;time_since_start&quot; : 23866,
+  &quot;time_since_reset&quot; : 23866,
+  &quot;current_number_of_entries&quot; : 1,
+  &quot;current_number_of_entries_in_memory&quot; : 1,
+  &quot;total_number_of_entries&quot; : 1,
+  &quot;off_heap_memory_used&quot; : 0,
+  ...
+</code></pre>
+<p>Last point i would like to pay attention is cache container <strong>height availability</strong> with <strong><code>Infinispan clustering</code></strong>.  By default, Infinispan uses MPING (multicast) protocol to cluster auto discovery. You can easy check it just by running another ISPN instances on some network. For example:</p>
+<pre><code class="language-bash">$ cd &lt;ISPN_HOME&gt;
+$ cp -r server server2
+$ bin/server.sh -o 100 -s server2
+
+$ bin/cli.sh
+connect
+describe
+</code></pre>
+<pre><code class="language-bash">{
+  &quot;version&quot; : &quot;10.1.8.Final&quot;,
+  ...
+  &quot;cluster_members_physical_addresses&quot; : [ &quot;127.0.0.1:7800&quot;, &quot;127.0.0.1:7801&quot; ],
+  &quot;cluster_size&quot; : 2,
+  ...
+}
+</code></pre>
+<p>Do not forget to add new ISPN node to your Wildfly configuration</p>
+<pre><code class="language-bash">/socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=ispn2:add(host=127.0.0.1, port=11322)
+/subsystem=infinispan/remote-cache-container=myRemoteContainer/remote-cluster=data-grid-cluster:write-attribute(name=socket-bindings, value=[ispn1,ispn2])
+</code></pre>
+<p>Please, notice if you perform cloud deployment or have some network restrictions, - auto discovery with <strong>MPING</strong> can be not accessible. In this case you can use a <strong>static list of IP addresses</strong>  by providing  <strong>TCPPING</strong> configuration via <strong><code>server/conf/infinispan.xml</code></strong>. Just add <code>jgroups</code> section and edit <code>transport</code> stack for default <code>cache-container</code> :</p>
+<pre><code class="language-xml">&lt;infinispan&gt;
+
+ &lt;jgroups&gt;
+    &lt;stack name=&quot;mytcpping&quot;&gt;
+      &lt;TCP bind_port=&quot;7800&quot; port_range=&quot;30&quot; recv_buf_size=&quot;20000000&quot; send_buf_size=&quot;640000&quot;/&gt;
+      &lt;TCPPING   initial_hosts=&quot;${jgroups.tcpping.initial_hosts:127.0.0.1[7800],127.0.0.1[7800]}&quot;/&gt;
+      &lt;MERGE3 /&gt;
+      &lt;FD_SOCK /&gt;
+      &lt;FD_ALL timeout=&quot;3000&quot; interval=&quot;1000&quot; timeout_check_interval=&quot;1000&quot; /&gt;
+      &lt;VERIFY_SUSPECT timeout=&quot;1000&quot; /&gt;
+      &lt;pbcast.NAKACK2 use_mcast_xmit=&quot;false&quot; xmit_interval=&quot;100&quot; xmit_table_num_rows=&quot;50&quot; xmit_table_msgs_per_row=&quot;1024&quot; xmit_table_max_compaction_time=&quot;30000&quot; /&gt;
+      &lt;UNICAST3 xmit_interval=&quot;100&quot; xmit_table_num_rows=&quot;50&quot; xmit_table_msgs_per_row=&quot;1024&quot; xmit_table_max_compaction_time=&quot;30000&quot; /&gt;
+      &lt;pbcast.STABLE stability_delay=&quot;200&quot; desired_avg_gossip=&quot;2000&quot; max_bytes=&quot;1M&quot; /&gt;
+      &lt;pbcast.GMS print_local_addr=&quot;false&quot; join_timeout=&quot;${jgroups.join_timeout:2000}&quot; /&gt;
+      &lt;UFC max_credits=&quot;4m&quot; min_threshold=&quot;0.40&quot; /&gt;
+      &lt;MFC max_credits=&quot;4m&quot; min_threshold=&quot;0.40&quot; /&gt;
+      &lt;FRAG3 /&gt;
+    &lt;/stack&gt;
+  &lt;/jgroups&gt;
+
+   &lt;cache-container name=&quot;default&quot; statistics=&quot;true&quot;&gt;
+     &lt;transport stack=&quot;mytcpping&quot; node-name=&quot;${infinispan.node.name:}&quot;/&gt;
+   &lt;/cache-container&gt;
+...
+</code></pre>
+<p>For more details about configuration, please refer to <a href="https://docs.wildfly.org/20/wildscribe/subsystem/infinispan/remote-cache-container/index.html">WildFly 20 Infinispan Model Reference</a> and <a href="https://infinispan.org/documentation/">Infinispan community documentation</a></p>
+<p>Source code of described example available on <a href="https://github.com/kostenkoserg/wildfly-infinispan-example">GitHub</a></p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2020/11/infinispan-server-wildfly-integration.html#disqus_thread" data-disqus-identifier="blog/2020/11/infinispan-server-wildfly-integration.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2020/11/ora-01795-jpa-function-workaround.html"><h1>ORA-01795 and JPA function workaround</h1></a>
 				<p>27 November 2020</p>
   			<p><p>Few posts ago i wrote about Hibernate Interceptor to solve <strong><a href="https://kostenko.org/blog/2020/10/jpa-ora-01795-hibernate-interceptor.html">ORA-01795: maximum number of expressions in a list is 1000 error</a></strong>. This way can be very helpful in case you got this limitation, but by some reasons not able to perform refactoring.</p>
