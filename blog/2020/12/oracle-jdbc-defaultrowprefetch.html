@@ -13,7 +13,7 @@
 </script>
 
     <meta charset="utf-8"/>
-    <title>Design DSL API in Java</title>
+    <title>Improve Oracle JDBC performance by fetch size tuning</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -117,69 +117,43 @@
     <div class="container">
 
 	<div class="page-header">
-		<h1>Design DSL API in Java</h1>
+		<h1>Improve Oracle JDBC performance by fetch size tuning</h1>
 	</div>
 
-	<p><em>27 May 2019</em></p>
+	<p><em>28 December 2020</em></p>
 
-	<p><p>Well designed API is very important in case you expect your API will use someone else instead of just you. To build readable and writable DSL(domain specific language) in Java usually uses Builder pattern with few simple rules:</p>
-<ul>
-<li>Think twice about names for methods</li>
-<li>Restrict available values for each step</li>
-</ul>
-<p>So, lets see how it looks from source code perspective...</p>
-<p>Design API entry point</p>
-<pre><code class="language-java">public class MyAPI {
-    public static UserBuilder.Registration asUser() {
-        return new UserBuilder.User();
-    }
+	<p><p>By default, when Oracle JDBC driver executes query, it retrieves a result set of <strong>10 rows</strong> at a time from the database cursor. Low fetch size value might cause more roundtrips to DB and this leads to a longer time to fetch results from queries. You can change the number of rows retrieved with each trip to the database cursor by changing the row fetch size value.</p>
+<p><strong>Statement, PreparedStatement, CallableStatement</strong>, and <strong>ResultSet</strong> provides next methods for dealing with fetch size:</p>
+<pre><code class="language-java">void setFetchSize(int rows) throws SQLException
+
+int getFetchSize() throws SQLException
+</code></pre>
+<p>Default fetch size value  can be changed by <strong>defaultRowPrefetch</strong> connection property:</p>
+<p>On Wildfly Application Server DataSource level by:</p>
+<pre><code class="language-bash">[standalone@localhost:9990 /] /subsystem=datasources/data-source=ExampleOraDS/connection-properties=defaultRowPrefetch:add(value=1000)
+</code></pre>
+<p>On Hibernate level by  <strong><code>hibernate.jdbc.fetch_size</code></strong> property:</p>
+<pre><code class="language-xml">&lt;properties&gt;
+  ...
+  &lt;property name=&quot;hibernate.jdbc.fetch_size&quot; value=&quot;1000&quot; /&gt;
+  ...
+&lt;/properties&gt;
+</code></pre>
+<p>I did simple test:</p>
+<pre><code class="language-java">@Test
+public void defaultRowPrefetchTest() throws Exception {
+   EntityManager em = Persistence.createEntityManagerFactory(&quot;myDSTestOra&quot;).createEntityManager();
+
+   Long time = System.currentTimeMillis();
+
+   Query q = em.createNativeQuery(&quot;SELECT * FROM MY_TABLE&quot;, Tuple.class);
+   List&lt;Tuple&gt; resultList = q.getResultList();
+
+   System.out.println(System.currentTimeMillis() - time);
 }
 </code></pre>
-<p>Design builder using interfaces to restrict available values depends on current step</p>
-<pre><code class="language-java">public class UserBuilder {
-    public static class User implements Registration, Login, Password, Apply {
-        private String login;
-        private String password;
-
-        @Override
-        public Login doRegistration() {
-            return this;
-        }
-        @Override
-        public Password withLogin(String login) {
-            this.login = login;
-            return this;
-        }
-        @Override
-        public Apply withPassword(String password) {
-            this.password = password;
-            return this;
-        }
-        @Override
-        public void apply() {
-            // ...
-        }
-    }
-
-    public interface Registration {
-        Login doRegistration();
-    }
-    public interface Login {
-        Password withLogin(String login);
-    }
-    public interface Password {
-        Apply withPassword(String password);
-    }
-    public interface Apply {
-        void apply();
-    }
-}
-</code></pre>
-<p>Then usage, with no chance to mistake, looks like</p>
-<pre><code class="language-java">asUser().doRegistration()
-        .withLogin(&quot;login&quot;).withPassword(&quot;password&quot;)
-        .apply();
-</code></pre>
+<p>And on my laptop, fetching of <strong>16K</strong> records takes <strong>~185 ms</strong> with default value and <strong>~86 ms</strong> with <code>defaultRowPrefetch = 20000</code>. As you can see from the result - there is more than <strong>x2</strong> performance improvement.</p>
+<p>Source code of test case on <a href="https://github.com/kostenkoserg/ee-jpa-examples">GitHub</a></p>
 </p>
 
 	<hr />
@@ -190,8 +164,8 @@
 	<script>
 
 	var disqus_config = function () {
-	this.page.url = 'https://kostenko.org/blog/2019/05/design-dsl-api-java.html';
-	this.page.identifier = 'blog/2019/05/design-dsl-api-java.html';
+	this.page.url = 'https://kostenko.org/blog/2020/12/oracle-jdbc-defaultrowprefetch.html';
+	this.page.identifier = 'blog/2020/12/oracle-jdbc-defaultrowprefetch.html';
 	};
 
 	(function() { // DON'T EDIT BELOW THIS LINE

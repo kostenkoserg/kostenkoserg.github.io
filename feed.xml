@@ -6,9 +6,50 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Sun, 27 Dec 2020 19:57:53 +0200</pubDate>
-    <lastBuildDate>Sun, 27 Dec 2020 19:57:53 +0200</lastBuildDate>
+    <pubDate>Sun, 27 Dec 2020 23:11:22 +0200</pubDate>
+    <lastBuildDate>Sun, 27 Dec 2020 23:11:22 +0200</lastBuildDate>
 
+    <item>
+      <title>Improve Oracle JDBC performance by fetch size tuning</title>
+      <link>https://kostenko.org/blog/2020/12/oracle-jdbc-defaultrowprefetch.html</link>
+      <pubDate>Mon, 28 Dec 2020 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2020/12/oracle-jdbc-defaultrowprefetch.html</guid>
+      	<description>
+	&lt;p&gt;By default, when Oracle JDBC driver executes query, it retrieves a result set of &lt;strong&gt;10 rows&lt;/strong&gt; at a time from the database cursor. Low fetch size value might cause more roundtrips to DB and this leads to a longer time to fetch results from queries. You can change the number of rows retrieved with each trip to the database cursor by changing the row fetch size value.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Statement, PreparedStatement, CallableStatement&lt;/strong&gt;, and &lt;strong&gt;ResultSet&lt;/strong&gt; provides next methods for dealing with fetch size:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;void setFetchSize(int rows) throws SQLException
+
+int getFetchSize() throws SQLException
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Default fetch size value  can be changed by &lt;strong&gt;defaultRowPrefetch&lt;/strong&gt; connection property:&lt;/p&gt;
+&lt;p&gt;On Wildfly Application Server DataSource level by:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;[standalone@localhost:9990 /] /subsystem=datasources/data-source=ExampleOraDS/connection-properties=defaultRowPrefetch:add(value=1000)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;On Hibernate level by  &lt;strong&gt;&lt;code&gt;hibernate.jdbc.fetch_size&lt;/code&gt;&lt;/strong&gt; property:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;properties&amp;gt;
+  ...
+  &amp;lt;property name=&amp;quot;hibernate.jdbc.fetch_size&amp;quot; value=&amp;quot;1000&amp;quot; /&amp;gt;
+  ...
+&amp;lt;/properties&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I did simple test:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;@Test
+public void defaultRowPrefetchTest() throws Exception {
+   EntityManager em = Persistence.createEntityManagerFactory(&amp;quot;myDSTestOra&amp;quot;).createEntityManager();
+
+   Long time = System.currentTimeMillis();
+
+   Query q = em.createNativeQuery(&amp;quot;SELECT * FROM MY_TABLE&amp;quot;, Tuple.class);
+   List&amp;lt;Tuple&amp;gt; resultList = q.getResultList();
+
+   System.out.println(System.currentTimeMillis() - time);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And on my laptop, fetching of &lt;strong&gt;16K&lt;/strong&gt; records takes &lt;strong&gt;~185 ms&lt;/strong&gt; with default value and &lt;strong&gt;~86 ms&lt;/strong&gt; with &lt;code&gt;defaultRowPrefetch = 20000&lt;/code&gt;. As you can see from the result - there is more than &lt;strong&gt;x2&lt;/strong&gt; performance improvement.&lt;/p&gt;
+&lt;p&gt;Source code of test case on &lt;a href=&quot;https://github.com/kostenkoserg/ee-jpa-examples&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Microprofile metrics with Wildfly Application Server</title>
       <link>https://kostenko.org/blog/2020/12/wildfly-microprofile-metrics.html</link>
