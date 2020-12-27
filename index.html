@@ -60,6 +60,7 @@
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown">Tags <b class="caret"></b></a>
               <ul class="dropdown-menu">
+										<li><a href="tags/metrics.html">metrics</a></li>
 										<li><a href="tags/wildfly.html">wildfly</a></li>
 										<li><a href="tags/logging.html">logging</a></li>
 										<li><a href="tags/jakartaee.html">jakartaee</a></li>
@@ -115,6 +116,146 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2020/12/wildfly-microprofile-metrics.html"><h1>Microprofile metrics with Wildfly Application Server</h1></a>
+				<p>27 December 2020</p>
+  			<p><p>Any enterprise application can't be completely successful on production without good monitoring solution. For years vendors and developers provided custom tooling for it. Since <strong><a href="https://github.com/eclipse/microprofile-metrics">Eclipse Microprofile Metrics</a></strong> specification we have a unified way to export monitoring data to the management agents and  unified Java API, that developers can use to expose their telemetry data.</p>
+<p>Wildfly application server provides  microprofile metrics support, but unfortunately <strong>only for standalone configurations</strong>  yet.  In case <strong>domain mode</strong> you can provide necessary dependencies</p>
+<pre><code class="language-java">dependencies {
+    compile group: 'org.eclipse.microprofile.metrics', name: 'microprofile-metrics-api', version: '2.3'
+    compile group: 'io.smallrye', name: 'smallrye-metrics', version: '2.4.0'
+}
+</code></pre>
+<p>and then expose application scope metrics through custom endpoint like</p>
+<pre><code class="language-java">import io.smallrye.metrics.exporters.JsonExporter;
+import io.smallrye.metrics.exporters.OpenMetricsExporter;
+...
+@Singleton
+@Path(&quot;/metrics&quot;)
+public class MetricsTestResource {
+
+  private OpenMetricsExporter openMetricsExporter = new OpenMetricsExporter();
+  private JsonExporter jsonExporter = new JsonExporter();
+
+  @GET
+  @Path(&quot;/prmths&quot;)
+  public String prometheus() {
+    return openMetricsExporter.exportAllScopes().toString();
+  }
+
+  @GET
+  @Path(&quot;/json&quot;)
+  public String json() {
+    return jsonExporter.exportAllScopes().toString();
+  }
+</code></pre>
+<p>JVM and subsystems metrics will not be available by endpoint above, but them  you can obtain through old good JMX.</p>
+<p>Standalone server from the box provides metrics in  <strong>prometheus</strong> format for all scopes over management interface (port <strong>9990</strong> ) using <strong><code>org.wildfly.extension.microprofile.metrics-smallrye</code></strong> extension and <strong><code>microprofile-metrics-smallrye</code></strong> subsystem.</p>
+<pre><code class="language-bash">kostenko@kostenko:$ curl http://127.0.0.1:9990/metrics/
+# HELP base_classloader_loadedClasses_count Displays the number of classes that are currently loaded in the Java virtual machine.
+# TYPE base_classloader_loadedClasses_count gauge
+base_classloader_loadedClasses_count 11826.0
+# HELP base_cpu_availableProcessors Displays the number of processors available to the Java virtual machine. This value may change during a particular invocation of the virtual machine.
+# TYPE base_cpu_availableProcessors gauge
+base_cpu_availableProcessors 8.0
+...
+</code></pre>
+<p>For developers available next annotations (sorry for the low output examples values):</p>
+<ul>
+<li><strong>@Counted</strong> - counter, which counts the invocations of the annotated object.
+<pre><code class="language-bash"># TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_total counter
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_total 1.0
+</code></pre>
+</li>
+<li><strong>@ConcurrentGauge</strong> - gauge which counts the parallel invocations of the annotated object.
+<pre><code class="language-bash"># TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_current gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_current 1.0
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_max gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_max 1.0
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_min gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_min 0.0
+</code></pre>
+</li>
+<li><strong>@Gauge</strong> - gauge, which samples the value of the annotated object.
+<pre><code class="language-bash"># TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_json gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_json 123.0
+</code></pre>
+</li>
+<li><strong>@Metered</strong> - meter, which tracks the frequency of invocations of the annotated object.
+<pre><code class="language-bash"># TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_total counter
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_total 6.0
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_rate_per_second gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_rate_per_second 0.209682602430885
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_one_min_rate_per_second gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_one_min_rate_per_second 0.015991117074135343
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_five_min_rate_per_second gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_five_min_rate_per_second 0.0033057092356765017
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_fifteen_min_rate_per_second gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_fifteen_min_rate_per_second 0.0011080303990206543
+</code></pre>
+</li>
+<li><strong>@Metric</strong> - annotation that contains the metadata information when requesting a metric to be injected.
+<pre><code class="language-bash"></code></pre>
+</li>
+<li><strong>@Timed</strong> - timer, which tracks duration of the annotated object.
+<pre><code class="language-bash"># TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_rate_per_second gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_rate_per_second 0.09811766798116955
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_one_min_rate_per_second gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_one_min_rate_per_second 0.030703655021877174
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_five_min_rate_per_second gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_five_min_rate_per_second 0.0065567799035988195
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_fifteen_min_rate_per_second gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_fifteen_min_rate_per_second 0.002209922141215539
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_min_seconds gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_min_seconds 5.88813E-4
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_max_seconds gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_max_seconds 0.005724684
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_mean_seconds gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_mean_seconds 0.0030220556126073638
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_stddev_seconds gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_stddev_seconds 0.0025644006235855748
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_seconds summary
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_seconds_count 2.0
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_seconds{quantile=&quot;0.5&quot;} 5.88813E-4
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_seconds{quantile=&quot;0.75&quot;} 0.005724684
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_seconds{quantile=&quot;0.95&quot;} 0.005724684
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_seconds{quantile=&quot;0.98&quot;} 0.005724684
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_seconds{quantile=&quot;0.99&quot;} 0.005724684
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_seconds{quantile=&quot;0.999&quot;} 0.005724684
+</code></pre>
+</li>
+<li><strong>@SimplyTimed</strong> - simple timer, which tracks duration and invocations of the annotated object.
+<pre><code class="language-bash"># TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_total counter
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_total 1.0
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_elapsedTime_seconds gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_elapsedTime_seconds 0.005032859
+</code></pre>
+</li>
+</ul>
+<p><a href="https://prometheus.io/docs/introduction/overview/">Prometheus</a> is a free software application used for event monitoring and alerting. It records real-time metrics in a time series database (allowing for high dimensionality) built using a HTTP pull model, with flexible queries and real-time alerting.</p>
+<p>Let's setup above and check how metrics monitoring with Prometheus looks on practice:</p>
+<pre><code class="language-bash">wget https://github.com/prometheus/prometheus/releases/download/v2.23.0/prometheus-2.23.0.linux-amd64.tar.gz
+tar xvfz prometheus-*.tar.gz
+cd prometheus-*
+</code></pre>
+<p>To provide path to the metrics endpoint edit <strong><code>prometheus.yml</code></strong> and provide correct <strong>metrics_path</strong> and <strong>targets</strong></p>
+<pre><code class="language-yaml"># Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=&lt;job_name&gt;` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+
+    static_configs:
+    - targets: ['127.0.0.1:9990']
+</code></pre>
+<p>This is it! <strong><code>http://localhost:9090/graph</code></strong> :<br />
+<img src="/img/2020-12-wildfly-mp-metrics.png" alt="wildfly-microprofile-metrics" /></p>
+<p>Now our metrics is collecting and can be visualized over standard prometheus UI(shown above) or easy integrated with <a href="https://prometheus.io/docs/visualization/grafana/">grafana</a></p>
+<p>Source code of custom metrics endpoint example available on <a href="https://github.com/kostenkoserg/wildfly-microprofile-example">GitHub</a></p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2020/12/wildfly-microprofile-metrics.html#disqus_thread" data-disqus-identifier="blog/2020/12/wildfly-microprofile-metrics.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2020/11/infinispan-server-wildfly-integration.html"><h1>Infinispan Server as Wildfly remote cache container for your Jakarta EE application</h1></a>
 				<p>29 November 2020</p>
   			<p><p><img src="/img/2020-11-wildfly-infinispan-server-1.png" alt="pager" /></p>
@@ -466,58 +607,6 @@ or orablogent0_.id in (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
 <p>Source code of described example as usual available on <a href="https://github.com/kostenkoserg/ee-jpa-examples">GitHub</a></p>
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2020/10/jpa-ora-01795-hibernate-interceptor.html#disqus_thread" data-disqus-identifier="blog/2020/10/jpa-ora-01795-hibernate-interceptor.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2020/10/jpa-count-over.html"><h1>Jakarta EE JPA paging and COUNT(*) OVER()</h1></a>
-				<p>02 October 2020</p>
-  			<p><p><img src="/img/2020-10-pager.png" alt="pager" /></p>
-<p>Almost all data related applications and UI\UX practices need for paging. Jakarta EE JPA specification helps to do it on backend side  by providing simple <strong>Query API:</strong></p>
-<ul>
-<li><strong><code>setFirstResult(int startPosition)</code></strong> - Set the position of the first result to retrieve.</li>
-<li><strong><code>setMaxResults(int maxResult)</code></strong> -  Set the maximum number of results to retrieve.</li>
-</ul>
-<p>Typically, to implement paging with JPA you need for two queries: one to <strong>select page</strong> and second to <strong>select total count</strong> to calculate count of pages. It works well with simple queries and well described in many articles. But real world enterprise application often enough operates with complex queries with complex filters on big amount of data and unfortunately <strong>second query is not for free</strong> here from performance point of view.</p>
-<p>Fortunately, since <strong>JPA 2.1</strong> developers can use <strong><code>function()</code></strong> to call not standard DB functions. Let's play around it to use power of database window functions and JPA usability.</p>
-<p>Actually, in case Hibernate JPA provider all we need is register our custom function for our custom dialect like:</p>
-<pre><code class="language-java">public class MyOraDialect extends Oracle10gDialect {
-    public MyOraDialect () {
-        super();
-        registerFunction(&quot;countover&quot;, new SQLFunctionTemplate(StandardBasicTypes.INTEGER, &quot;count(*) over()&quot;));
-    }
-}
-</code></pre>
-<p>and use dialect above in the our application <code>persistence.xml</code>:</p>
-<pre><code class="language-xml">  &lt;property name=&quot;hibernate.dialect&quot; value=&quot;org.kostenko.example.jpa.dialect.MyOraDialect&quot;/&gt;
-</code></pre>
-<p>Looks so easy, - time to test!</p>
-<pre><code class="language-java">public class OraTest {
-    @Test
-    public void countOver() throws Exception {
-        EntityManager em = Persistence.createEntityManagerFactory(&quot;myDSTestOra&quot;).createEntityManager();
-        this.generateTestData(em);
-        Query query =  em.createQuery(&quot;SELECT b as post, function('countover') as cnt FROM OraBlogEntity b&quot;, Tuple.class);
-        query.setFirstResult(10);
-        query.setMaxResults(5);
-        List&lt;Tuple&gt; tpList = query.getResultList();
-        for (Tuple tp : tpList) {
-            System.out.println(tp.get(&quot;post&quot;));
-            System.out.println(&quot;Total:&quot; + tp.get(&quot;cnt&quot;));
-        }
-    }
-    ...
-}
-</code></pre>
-<p>Output:</p>
-<pre><code class="language-bash">Hibernate: select * from ( select row_.*, rownum rownum_ from ( select orablogent0_.id as col_0_0_, count(*) over() as col_1_0_, orablogent0_.id as id1_0_, orablogent0_.body as body2_0_, orablogent0_.title as title3_0_ from orablogentity orablogent0_ ) row_ where rownum &lt;= ?) where rownum_ &gt; ?
-OraBlogEntity{id=151, title=title7, body=body7}
-Total:3003
-OraBlogEntity{id=152, title=title8, body=body8}
-Total:3003
-...
-</code></pre>
-<p>Please, note: <strong>count(*) over()</strong> construction is not supported by <strong>all</strong> RDBMS, but in turn supports by Oracle, Postgres, MSSQL Server and others.</p>
-<p>Source code of described example as usual available on <a href="https://github.com/kostenkoserg/ee-jpa-examples">GitHub</a></p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2020/10/jpa-count-over.html#disqus_thread" data-disqus-identifier="blog/2020/10/jpa-count-over.html">Comments</a></p>
 				<hr/>
 
 		<ul class="pager">

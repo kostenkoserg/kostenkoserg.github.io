@@ -60,6 +60,7 @@
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown">Tags <b class="caret"></b></a>
               <ul class="dropdown-menu">
+										<li><a href="../tags/metrics.html">metrics</a></li>
 										<li><a href="../tags/wildfly.html">wildfly</a></li>
 										<li><a href="../tags/logging.html">logging</a></li>
 										<li><a href="../tags/jakartaee.html">jakartaee</a></li>
@@ -115,6 +116,28 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2020/08/migration-wildfly-18-to-20.html"><h1>Migration from Wildfly 18 to Wildfly 20</h1></a>
+				<p>06 August 2020</p>
+  			<p><p>Some time ago i wrote article about migration from <a href="https://kostenko.org/blog/2019/10/migration-wildfly-10-to-18.html">Wildfly 10 to Wildfly 18 and application level migration issues</a>. Migration from Wildfly 18 to <strong>Wildfly 20</strong> does not provoke any application level issues and can be done in minutes:</p>
+<pre><code class="language-java">git clone https://github.com/wildfly/wildfly-server-migration.git
+cd ./wildfly-server-migration/
+mvn clean install
+cd ./dist/standalone/target/
+unzip jboss-server-migration-1.10.0-SNAPSHOT.zip
+cd ./jboss-server-migration
+
+./jboss-server-migration.sh -s /opt/wildfly-18.0.0.Final -t /opt/wildfly-20.0.1.Final/
+</code></pre>
+<p><strong>Why should i do migration to Wildfly 20 ?</strong></p>
+<ul>
+<li>Supports the <a href="https://download.eclipse.org/microprofile/microprofile-3.3/microprofile-spec-3.3.html">Eclipse MicroProfile 3.3 platform specifications</a></li>
+<li>Possible to use TLS 1.3 with WildFly when running against JDK 11 or higher.</li>
+<li>RESTEasy (integrated in WildFly via the jaxrs subsystem) can now be configured using MicroProfile Config.</li>
+<li>Many component upgrades and bug fixes</li>
+</ul>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2020/08/migration-wildfly-18-to-20.html#disqus_thread" data-disqus-identifier="blog/2020/08/migration-wildfly-18-to-20.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2020/08/java-way-to-unzip.html"><h1>Unzip without root but with java</h1></a>
 				<p>05 August 2020</p>
   			<p><p>If you need to <strong>unzip</strong> file on the server, where is no root and no <code>unzip</code> installed then time to ask <strong>java</strong> about:</p>
@@ -464,69 +487,6 @@ provision {
 <p>Enjoy!</p>
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2020/03/jpa-wildfly-slow-sql.html#disqus_thread" data-disqus-identifier="blog/2020/03/jpa-wildfly-slow-sql.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2020/03/firebase-push-microprofile-rest-client.html"><h1>Firebase push notifications with Eclipse Microprofile Rest Client</h1></a>
-				<p>05 March 2020</p>
-  			<p><p>Nowadays <strong>Push notifications</strong> is a must have feature for any trend application. Firebase Cloud Messaging (<strong>FCM</strong>) is a free (at least in this moment) cross-platform solution for messages and notifications for <strong>Android</strong>, <strong>iOS</strong> and <strong>Web applications</strong>.</p>
-<p><img src="/img/2020-03-firebase-mp-rest-client.png" alt="firebase, push, microprofile, rest client" /></p>
-<p>To enable push notification on client side you should create Firebase project and follow the <a href="https://firebase.google.com/docs/cloud-messaging">manual</a> or  <a href="https://github.com/firebase/quickstart-js/tree/master/messaging">examples</a>. From the server side perspective all you need to send push notification is:</p>
-<ul>
-<li><strong>Server key</strong> - will be created for your firebase project</li>
-<li><strong>Instance ID token</strong> - id of specific subscribed instance (instance destination id)</li>
-</ul>
-<p>Firebase provides <strong><code>https://fcm.googleapis.com/fcm/send</code></strong> endpoint and very simple <a href="https://firebase.google.com/docs/cloud-messaging/http-server-ref">HTTP API</a> like</p>
-<pre><code class="language-java">{
-    &quot;to&quot;: &quot;&lt;Instance ID token&gt;&quot;,
-    &quot;notification&quot;: {
-      &quot;title&quot;: &quot;THIS IS MP REST CLIENT!&quot;,
-      &quot;body&quot;: &quot;The quick brown fox jumps over the lazy dog.&quot;
-      }
-}
-</code></pre>
-<p>So, let's design simple Microprofile REST client to deal with above:</p>
-<pre><code class="language-java">@Path(&quot;/&quot;)
-@RegisterRestClient(configKey = &quot;push-api&quot;)
-public interface PushClientService {
-
-    @POST
-    @Path(&quot;/fcm/send&quot;)
-    @Produces(&quot;application/json&quot;)
-    @ClientHeaderParam(name = &quot;Authorization&quot;, value = &quot;{generateAuthHeader}&quot;)
-    void send(PushMessage msg);
-
-    default String generateAuthHeader() {
-        return &quot;key=&quot; + ConfigProvider.getConfig().getValue(&quot;firebase.server_key&quot;, String.class);
-    }
-}
-</code></pre>
-<pre><code class="language-java">public class PushMessage {
-
-    public String to;
-    public PushNotification notification;
-
-    public static class PushNotification {
-        public String title;
-        public String body;
-    }
-}
-</code></pre>
-<p>and application.properties</p>
-<pre><code class="language-bash"># firebase server key
-firebase.server_key=&lt;SERVER_KEY&gt;
-# rest client
-push-api/mp-rest/url=https://fcm.googleapis.com/
-</code></pre>
-<p>Actually, this is it! Now you able to <code>@Inject</code>  PushClientService and enjoy push notifications as well.</p>
-<pre><code class="language-java">@Inject
-@RestClient
-PushClientService pushService;
-...
-pushService.send(message);
-</code></pre>
-<p>If you would like to test how it works from client side perspective, - feel free to use <strong><a href="https://kostenko.org/blog/2020/03/firebase-push-microprofile-rest-client/index.htm">Test web application</a></strong> to generate instance ID token and check notifications delivery.</p>
-<p>Described sample application source code with swagger-ui endpoint and firebase.server_key available on <a href="https://github.com/kostenkoserg/microprofile-quarkus-example">GitHub</a></p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2020/03/firebase-push-microprofile-rest-client.html#disqus_thread" data-disqus-identifier="blog/2020/03/firebase-push-microprofile-rest-client.html">Comments</a></p>
 				<hr/>
 
 		<ul class="pager">

@@ -6,9 +6,153 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Sun, 29 Nov 2020 12:42:42 +0200</pubDate>
-    <lastBuildDate>Sun, 29 Nov 2020 12:42:42 +0200</lastBuildDate>
+    <pubDate>Sun, 27 Dec 2020 19:57:53 +0200</pubDate>
+    <lastBuildDate>Sun, 27 Dec 2020 19:57:53 +0200</lastBuildDate>
 
+    <item>
+      <title>Microprofile metrics with Wildfly Application Server</title>
+      <link>https://kostenko.org/blog/2020/12/wildfly-microprofile-metrics.html</link>
+      <pubDate>Sun, 27 Dec 2020 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2020/12/wildfly-microprofile-metrics.html</guid>
+      	<description>
+	&lt;p&gt;Any enterprise application can&apos;t be completely successful on production without good monitoring solution. For years vendors and developers provided custom tooling for it. Since &lt;strong&gt;&lt;a href=&quot;https://github.com/eclipse/microprofile-metrics&quot;&gt;Eclipse Microprofile Metrics&lt;/a&gt;&lt;/strong&gt; specification we have a unified way to export monitoring data to the management agents and  unified Java API, that developers can use to expose their telemetry data.&lt;/p&gt;
+&lt;p&gt;Wildfly application server provides  microprofile metrics support, but unfortunately &lt;strong&gt;only for standalone configurations&lt;/strong&gt;  yet.  In case &lt;strong&gt;domain mode&lt;/strong&gt; you can provide necessary dependencies&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;dependencies {
+    compile group: &apos;org.eclipse.microprofile.metrics&apos;, name: &apos;microprofile-metrics-api&apos;, version: &apos;2.3&apos;
+    compile group: &apos;io.smallrye&apos;, name: &apos;smallrye-metrics&apos;, version: &apos;2.4.0&apos;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;and then expose application scope metrics through custom endpoint like&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;import io.smallrye.metrics.exporters.JsonExporter;
+import io.smallrye.metrics.exporters.OpenMetricsExporter;
+...
+@Singleton
+@Path(&amp;quot;/metrics&amp;quot;)
+public class MetricsTestResource {
+
+  private OpenMetricsExporter openMetricsExporter = new OpenMetricsExporter();
+  private JsonExporter jsonExporter = new JsonExporter();
+
+  @GET
+  @Path(&amp;quot;/prmths&amp;quot;)
+  public String prometheus() {
+    return openMetricsExporter.exportAllScopes().toString();
+  }
+
+  @GET
+  @Path(&amp;quot;/json&amp;quot;)
+  public String json() {
+    return jsonExporter.exportAllScopes().toString();
+  }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;JVM and subsystems metrics will not be available by endpoint above, but them  you can obtain through old good JMX.&lt;/p&gt;
+&lt;p&gt;Standalone server from the box provides metrics in  &lt;strong&gt;prometheus&lt;/strong&gt; format for all scopes over management interface (port &lt;strong&gt;9990&lt;/strong&gt; ) using &lt;strong&gt;&lt;code&gt;org.wildfly.extension.microprofile.metrics-smallrye&lt;/code&gt;&lt;/strong&gt; extension and &lt;strong&gt;&lt;code&gt;microprofile-metrics-smallrye&lt;/code&gt;&lt;/strong&gt; subsystem.&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;kostenko@kostenko:$ curl http://127.0.0.1:9990/metrics/
+# HELP base_classloader_loadedClasses_count Displays the number of classes that are currently loaded in the Java virtual machine.
+# TYPE base_classloader_loadedClasses_count gauge
+base_classloader_loadedClasses_count 11826.0
+# HELP base_cpu_availableProcessors Displays the number of processors available to the Java virtual machine. This value may change during a particular invocation of the virtual machine.
+# TYPE base_cpu_availableProcessors gauge
+base_cpu_availableProcessors 8.0
+...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;For developers available next annotations (sorry for the low output examples values):&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;@Counted&lt;/strong&gt; - counter, which counts the invocations of the annotated object.
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_total counter
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_total 1.0
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;@ConcurrentGauge&lt;/strong&gt; - gauge which counts the parallel invocations of the annotated object.
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_current gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_current 1.0
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_max gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_max 1.0
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_min gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_min 0.0
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;@Gauge&lt;/strong&gt; - gauge, which samples the value of the annotated object.
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_json gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_json 123.0
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;@Metered&lt;/strong&gt; - meter, which tracks the frequency of invocations of the annotated object.
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_total counter
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_total 6.0
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_rate_per_second gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_rate_per_second 0.209682602430885
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_one_min_rate_per_second gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_one_min_rate_per_second 0.015991117074135343
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_five_min_rate_per_second gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_five_min_rate_per_second 0.0033057092356765017
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_fifteen_min_rate_per_second gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_fifteen_min_rate_per_second 0.0011080303990206543
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;@Metric&lt;/strong&gt; - annotation that contains the metadata information when requesting a metric to be injected.
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;@Timed&lt;/strong&gt; - timer, which tracks duration of the annotated object.
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_rate_per_second gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_rate_per_second 0.09811766798116955
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_one_min_rate_per_second gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_one_min_rate_per_second 0.030703655021877174
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_five_min_rate_per_second gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_five_min_rate_per_second 0.0065567799035988195
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_fifteen_min_rate_per_second gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_fifteen_min_rate_per_second 0.002209922141215539
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_min_seconds gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_min_seconds 5.88813E-4
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_max_seconds gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_max_seconds 0.005724684
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_mean_seconds gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_mean_seconds 0.0030220556126073638
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_stddev_seconds gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_stddev_seconds 0.0025644006235855748
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_seconds summary
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_seconds_count 2.0
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_seconds{quantile=&amp;quot;0.5&amp;quot;} 5.88813E-4
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_seconds{quantile=&amp;quot;0.75&amp;quot;} 0.005724684
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_seconds{quantile=&amp;quot;0.95&amp;quot;} 0.005724684
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_seconds{quantile=&amp;quot;0.98&amp;quot;} 0.005724684
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_seconds{quantile=&amp;quot;0.99&amp;quot;} 0.005724684
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_seconds{quantile=&amp;quot;0.999&amp;quot;} 0.005724684
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;@SimplyTimed&lt;/strong&gt; - simple timer, which tracks duration and invocations of the annotated object.
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_total counter
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_total 1.0
+# TYPE application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_elapsedTime_seconds gauge
+application_org_kostenko_examples_microprofile_metrics_MetricsTestResource_prometheus_elapsedTime_seconds 0.005032859
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;a href=&quot;https://prometheus.io/docs/introduction/overview/&quot;&gt;Prometheus&lt;/a&gt; is a free software application used for event monitoring and alerting. It records real-time metrics in a time series database (allowing for high dimensionality) built using a HTTP pull model, with flexible queries and real-time alerting.&lt;/p&gt;
+&lt;p&gt;Let&apos;s setup above and check how metrics monitoring with Prometheus looks on practice:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;wget https://github.com/prometheus/prometheus/releases/download/v2.23.0/prometheus-2.23.0.linux-amd64.tar.gz
+tar xvfz prometheus-*.tar.gz
+cd prometheus-*
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;To provide path to the metrics endpoint edit &lt;strong&gt;&lt;code&gt;prometheus.yml&lt;/code&gt;&lt;/strong&gt; and provide correct &lt;strong&gt;metrics_path&lt;/strong&gt; and &lt;strong&gt;targets&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-yaml&quot;&gt;# Here it&apos;s Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=&amp;lt;job_name&amp;gt;` to any timeseries scraped from this config.
+  - job_name: &apos;prometheus&apos;
+
+    # metrics_path defaults to &apos;/metrics&apos;
+    # scheme defaults to &apos;http&apos;.
+
+    static_configs:
+    - targets: [&apos;127.0.0.1:9990&apos;]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This is it! &lt;strong&gt;&lt;code&gt;http://localhost:9090/graph&lt;/code&gt;&lt;/strong&gt; :&lt;br /&gt;
+&lt;img src=&quot;/img/2020-12-wildfly-mp-metrics.png&quot; alt=&quot;wildfly-microprofile-metrics&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;Now our metrics is collecting and can be visualized over standard prometheus UI(shown above) or easy integrated with &lt;a href=&quot;https://prometheus.io/docs/visualization/grafana/&quot;&gt;grafana&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Source code of custom metrics endpoint example available on &lt;a href=&quot;https://github.com/kostenkoserg/wildfly-microprofile-example&quot;&gt;GitHub&lt;/a&gt;&lt;/p&gt;
+
+	</description>
+    </item>
     <item>
       <title>Infinispan Server as Wildfly remote cache container for your Jakarta EE application</title>
       <link>https://kostenko.org/blog/2020/11/infinispan-server-wildfly-integration.html</link>
