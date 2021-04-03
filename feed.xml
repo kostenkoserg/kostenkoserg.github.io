@@ -6,9 +6,51 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Sun, 27 Dec 2020 23:11:22 +0200</pubDate>
-    <lastBuildDate>Sun, 27 Dec 2020 23:11:22 +0200</lastBuildDate>
+    <pubDate>Sat, 3 Apr 2021 10:38:21 +0300</pubDate>
+    <lastBuildDate>Sat, 3 Apr 2021 10:38:21 +0300</lastBuildDate>
 
+    <item>
+      <title>Undertow AJP balancer. UT005028: Proxy request failed: java.nio.BufferOverflowException</title>
+      <link>https://kostenko.org/blog/2021/undertow-ajp-balancer-.html</link>
+      <pubDate>Sat, 3 Apr 2021 00:00:00 +0300</pubDate>
+      <guid isPermaLink="false">blog/2021/undertow-ajp-balancer-.html</guid>
+      	<description>
+	&lt;p&gt;Wildfly provides great out of the box &lt;a href=&quot;https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html&quot;&gt;load balancing support&lt;/a&gt; by &lt;strong&gt;Undertow&lt;/strong&gt; and &lt;strong&gt;modcluster&lt;/strong&gt; subsystems&lt;br /&gt;
+Unfortunately, in case  HTTP headers size is huge enough (close to 16K),  which is so actual in JWT era - pity error happened:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;ERROR [io.undertow.proxy] (default I/O-10) UT005028: Proxy request to /ee-jax-rs-examples/clusterdemo/serverinfo failed: java.io.IOException: java.nio.BufferOverflowException
+ at io.undertow.server.handlers.proxy.ProxyHandler$HTTPTrailerChannelListener.handleEvent(ProxyHandler.java:771)
+ at io.undertow.server.handlers.proxy.ProxyHandler$ProxyAction$1.completed(ProxyHandler.java:646)
+ at io.undertow.server.handlers.proxy.ProxyHandler$ProxyAction$1.completed(ProxyHandler.java:561)
+ at io.undertow.client.ajp.AjpClientExchange.invokeReadReadyCallback(AjpClientExchange.java:203)
+ at io.undertow.client.ajp.AjpClientConnection.initiateRequest(AjpClientConnection.java:288)
+ at io.undertow.client.ajp.AjpClientConnection.sendRequest(AjpClientConnection.java:242)
+ at io.undertow.server.handlers.proxy.ProxyHandler$ProxyAction.run(ProxyHandler.java:561)
+ at io.undertow.util.SameThreadExecutor.execute(SameThreadExecutor.java:35)
+ at io.undertow.server.HttpServerExchange.dispatch(HttpServerExchange.java:815)
+...
+Caused by: java.nio.BufferOverflowException
+ at java.nio.Buffer.nextPutIndex(Buffer.java:521)
+ at java.nio.DirectByteBuffer.put(DirectByteBuffer.java:297)
+ at io.undertow.protocols.ajp.AjpUtils.putString(AjpUtils.java:52)
+ at io.undertow.protocols.ajp.AjpClientRequestClientStreamSinkChannel.createFrameHeaderImpl(AjpClientRequestClientStreamSinkChannel.java:176)
+ at io.undertow.protocols.ajp.AjpClientRequestClientStreamSinkChannel.generateSendFrameHeader(AjpClientRequestClientStreamSinkChannel.java:290)
+ at io.undertow.protocols.ajp.AjpClientFramePriority.insertFrame(AjpClientFramePriority.java:39)
+ at io.undertow.protocols.ajp.AjpClientFramePriority.insertFrame(AjpClientFramePriority.java:32)
+ at io.undertow.server.protocol.framed.AbstractFramedChannel.flushSenders(AbstractFramedChannel.java:603)
+ at io.undertow.server.protocol.framed.AbstractFramedChannel.flush(AbstractFramedChannel.java:742)
+ at io.undertow.server.protocol.framed.AbstractFramedChannel.queueFrame(AbstractFramedChannel.java:735)
+ at io.undertow.server.protocol.framed.AbstractFramedStreamSinkChannel.queueFinalFrame(AbstractFramedStreamSinkChannel.java:267)
+ at io.undertow.server.protocol.framed.AbstractFramedStreamSinkChannel.shutdownWrites(AbstractFramedStreamSinkChannel.java:244)
+ at io.undertow.channels.DetachableStreamSinkChannel.shutdownWrites(DetachableStreamSinkChannel.java:79)
+ at io.undertow.server.handlers.proxy.ProxyHandler$HTTPTrailerChannelListener.handleEvent(ProxyHandler.java:754)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The same request directly to backend server works well.  Tried to play with &lt;strong&gt;ajp-listener&lt;/strong&gt; and &lt;strong&gt;mod-cluster&lt;/strong&gt; filter &lt;strong&gt;&amp;quot;max-*&amp;quot;&lt;/strong&gt; parameters, but have no luck.&lt;/p&gt;
+&lt;p&gt;Possible solution here is switch protocol from AJP to HTTP which can be bit less effective, but works well with big headers:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;/profile=full-ha/subsystem=modcluster/proxy=default:write-attribute(name=listener, value=default)
+&lt;/code&gt;&lt;/pre&gt;
+
+	</description>
+    </item>
     <item>
       <title>Improve Oracle JDBC performance by fetch size tuning</title>
       <link>https://kostenko.org/blog/2020/12/oracle-jdbc-defaultrowprefetch.html</link>

@@ -99,6 +99,7 @@
 										<li><a href="tags/jwt.html">jwt</a></li>
 										<li><a href="tags/rest-client.html">rest-client</a></li>
 										<li><a href="tags/tomcat.html">tomcat</a></li>
+										<li><a href="tags/undertow.html">undertow</a></li>
 										<li><a href="tags/jax-rs.html">jax-rs</a></li>
 										<li><a href="tags/jsr532.html">jsr532</a></li>
 										<li><a href="tags/jbake.html">jbake</a></li>
@@ -117,6 +118,44 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2021/undertow-ajp-balancer-.html"><h1>Undertow AJP balancer. UT005028: Proxy request failed: java.nio.BufferOverflowException</h1></a>
+				<p>03 April 2021</p>
+  			<p><p>Wildfly provides great out of the box <a href="https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html">load balancing support</a> by <strong>Undertow</strong> and <strong>modcluster</strong> subsystems<br />
+Unfortunately, in case  HTTP headers size is huge enough (close to 16K),  which is so actual in JWT era - pity error happened:</p>
+<pre><code class="language-java">ERROR [io.undertow.proxy] (default I/O-10) UT005028: Proxy request to /ee-jax-rs-examples/clusterdemo/serverinfo failed: java.io.IOException: java.nio.BufferOverflowException
+ at io.undertow.server.handlers.proxy.ProxyHandler$HTTPTrailerChannelListener.handleEvent(ProxyHandler.java:771)
+ at io.undertow.server.handlers.proxy.ProxyHandler$ProxyAction$1.completed(ProxyHandler.java:646)
+ at io.undertow.server.handlers.proxy.ProxyHandler$ProxyAction$1.completed(ProxyHandler.java:561)
+ at io.undertow.client.ajp.AjpClientExchange.invokeReadReadyCallback(AjpClientExchange.java:203)
+ at io.undertow.client.ajp.AjpClientConnection.initiateRequest(AjpClientConnection.java:288)
+ at io.undertow.client.ajp.AjpClientConnection.sendRequest(AjpClientConnection.java:242)
+ at io.undertow.server.handlers.proxy.ProxyHandler$ProxyAction.run(ProxyHandler.java:561)
+ at io.undertow.util.SameThreadExecutor.execute(SameThreadExecutor.java:35)
+ at io.undertow.server.HttpServerExchange.dispatch(HttpServerExchange.java:815)
+...
+Caused by: java.nio.BufferOverflowException
+ at java.nio.Buffer.nextPutIndex(Buffer.java:521)
+ at java.nio.DirectByteBuffer.put(DirectByteBuffer.java:297)
+ at io.undertow.protocols.ajp.AjpUtils.putString(AjpUtils.java:52)
+ at io.undertow.protocols.ajp.AjpClientRequestClientStreamSinkChannel.createFrameHeaderImpl(AjpClientRequestClientStreamSinkChannel.java:176)
+ at io.undertow.protocols.ajp.AjpClientRequestClientStreamSinkChannel.generateSendFrameHeader(AjpClientRequestClientStreamSinkChannel.java:290)
+ at io.undertow.protocols.ajp.AjpClientFramePriority.insertFrame(AjpClientFramePriority.java:39)
+ at io.undertow.protocols.ajp.AjpClientFramePriority.insertFrame(AjpClientFramePriority.java:32)
+ at io.undertow.server.protocol.framed.AbstractFramedChannel.flushSenders(AbstractFramedChannel.java:603)
+ at io.undertow.server.protocol.framed.AbstractFramedChannel.flush(AbstractFramedChannel.java:742)
+ at io.undertow.server.protocol.framed.AbstractFramedChannel.queueFrame(AbstractFramedChannel.java:735)
+ at io.undertow.server.protocol.framed.AbstractFramedStreamSinkChannel.queueFinalFrame(AbstractFramedStreamSinkChannel.java:267)
+ at io.undertow.server.protocol.framed.AbstractFramedStreamSinkChannel.shutdownWrites(AbstractFramedStreamSinkChannel.java:244)
+ at io.undertow.channels.DetachableStreamSinkChannel.shutdownWrites(DetachableStreamSinkChannel.java:79)
+ at io.undertow.server.handlers.proxy.ProxyHandler$HTTPTrailerChannelListener.handleEvent(ProxyHandler.java:754)
+</code></pre>
+<p>The same request directly to backend server works well.  Tried to play with <strong>ajp-listener</strong> and <strong>mod-cluster</strong> filter <strong>&quot;max-*&quot;</strong> parameters, but have no luck.</p>
+<p>Possible solution here is switch protocol from AJP to HTTP which can be bit less effective, but works well with big headers:</p>
+<pre><code class="language-java">/profile=full-ha/subsystem=modcluster/proxy=default:write-attribute(name=listener, value=default)
+</code></pre>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2021/undertow-ajp-balancer-.html#disqus_thread" data-disqus-identifier="blog/2021/undertow-ajp-balancer-.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2020/12/oracle-jdbc-defaultrowprefetch.html"><h1>Improve Oracle JDBC performance by fetch size tuning</h1></a>
 				<p>28 December 2020</p>
   			<p><p>By default, when Oracle JDBC driver executes query, it retrieves a result set of <strong>10 rows</strong> at a time from the database cursor. Low fetch size value might cause more roundtrips to DB and this leads to a longer time to fetch results from queries. You can change the number of rows retrieved with each trip to the database cursor by changing the row fetch size value.</p>
@@ -523,42 +562,6 @@ public int getInExpressionCountLimit() {
 <p>Source code of described example available on <a href="https://github.com/kostenkoserg/ee-jpa-examples">GitHub</a></p>
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2020/11/ora-01795-jpa-function-workaround.html#disqus_thread" data-disqus-identifier="blog/2020/11/ora-01795-jpa-function-workaround.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2020/11/wildfly-infinspan-scaling.html"><h1>Wildfly/Infinispan domain. Keep distributed cache on separate nodes</h1></a>
-				<p>03 November 2020</p>
-  			<p><p>Previously i wrote about development of Jakarta EE application using <a href="https://kostenko.org/blog/2020/08/wildfly-infinspan.html">distributed cache with Wildfly and Infinispan</a>. This solution has a good fit for a small clustered environments where data distribution between nodes will not costs too much. In case you are looking for clustered environment where application scaling should have minimum impact on cache and vice versa, but by some reason you wouldn't like to use a separate infinispan-server cluster as <strong>remote-cache-container</strong> then next topology can be a solution:<br />
-<img src="/img/2020-11-cache-server-group.png" alt="cache-server-group" /></p>
-<p>To make it work we need to configure <strong>distributed-cache</strong> for two server groups and provide <strong>zero capacity-factor</strong> for one of them. Below is simple configuration example:</p>
-<pre><code class="language-bash"># clone current profile
-/profile=full-ha:clone(to-profile=full-ha-cache)
-# Create cache server group based on new profile
-/server-group=cache-servers:add(profile=full-ha-cache, socket-binding-group=full-ha-sockets)
-# Add cache container and distributed cache for both profiles
-/profile=full-ha/subsystem=infinispan/cache-container=mycachecontainer:add(statistics-enabled=true)
-/profile=full-ha-cache/subsystem=infinispan/cache-container=mycachecontainer:add(statistics-enabled=true)
-/profile=ful-ha-cache/subsystem=infinispan/cache-container=mycachecontainer/distributed-cache=mycache:add()
-/profile=full-ha/subsystem=infinispan/cache-container=mycachecontainer/distributed-cache=mycache:add()
-# Create cache servers
-/host=master/server-config=cache1:add(group=cache-servers,socket-binding-port-offset=500)
-/host=master/server-config=cache1:start(blocking=true)
-/host=master/server-config=cache2:add(group=cache-servers,socket-binding-port-offset=600)
-/host=master/server-config=cache2:start(blocking=true)
-# Configure ZERO capacity for profile which we will use for application
-/profile=full-ha/subsystem=infinispan/cache-container=mycachecontainer/distributed-cache=mycache:write-attribute(name=capacity-factor, value=0)
-# Provide transport
-/profile=full-ha/subsystem=infinispan/cache-container=mycachecontainer/transport=jgroups:add()
-/profile=ful-ha-cache/subsystem=infinispan/cache-container=mycachecontainer/transport=jgroups:add()
-</code></pre>
-<p>Now let's deploy our application on two server groups</p>
-<pre><code class="language-bash">deploy jcache-examples.war --server-groups=backend-servers,cache-servers
-</code></pre>
-<p>You can check cached <strong>number-of-entries</strong> on each server by</p>
-<pre><code class="language-bash">/host=master/server=backend1/subsystem=infinispan/cache-container=mycachecontainer/distributed-cache=mycache:read-resource(include-runtime=true)
-/host=master/server=cache1/subsystem=infinispan/cache-container=mycachecontainer/distributed-cache=mycache:read-resource(include-runtime=true)
-</code></pre>
-<p>And be sure that application backend-servers will always show <code>&quot;number-of-entries&quot; =&gt; 0</code></p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2020/11/wildfly-infinspan-scaling.html#disqus_thread" data-disqus-identifier="blog/2020/11/wildfly-infinspan-scaling.html">Comments</a></p>
 				<hr/>
 
 		<ul class="pager">
