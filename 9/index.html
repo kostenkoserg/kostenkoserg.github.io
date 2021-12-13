@@ -78,6 +78,7 @@
 										<li><a href="../tags/jberet.html">jberet</a></li>
 										<li><a href="../tags/github.html">github</a></li>
 										<li><a href="../tags/activemq.html">activemq</a></li>
+										<li><a href="../tags/log4j.html">log4j</a></li>
 										<li><a href="../tags/jetty.html">jetty</a></li>
 										<li><a href="../tags/api.html">api</a></li>
 										<li><a href="../tags/jcache.html">jcache</a></li>
@@ -118,6 +119,31 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2019/06/wildfly-activemq-deadlock.html"><h1>Wildfly active-mq subsystem deadlock</h1></a>
+				<p>29 June 2019</p>
+  			<p><p>Recently got unusual height CPU utilizaton on random wildly cluster instance. Thread dump shows the reason of a problem:</p>
+<pre><code class="language-java">Found one Java-level deadlock:
+=============================
+
+&quot;Thread-1 (ActiveMQ-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$2@46fcd20a-1114701218)&quot;:
+  waiting to lock Monitor@0x00007f45f02e20f8 (Object@0x0000000603407950, a org/apache/activemq/artemis/core/server/cluster/impl/ClusterConnectionImpl$MessageFlowRecordImpl),
+  which is held by &quot;Thread-29 (ActiveMQ-client-global-threads-2129186403)&quot;
+&quot;Thread-29 (ActiveMQ-client-global-threads-2129186403)&quot;:
+  waiting to lock Monitor@0x00007f46203b5518 (Object@0x00000004cc79a7b8, a org/apache/activemq/artemis/core/server/impl/QueueImpl),
+  which is held by &quot;Thread-1 (ActiveMQ-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$2@46fcd20a-1114701218)&quot;
+
+Found a total of 1 deadlock.
+</code></pre>
+<p>Below is part of official documentation:</p>
+<blockquote>
+<p>&quot;If thread-pool-max-size is set to a positive integer greater than zero, the thread pool is bounded. If requests come in and there are no free threads available in the pool, requests will block until a thread becomes available. It is recommended that a bounded thread pool be used with caution since it can lead to <strong>deadlock situations</strong> if the upper bound is configured too low.&quot;</p>
+</blockquote>
+<p>So, solution is:</p>
+<pre><code class="language-java">/subsystem=messaging-activemq/server=default:write-attribute(name=thread-pool-max-size,value=-1)
+</code></pre>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2019/06/wildfly-activemq-deadlock.html#disqus_thread" data-disqus-identifier="blog/2019/06/wildfly-activemq-deadlock.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2019/06/runtime-class-loading.html"><h1>How to use custom ClassLoader to load jars in runtime</h1></a>
 				<p>28 June 2019</p>
   			<p><p>To load calsses in runtime java uses ClassLoader mechanism which is based on next core principles:</p>
@@ -288,82 +314,6 @@ Generation of 100000000 random numbers with java.security.SecureRandom time 2203
 <p>It will use additional hardware(CPU) statistic to increase entropy and as result speedup your application.</p>
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2019/04/java-spedup-random-generation.html#disqus_thread" data-disqus-identifier="blog/2019/04/java-spedup-random-generation.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html"><h1>Wildfly domain mode cluster and load balancing from the box</h1></a>
-				<p>15 April 2019</p>
-  			<p><p>Wildfly Application Server provide us two possible modes to setup cluster environment for the Java EE applications.</p>
-<ol>
-<li>
-<p><strong>Standalone mode</strong> - every standalone instance has its own management interface and configuration. You can manage one instance at a time. Configuration placed in <code>standalone.xml</code> file.</p>
-</li>
-<li>
-<p><strong>Domain mode</strong> - all Wildfly instances manage by special orchestration process called <code>domain controller</code>. Using domain controller you can manage group of servers. Also you can mange groups as well. Each servers group can has its own configuration, deployments etc. Configuration placed in <code>domain.xml</code> and <code>host.xml</code> files.<br />
-Example of a Wildfly server groups:<br />
-<img src="/img/2019-04-wildfly-cluster-domain-mode.png" alt="wildfly-cluster-domain-mode" /></p>
-</li>
-</ol>
-<p>From the version 10 Wildfly adds support for using the <code>Undertow</code> subsystem as a load balancer. So, now all we need to build Java EE clustered infrastructure is Wildfly only. Let's do it.</p>
-<p>Download latest version of application server from the <a href="https://wildfly.org/downloads/">https://wildfly.org/downloads/</a> and unzip distributive after. To run Wildfly in domain mode, please execute:</p>
-<pre><code class="language-java">kostenko@kostenko:/opt/wildfly-16.0.0.Final/bin$ ./domain.sh
-</code></pre>
-<p>Connect to the Wildfly CLI concole</p>
-<pre><code class="language-java">kostenko@kostenko:/opt/wildfly-16.0.0.Final/bin$ ./jboss-cli.sh -c
-[domain@localhost:9990 /]
-</code></pre>
-<p>By default Wildfly has preconfigured server groups <code>main-server-group</code> and <code>other-server-group</code>, so we need cleanup existing servers:</p>
-<pre><code class="language-java">:stop-servers(blocking=true)
-/host=master/server-config=server-one:remove
-/host=master/server-config=server-two:remove
-/host=master/server-config=server-three:remove
-/server-group=main-server-group:remove
-/server-group=other-server-group:remove
-</code></pre>
-<p>Create new server group and servers, using the <code>full-ha</code> profile so <code>mod_cluster</code> support is included:</p>
-<pre><code class="language-java">/server-group=backend-servers:add(profile=full-ha, socket-binding-group=full-ha-sockets)
-/host=master/server-config=backend1:add(group=backend-servers, socket-binding-port-offset=100)
-/host=master/server-config=backend2:add(group=backend-servers, socket-binding-port-offset=200)
-
-#start the backend servers
-/server-group=backend-servers:start-servers(blocking=true)
-
-#add system properties (so we can tell them apart)
-/host=master/server-config=backend1/system-property=server.name:add(boot-time=false, value=backend1)
-/host=master/server-config=backend2/system-property=server.name:add(boot-time=false, value=backend2)
-</code></pre>
-<p>Then  set up the server group for load balancer</p>
-<pre><code class="language-java">/server-group=load-balancer:add(profile=load-balancer, socket-binding-group=load-balancer-sockets)
-/host=master/server-config=load-balancer:add(group=load-balancer)
-/socket-binding-group=load-balancer-sockets/socket-binding=modcluster:write-attribute(name=interface, value=public)
-/server-group=load-balancer:start-servers
-</code></pre>
-<p>Now let's develop simple JAX-RS endpoint to show how it works:</p>
-<pre><code class="language-java">@Path(&quot;/clusterdemo&quot;)
-@Stateless
-public class ClusterDemoEndpoint {
-
-    @GET
-    @Path(&quot;/serverinfo&quot;)
-    public Response getServerInfo() {
-
-        return Response.ok().entity(&quot;Server: &quot; + System.getProperty(&quot;server.name&quot;)).build();
-    }
-}
-</code></pre>
-<p>Build project and deploy it to the <code>backend-servers</code> group:</p>
-<pre><code class="language-java">[domain@localhost:9990 /] deploy ee-jax-rs-examples.war --server-groups=backend-servers
-</code></pre>
-<p>And check the result by <code>http://localhost:8080/ee-jax-rs-examples/clusterdemo/serverinfo</code> :<br />
-<img src="/img/2019-04-wildfly-cluster-domain-mode-1-2.gif" alt="wildfly-cluster-domain-mode-1-2" /></p>
-<p>Now we can easily add  servers to the group at runtime and requests will balancing automatically:</p>
-<pre><code class="language-java">[domain@localhost:9990 /] /host=master/server-config=backend3:add(group=backend-servers, socket-binding-port-offset=300)
-[domain@localhost:9990 /] /host=master/server-config=backend3/system-property=server.name:add(boot-time=false, value=backend3)
-[domain@localhost:9990 /] /server-group=backend-servers/:start-servers(blocking=true)
-</code></pre>
-<p><img src="/img/2019-04-wildfly-cluster-domain-mode-1-2-3.gif" alt="wildfly-cluster-domain-mode-1-2-3" /></p>
-<p>That is it!<br />
-Source code available on GitHub:  <a href="https://github.com/kostenkoserg/ee-jax-rs-examples/blob/master/src/main/java/org/kostenko/example/jaxrs/ClusterDemoEndpoint.java">Demo application</a>,  <a href="https://github.com/kostenkoserg/wildfly-configuration-examples/blob/master/wildfly-domain-mode-cluster.cli">Wildlfly CLI </a></p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html#disqus_thread" data-disqus-identifier="blog/2019/04/wildfly-cluster-domain-mode.html">Comments</a></p>
 				<hr/>
 
 		<ul class="pager">

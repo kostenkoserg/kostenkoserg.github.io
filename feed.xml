@@ -6,14 +6,42 @@
     <atom:link href="https://kostenko.org/feed.xml" rel="self" type="application/rss+xml" />
     <description>JBake Bootstrap Template</description>
     <language>en-gb</language>
-    <pubDate>Sat, 3 Apr 2021 10:38:21 +0300</pubDate>
-    <lastBuildDate>Sat, 3 Apr 2021 10:38:21 +0300</lastBuildDate>
+    <pubDate>Mon, 13 Dec 2021 11:58:43 +0200</pubDate>
+    <lastBuildDate>Mon, 13 Dec 2021 11:58:43 +0200</lastBuildDate>
 
     <item>
+      <title>Infinispan Apache Log4j 2 CVE-2021-44228 vulnerability</title>
+      <link>https://kostenko.org/blog/2021/12/infinispan-log4j-2-CVE-2021-44228.html</link>
+      <pubDate>Mon, 13 Dec 2021 00:00:00 +0200</pubDate>
+      <guid isPermaLink="false">blog/2021/12/infinispan-log4j-2-CVE-2021-44228.html</guid>
+      	<description>
+	&lt;p&gt;&lt;strong&gt;&lt;a href=&quot;https://infinispan.org/&quot;&gt;Infinispan&lt;/a&gt;&lt;/strong&gt; 10+ uses &lt;a href=&quot;https://logging.apache.org/log4j/2.x/index.html&quot;&gt;Log4j&lt;/a&gt; version &lt;strong&gt;2.0+&lt;/strong&gt; and can be affected by vulnerability &lt;strong&gt;&lt;a href=&quot;https://nvd.nist.gov/vuln/detail/CVE-2021-44228&quot;&gt;CVE-2021-44228&lt;/a&gt;&lt;/strong&gt;, which has a 10.0 CVSS score. The first fixed Log4j version is &lt;strong&gt;2.15.0.&lt;/strong&gt;&lt;br /&gt;
+So, until official patch is coming, - you can update used logger version to the latest in few simple steps&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Download Log4j version 2.15.0:  &lt;a href=&quot;https://www.apache.org/dyn/closer.lua/logging/log4j/2.15.0/apache-log4j-2.15.0-bin.zip&quot;&gt;https://www.apache.org/dyn/closer.lua/logging/log4j/2.15.0/apache-log4j-2.15.0-bin.zip&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Unpack distributive&lt;/li&gt;
+&lt;li&gt;Replace affected libraries&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre&gt;&lt;code class=&quot;language-java&quot;&gt;wget https://downloads.apache.org/logging/log4j/2.15.0/apache-log4j-2.15.0-bin.zip
+unzip apache-log4j-2.15.0-bin.zip
+
+cd /opt/infinispan-server-10.1.8.Final/lib/
+
+rm log4j-*.jar
+cp ~/Downloads/apache-log4j-2.15.0-bin/log4j-api-2.15.0.jar ./
+cp ~/Downloads/apache-log4j-2.15.0-bin/log4j-core-2.15.0.jar ./
+cp ~/Downloads/apache-log4j-2.15.0-bin/log4j-jul-2.15.0.jar ./
+cp ~/Downloads/apache-log4j-2.15.0-bin/log4j-slf4j-impl-2.15.0.jar ./
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Please, note - patch above is not official, but according to initial tests it works with no issues&lt;/p&gt;
+
+	</description>
+    </item>
+    <item>
       <title>Undertow AJP balancer. UT005028: Proxy request failed: java.nio.BufferOverflowException</title>
-      <link>https://kostenko.org/blog/2021/undertow-ajp-balancer-.html</link>
+      <link>https://kostenko.org/blog/2021/04/undertow-ajp-balancer-.html</link>
       <pubDate>Sat, 3 Apr 2021 00:00:00 +0300</pubDate>
-      <guid isPermaLink="false">blog/2021/undertow-ajp-balancer-.html</guid>
+      <guid isPermaLink="false">blog/2021/04/undertow-ajp-balancer-.html</guid>
       	<description>
 	&lt;p&gt;Wildfly provides great out of the box &lt;a href=&quot;https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html&quot;&gt;load balancing support&lt;/a&gt; by &lt;strong&gt;Undertow&lt;/strong&gt; and &lt;strong&gt;modcluster&lt;/strong&gt; subsystems&lt;br /&gt;
 Unfortunately, in case  HTTP headers size is huge enough (close to 16K),  which is so actual in JWT era - pity error happened:&lt;/p&gt;

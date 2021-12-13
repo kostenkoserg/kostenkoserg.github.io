@@ -78,6 +78,7 @@
 										<li><a href="../tags/jberet.html">jberet</a></li>
 										<li><a href="../tags/github.html">github</a></li>
 										<li><a href="../tags/activemq.html">activemq</a></li>
+										<li><a href="../tags/log4j.html">log4j</a></li>
 										<li><a href="../tags/jetty.html">jetty</a></li>
 										<li><a href="../tags/api.html">api</a></li>
 										<li><a href="../tags/jcache.html">jcache</a></li>
@@ -118,6 +119,16 @@
     <div class="container">
 
 
+				<a href="https://kostenko.org/blog/2020/09/tomcat-reload-application.html"><h1>Simple trick to reload application on Tomcat</h1></a>
+				<p>30 September 2020</p>
+  			<p><p>Reload tomcat application without accessing to manager console you can just by touch</p>
+<pre><code class="language-bash">cd tomcat/webapps/&lt;application&gt;/WEB-INF/
+touch web.xml
+</code></pre>
+<p>The trick above <strong>will work on other application servers</strong> with &quot;hot deploy&quot; support.</p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2020/09/tomcat-reload-application.html#disqus_thread" data-disqus-identifier="blog/2020/09/tomcat-reload-application.html">Comments</a></p>
+				<hr/>
 				<a href="https://kostenko.org/blog/2020/08/wildfly-infinspan.html"><h1>Distributed caching with Wildfly/Infinispan and poor JCache support.</h1></a>
 				<p>26 August 2020</p>
   			<p><p>Latest trends teach us to do development of stateless applications, and if you can - keep your design stateless. But, by some reason, you may need to cache and share state between nodes.</p>
@@ -343,94 +354,6 @@ cd ./jboss-server-migration
 </code></pre>
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2020/08/java-way-to-unzip.html#disqus_thread" data-disqus-identifier="blog/2020/08/java-way-to-unzip.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2020/04/quarkus-vaadin-8.html"><h1>Rich web application on pure Java with Vaadin and Quarkus</h1></a>
-				<p>29 April 2020</p>
-  			<p><p>Recently I wrote about <a href="https://kostenko.org/blog/2020/02/jwt-openapi-microprofile-quarkus.html">REST API with Eclipse Microprofile and Quarkus</a> - and it is very useful for the microservices development, but from time to time every backend Java developer <strong>needs for the UI</strong>. With <strong><a href="https://vaadin.com/">Vaadin web framework</a></strong> you can write UI 100% in Java without getting bogged down in JS, HTML, and CSS.</p>
-<p>Quarkus provides <strong><code>Servlet</code></strong> and  <strong><code>Websocket</code></strong> support as well, so there is no any blockers to run web application.<br />
-To bootstrap Quarkus from the scratch you can visit  <strong><a href="https://code.quarkus.io/">code.quarkus.io</a></strong> and select build tool you like and extensions you need. In our case we need for:</p>
-<ul>
-<li><strong>Undertow Servlet</strong></li>
-<li><strong>Undertow WebSockets</strong></li>
-</ul>
-<p>With <strong>Vaadin 8</strong> dependencies my <strong><code>build.gradle</code></strong> looks pretty clear:</p>
-<pre><code class="language-java">plugins {
-    id 'java'
-    id 'io.quarkus'
-}
-repositories {
-     mavenLocal()
-     mavenCentral()
-}
-dependencies {
-    compile 'com.vaadin:vaadin-server:8.10.3'
-    compile 'com.vaadin:vaadin-push:8.10.3'
-    compile 'com.vaadin:vaadin-client-compiled:8.10.3'
-    compile 'com.vaadin:vaadin-themes:8.10.3'
-    implementation 'io.quarkus:quarkus-undertow-websockets'
-    implementation 'io.quarkus:quarkus-undertow'
-    implementation enforcedPlatform(&quot;${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}&quot;)
-}
-
-group 'org.kostenko'
-version '1.0.0-SNAPSHOT'
-
-compileJava {
-    options.encoding = 'UTF-8'
-    options.compilerArgs &lt;&lt; '-parameters'
-}
-</code></pre>
-<p>Now we able to create <strong><code>com.vaadin.ui.UI</code></strong></p>
-<pre><code class="language-java">@Theme(&quot;dashboard&quot;)
-public class MyUI extends UI {
-
-    @Override
-    protected void init(VaadinRequest vaadinRequest) {
-      ...
-    }
-
-    /**
-     * VaadinServlet configuration
-     */
-    @WebServlet(urlPatterns = &quot;/*&quot;, name = &quot;MyUIServlet&quot;, asyncSupported = true, initParams = {
-        @WebInitParam(name = &quot;org.atmosphere.websocket.suppressJSR356&quot;, value = &quot;true&quot;)}
-    )
-    @VaadinServletConfiguration(ui = MyUI.class, productionMode = false)
-    public static class MyUIServlet extends VaadinServlet {
-    }
-}
-</code></pre>
-<p>Put Vaadin static files to the <code>/src/main/resources/META-INF/resources/VAADIN</code> and run quarkus in dev mode as usual <strong>./gradlew quarkusDev</strong>:</p>
-<pre><code class="language-bash">Listening for transport dt_socket at address: 5005
-__  ____  __  _____   ___  __ ____  ______
- --/ __ \/ / / / _ | / _ \/ //_/ / / / __/
- -/ /_/ / /_/ / __ |/ , _/ ,&lt; / /_/ /\ \   
---\___\_\____/_/ |_/_/|_/_/|_|\____/___/   
-2020-04-29 09:49:37,718 WARN  [io.qua.dep.QuarkusAugmentor] (main) Using Java versions older than 11 to build Quarkus applications is deprecated and will be disallowed in a future release!
-2020-04-29 09:49:38,389 INFO  [io.und.servlet] (Quarkus Main Thread) Initializing AtmosphereFramework
-2020-04-29 09:49:38,579 INFO  [io.quarkus] (Quarkus Main Thread) Quarkus 1.4.1.Final started in 0.995s. Listening on: http://0.0.0.0:8080
-2020-04-29 09:49:38,579 INFO  [io.quarkus] (Quarkus Main Thread) Profile dev activated. Live Coding activated.
-2020-04-29 09:49:38,579 INFO  [io.quarkus] (Quarkus Main Thread) Installed features: [cdi, servlet, undertow-websockets]
-2020-04-29 09:49:46,423 WARNING [com.vaa.ser.DefaultDeploymentConfiguration] (executor-thread-1)                                                                                                                                                             
-=================================================================                                                                                                                                                                                            
-Vaadin is running in DEBUG MODE.
-Add productionMode=true to web.xml to disable debug features.
-To show debug window, add ?debug to your application URL.
-=================================================================
-</code></pre>
-<p>Example application I did based on <strong><a href="https://github.com/vaadin/dashboard-demo">vaadin/dashboard-demo</a></strong> that uses nicely looking and responsive <strong><a href="https://demo.vaadin.com/valo-theme/#!common">Valo theme</a></strong></p>
-<p><img src="/img/2020-04-quarkus-vaadin-sm.gif" alt="quarkus + vaadin" /></p>
-<p><strong>Current solution limitations and workaround:</strong></p>
-<ul>
-<li>Latest Vaadin version (14+) does not work from the box and needs for custom Quarkus extensions like <a href="https://github.com/moewes/quarkus-vaadin-lab">moewes/quarkus-vaadin-lab</a> and there is still no official one :(</li>
-<li>Vaadin CDI doesn't work as expected, so to access your CDI beans from the UI components you should use <strong><code>CDI.current().select(Bean.class).get();</code></strong></li>
-<li>By default Quarkus removes CDI beans from the runtime if no one @Inject them. Use <strong><code>io.quarkus.arc.Unremovable</code></strong> annotation for keep beans you need.</li>
-<li>In case <code>java.lang.IllegalStateException:Unable to configure jsr356 at that stage. ServerContainer is null</code> - provide <code>org.atmosphere.websocket.suppressJSR356</code> VaadinServlet parameter as was shown in the code snippet above</li>
-<li>Quarkus native mode doesn't work</li>
-</ul>
-<p>Described example application source code available on <a href="https://github.com/kostenkoserg/quarkus-vaadin8-example">GitHub</a></p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2020/04/quarkus-vaadin-8.html#disqus_thread" data-disqus-identifier="blog/2020/04/quarkus-vaadin-8.html">Comments</a></p>
 				<hr/>
 
 		<ul class="pager">

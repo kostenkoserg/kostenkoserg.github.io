@@ -78,6 +78,7 @@
 										<li><a href="tags/jberet.html">jberet</a></li>
 										<li><a href="tags/github.html">github</a></li>
 										<li><a href="tags/activemq.html">activemq</a></li>
+										<li><a href="tags/log4j.html">log4j</a></li>
 										<li><a href="tags/jetty.html">jetty</a></li>
 										<li><a href="tags/api.html">api</a></li>
 										<li><a href="tags/jcache.html">jcache</a></li>
@@ -118,7 +119,31 @@
     <div class="container">
 
 
-				<a href="https://kostenko.org/blog/2021/undertow-ajp-balancer-.html"><h1>Undertow AJP balancer. UT005028: Proxy request failed: java.nio.BufferOverflowException</h1></a>
+				<a href="https://kostenko.org/blog/2021/12/infinispan-log4j-2-CVE-2021-44228.html"><h1>Infinispan Apache Log4j 2 CVE-2021-44228 vulnerability</h1></a>
+				<p>13 December 2021</p>
+  			<p><p><strong><a href="https://infinispan.org/">Infinispan</a></strong> 10+ uses <a href="https://logging.apache.org/log4j/2.x/index.html">Log4j</a> version <strong>2.0+</strong> and can be affected by vulnerability <strong><a href="https://nvd.nist.gov/vuln/detail/CVE-2021-44228">CVE-2021-44228</a></strong>, which has a 10.0 CVSS score. The first fixed Log4j version is <strong>2.15.0.</strong><br />
+So, until official patch is coming, - you can update used logger version to the latest in few simple steps</p>
+<ul>
+<li>Download Log4j version 2.15.0:  <a href="https://www.apache.org/dyn/closer.lua/logging/log4j/2.15.0/apache-log4j-2.15.0-bin.zip">https://www.apache.org/dyn/closer.lua/logging/log4j/2.15.0/apache-log4j-2.15.0-bin.zip</a></li>
+<li>Unpack distributive</li>
+<li>Replace affected libraries</li>
+</ul>
+<pre><code class="language-java">wget https://downloads.apache.org/logging/log4j/2.15.0/apache-log4j-2.15.0-bin.zip
+unzip apache-log4j-2.15.0-bin.zip
+
+cd /opt/infinispan-server-10.1.8.Final/lib/
+
+rm log4j-*.jar
+cp ~/Downloads/apache-log4j-2.15.0-bin/log4j-api-2.15.0.jar ./
+cp ~/Downloads/apache-log4j-2.15.0-bin/log4j-core-2.15.0.jar ./
+cp ~/Downloads/apache-log4j-2.15.0-bin/log4j-jul-2.15.0.jar ./
+cp ~/Downloads/apache-log4j-2.15.0-bin/log4j-slf4j-impl-2.15.0.jar ./
+</code></pre>
+<p>Please, note - patch above is not official, but according to initial tests it works with no issues</p>
+</p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2021/12/infinispan-log4j-2-CVE-2021-44228.html#disqus_thread" data-disqus-identifier="blog/2021/12/infinispan-log4j-2-CVE-2021-44228.html">Comments</a></p>
+				<hr/>
+				<a href="https://kostenko.org/blog/2021/04/undertow-ajp-balancer-.html"><h1>Undertow AJP balancer. UT005028: Proxy request failed: java.nio.BufferOverflowException</h1></a>
 				<p>03 April 2021</p>
   			<p><p>Wildfly provides great out of the box <a href="https://kostenko.org/blog/2019/04/wildfly-cluster-domain-mode.html">load balancing support</a> by <strong>Undertow</strong> and <strong>modcluster</strong> subsystems<br />
 Unfortunately, in case  HTTP headers size is huge enough (close to 16K),  which is so actual in JWT era - pity error happened:</p>
@@ -154,7 +179,7 @@ Caused by: java.nio.BufferOverflowException
 <pre><code class="language-java">/profile=full-ha/subsystem=modcluster/proxy=default:write-attribute(name=listener, value=default)
 </code></pre>
 </p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2021/undertow-ajp-balancer-.html#disqus_thread" data-disqus-identifier="blog/2021/undertow-ajp-balancer-.html">Comments</a></p>
+				<p class="text-right"><a href="https://kostenko.org/blog/2021/04/undertow-ajp-balancer-.html#disqus_thread" data-disqus-identifier="blog/2021/04/undertow-ajp-balancer-.html">Comments</a></p>
 				<hr/>
 				<a href="https://kostenko.org/blog/2020/12/oracle-jdbc-defaultrowprefetch.html"><h1>Improve Oracle JDBC performance by fetch size tuning</h1></a>
 				<p>28 December 2020</p>
@@ -486,82 +511,6 @@ describe
 <p>Source code of described example available on <a href="https://github.com/kostenkoserg/wildfly-infinispan-example">GitHub</a></p>
 </p>
 				<p class="text-right"><a href="https://kostenko.org/blog/2020/11/infinispan-server-wildfly-integration.html#disqus_thread" data-disqus-identifier="blog/2020/11/infinispan-server-wildfly-integration.html">Comments</a></p>
-				<hr/>
-				<a href="https://kostenko.org/blog/2020/11/ora-01795-jpa-function-workaround.html"><h1>ORA-01795 and JPA function workaround</h1></a>
-				<p>27 November 2020</p>
-  			<p><p>Few posts ago i wrote about Hibernate Interceptor to solve <strong><a href="https://kostenko.org/blog/2020/10/jpa-ora-01795-hibernate-interceptor.html">ORA-01795: maximum number of expressions in a list is 1000 error</a></strong>. This way can be very helpful in case you got this limitation, but by some reasons not able to perform refactoring.</p>
-<p>Another way to get it done with  <strong>JPQL</strong> is a <strong>JPA function()</strong>. We used similar approach to implement <a href="https://kostenko.org/blog/2020/10/jpa-count-over.html">JPA paging with COUNT(*) OVER()</a>.</p>
-<p>So, let's see how less code we need to get it work with custom <em><code>Dialect</code></em>  workaround.</p>
-<p><code>Custom dialect:</code></p>
-<pre><code class="language-java">public class MyOraDialect extends Oracle10gDialect {
-    public MyOraDialect () {
-        super();
-        // sql tuples workaround
-        registerFunction( &quot;safeTupleIn&quot;, new VarArgsSQLFunction( StandardBasicTypes.INTEGER, &quot;(&quot;, &quot;,0),(&quot;, &quot;,0)&quot;));
-        // custom SQLFunction workaround
-        registerFunction( &quot;safeIn&quot;, new SafeInFunction());
-    }
-}
-</code></pre>
-<p><code>Usage example:</code></p>
-<pre><code class="language-java">@Test
-public void safeTupleIn1000Test() throws Exception {
-     EntityManager em = Persistence.createEntityManagerFactory(&quot;myDSTestOra&quot;).createEntityManager();
-     // this.generateTestData(em);
-     ...
-     Query query =  em.createQuery(&quot;SELECT b as post FROM OraBlogEntity b where (id, 0) in (function('safeTupleIn',:ids))&quot;, Tuple.class);
-     query.setParameter(&quot;ids&quot;, idsList);
-     List&lt;Tuple&gt; tpList = query.getResultList();
-     System.out.println(tpList.size());
-}
-</code></pre>
-<p>or bit cleaner:</p>
-<pre><code class="language-java">...
-Query query =  em.createQuery(&quot;SELECT b as post FROM OraBlogEntity b where id in (function('safeIn', id, :ids))&quot;, Tuple.class);
-query.setParameter(&quot;ids&quot;, idsList);
-...
-</code></pre>
-<p>Result SQL in this case SQL tuples will looks like</p>
-<pre><code class="language-bash">Hibernate: select orablogent0_.id as id1_0_, orablogent0_.body as body2_0_, orablogent0_.title as title3_0_ from orablogentity orablogent0_ where (orablogent0_.id , 0) in ((?,0),(?,0),(?....)
-</code></pre>
-<p>In case custom SQLFunction implementation:</p>
-<pre><code class="language-bash">Hibernate: select orablogent0_.id as id1_0_, orablogent0_.body as body2_0_, orablogent0_.title as title3_0_ from orablogentity orablogent0_ where orablogent0_.id in (?,...,?) or orablogent0_.id in (?,...,?)
-</code></pre>
-<p>Below is simple example how custom <strong><code>org.hibernate.dialect.function.SQLFunction</code></strong> can be implemented.</p>
-<pre><code class="language-java">public class SafeInFunction implements SQLFunction {
-    private final static int IN_CAUSE_LIMIT = 1000;
-    ...
-    @Override
-    public String render(Type firstArgumentType, List arguments, SessionFactoryImplementor factory) throws QueryException {
-        final StringBuilder buf = new StringBuilder();
-        String fieldName = (String) arguments.get(0);
-        for (int i = 1; i &lt; arguments.size(); i++) {
-            if (i % IN_CAUSE_LIMIT == 0) {
-                buf.deleteCharAt(buf.length() - 1).append(&quot;) or &quot;).append(fieldName).append(&quot; in (&quot;);
-            }
-            buf.append(&quot;?,&quot;);
-        }
-        return buf.deleteCharAt(buf.length() - 1).toString();
-    }
-}
-</code></pre>
-<p>PS. Hibernate provides <strong><code>org.hibernate.dialect.Dialect</code></strong> method to overwrite</p>
-<pre><code class="language-java">/**
- * Return the limit that the underlying database places on the number of elements in an {@code IN} predicate.
- * If the database defines no such limits, simply return zero or less-than-zero.
- *
- * @return int The limit, or zero-or-less to indicate no limit.
- */
-public int getInExpressionCountLimit() {
-  return 0;
-}
-</code></pre>
-<p>But unfortunately did not provides properly implementation yet and just throw warning</p>
-<pre><code class="language-bash">WARN: HHH000443: Dialect limits the number of elements in an IN predicate to 1000 entries.  However, the given parameter list [ids] contained 1111 entries, which will likely cause failures to execute the query in the database
-</code></pre>
-<p>Source code of described example available on <a href="https://github.com/kostenkoserg/ee-jpa-examples">GitHub</a></p>
-</p>
-				<p class="text-right"><a href="https://kostenko.org/blog/2020/11/ora-01795-jpa-function-workaround.html#disqus_thread" data-disqus-identifier="blog/2020/11/ora-01795-jpa-function-workaround.html">Comments</a></p>
 				<hr/>
 
 		<ul class="pager">
